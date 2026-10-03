@@ -143,6 +143,7 @@ fun EcoScreen(resumeKey: Int) {
                 }
             }
         }
+        TickerStrip(roadmap)
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (failed && rows == null) {
                 Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.", color = MaterialTheme.colorScheme.error)
@@ -152,7 +153,6 @@ fun EcoScreen(resumeKey: Int) {
             }
             Spacer(Modifier.height(4.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                item(key = "roadmap") { RoadmapSection(roadmap) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
                 item(key = "usage") { UsageCard() }
             }
