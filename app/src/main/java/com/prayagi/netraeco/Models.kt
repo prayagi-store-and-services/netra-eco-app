@@ -51,3 +51,22 @@ fun formatSize(bytes: Long): String {
     val mb = bytes / (1024.0 * 1024.0)
     return String.format(java.util.Locale.US, "%.1f MB", mb)
 }
+
+/**
+ * Release notes worth showing. Empty when the text is only the generic "Backup update source" line
+ * that some release files carry, so we hide it instead of showing a meaningless note.
+ */
+fun usefulNotes(raw: String): String {
+    val t = raw.trim()
+    if (t.isBlank() || t.startsWith("Backup update source", ignoreCase = true)) return ""
+    return t
+}
+
+/** Short label for the status pill on a card. */
+fun statusLabel(status: Status): String = when (status) {
+    Status.NotInstalled -> "Not installed"
+    Status.UpdateAvailable -> "Update available"
+    Status.UpToDate -> "Up to date"
+    Status.InstalledNewer -> "Newer than published"
+    Status.Unavailable -> "Unavailable"
+}
