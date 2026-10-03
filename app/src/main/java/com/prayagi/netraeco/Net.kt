@@ -84,6 +84,16 @@ object Net {
         null
     }
 
+    /** Netra Eco itself, so the manual "Check for update" button can use the same download and install flow. */
+    const val SELF_REPO = "prayagi-store-and-services/netra-eco-app"
+
+    fun selfApp(context: Context) = CatalogApp(
+        id = "netra-eco", name = "Netra Eco", type = "", summary = "", repo = SELF_REPO,
+        packageName = context.packageName,
+        latestJsonUrl = "https://github.com/$SELF_REPO/releases/latest/download/latest.json",
+        siteUrl = ""
+    )
+
     /** Number of downloads running right now; installer files are only cleaned when it is 0. */
     private val activeDownloads = java.util.concurrent.atomic.AtomicInteger(0)
 
