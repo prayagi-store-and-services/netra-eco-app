@@ -31,6 +31,8 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 - `INTERNET` - to read the lists and download APKs.
 - `REQUEST_INSTALL_PACKAGES` - to hand a downloaded Netra APK to the system installer.
 
+- `netra_active` counter (v1.0.6): once a day the app adds +1 to the public Firestore counter `netra_active/netra-eco_<yyyyMMdd>` (and one per month) so the Netra site can show how many people use Eco. No user ID, no install ID, no location, no device data. On by default; switch it off with the toggle at the bottom of the app list.
+
 ## Limits
 
 - A new Netra app appears in the list as soon as it is added to `projects.json`. To also detect whether it is installed, its package name must be added to the manifest `<queries>` in a new version of this app.
