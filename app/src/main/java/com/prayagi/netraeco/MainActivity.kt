@@ -32,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,7 +73,10 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Re-read installed versions when the user comes back from the system installer.
         // Delete installer files left from a finished or cancelled install (not while a download runs).
-        Thread { Net.cleanLeftovers(applicationContext) }.start()
+        Thread {
+            Net.cleanLeftovers(applicationContext)
+            UsagePing.pingIfDue(applicationContext)
+        }.start()
         resumeCount.intValue = resumeCount.intValue + 1
     }
 }
@@ -150,6 +154,7 @@ fun EcoScreen(resumeKey: Int) {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item(key = "roadmap") { RoadmapSection(roadmap) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
+                item(key = "usage") { UsageCard() }
             }
         }
     }
@@ -297,5 +302,20 @@ private fun SelfUpdateButton(onRefresh: () -> Unit) {
             }
         }) { Text("Update to " + r.versionName) }
     }
+    }
+}
+
+@Composable
+private fun UsageCard() {
+    val context = LocalContext.current
+    var on by remember { mutableStateOf(UsagePing.isEnabled(context)) }
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.weight(1f)) {
+                Text("Share anonymous usage count", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text("Once a day the app adds 1 to a public counter so the Netra site can show roughly how many people use it. No ID, no location, no files.", style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(checked = on, onCheckedChange = { on = it; UsagePing.setEnabled(context, it) })
+        }
     }
 }
