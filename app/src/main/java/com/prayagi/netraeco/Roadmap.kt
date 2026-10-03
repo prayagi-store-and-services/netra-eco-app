@@ -1,25 +1,41 @@
 package com.prayagi.netraeco
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.time.OffsetDateTime
@@ -61,37 +77,93 @@ object Roadmap {
     }
 }
 
+
+/** Colour of one ticker item. Orange (in progress) wins over the time colours. */
+enum class Tone { RED, ORANGE, BLUE, GREEN, GREY }
+
+object Ticker {
+    const val TWO_HOURS = 2 * 3600 * 1000L
+    const val THIRTY_MIN = 30 * 60 * 1000L
+
+    fun inProgress(item: RoadmapItem) = item.status.trim().equals("In progress", ignoreCase = true)
+
+    fun tone(item: RoadmapItem, nowMillis: Long): Tone {
+        if (inProgress(item)) return Tone.ORANGE
+        val eta = item.etaMillis ?: return Tone.GREY
+        val left = eta - nowMillis
+        return when {
+            left <= THIRTY_MIN -> Tone.GREEN
+            left <= TWO_HOURS -> Tone.BLUE
+            else -> Tone.RED
+        }
+    }
+
+    /** Short time left, minute precision so the line does not jitter every second. */
+    fun left(ms: Long): String {
+        val m = ms / 60000
+        return when {
+            m >= 24 * 60 -> "%d d %d h".format(m / (24 * 60), m % (24 * 60) / 60)
+            m >= 60 -> "%d h %d m".format(m / 60, m % 60)
+            else -> "%d m".format(m.coerceAtLeast(1))
+        }
+    }
+
+    fun label(item: RoadmapItem, nowMillis: Long): String {
+        val prefix = if (item.appNames.isNotBlank() && !item.appNames.contains(",")) item.appNames.substringBefore(" (") + ": " else ""
+        val eta = item.etaMillis
+        val tail = when {
+            inProgress(item) -> if (eta != null && eta > nowMillis) "IN PROGRESS, est. in " + left(eta - nowMillis) else "IN PROGRESS"
+            eta == null -> "Unavailable"
+            eta <= nowMillis -> "estimate passed, check for update"
+            else -> "in " + left(eta - nowMillis)
+        }
+        return prefix + item.title + " - " + tail
+    }
+
+    fun upcoming(items: List<RoadmapItem>): List<RoadmapItem> =
+        items.filter { !it.released }.sortedBy { it.etaMillis ?: Long.MAX_VALUE }
+
+    fun color(t: Tone): Color = when (t) {
+        Tone.RED -> Color(0xFFFF4646)
+        Tone.ORANGE -> Color(0xFFFF9800)
+        Tone.BLUE -> Color(0xFF409CFF)
+        Tone.GREEN -> Color(0xFF3CE66E)
+        Tone.GREY -> Color(0xFFAAAAAA)
+    }
+}
+
+/** One black strip at the top, one line, scrolling left to right without stopping. */
 @Composable
-fun RoadmapSection(items: List<RoadmapItem>?) {
+fun TickerStrip(items: List<RoadmapItem>?) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var showAll by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Coming soon", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            if (items == null || items.isEmpty()) {
-                Text("Roadmap Unavailable right now.", style = MaterialTheme.typography.bodySmall)
-                return@Column
+    val list = if (items == null) emptyList() else Ticker.upcoming(items)
+    Box(Modifier.fillMaxWidth().height(40.dp).background(Color.Black).clipToBounds(), contentAlignment = Alignment.CenterStart) {
+        if (list.isEmpty()) {
+            Text("Roadmap Unavailable right now.", color = Ticker.color(Tone.GREY), fontSize = 14.sp, modifier = Modifier.offset(x = 16.dp))
+            return@Box
+        }
+        val text: AnnotatedString = buildAnnotatedString {
+            list.forEach { it ->
+                withStyle(SpanStyle(color = Ticker.color(Ticker.tone(it, now)), fontWeight = FontWeight.Bold)) { append(Ticker.label(it, now)) }
+                withStyle(SpanStyle(color = Color(0xFF888888))) { append("     |     ") }
             }
-            val next = Roadmap.next(items, now)
-            if (next != null) {
-                Spacer(Modifier.height(4.dp))
-                Text("Next release: " + next.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                Text("Estimated in " + Roadmap.countdown(next.etaMillis!! - now), style = MaterialTheme.typography.bodyMedium)
+        }
+        var unit by remember { mutableIntStateOf(0) }
+        val density = LocalDensity.current
+        val screenPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+        val durationMs = if (unit > 0) ((unit / density.density) / 60f * 1000f).toInt().coerceAtLeast(4000) else 12000
+        val p by rememberInfiniteTransition(label = "ticker").animateFloat(
+            0f, 1f, infiniteRepeatable(tween(durationMs, easing = LinearEasing), RepeatMode.Restart), label = "p"
+        )
+        val copies = if (unit > 0) (kotlin.math.ceil(screenPx / unit).toInt() + 2) else 3
+        Row(Modifier.wrapContentWidth(Alignment.Start, unbounded = true).offset { IntOffset((-unit + p * unit).toInt(), 0) }) {
+            repeat(copies) { i ->
+                Text(
+                    text, fontSize = 15.sp, maxLines = 1, softWrap = false,
+                    modifier = if (i == 0) Modifier.onSizeChanged { unit = it.width } else Modifier
+                )
             }
-            val upcoming = items.filter { !it.released }.sortedBy { it.etaMillis ?: Long.MAX_VALUE }
-            val shown = if (showAll) upcoming else upcoming.take(4)
-            shown.forEach { it ->
-                Spacer(Modifier.height(8.dp))
-                Text(it.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                val left = it.etaMillis?.let { e -> Roadmap.countdown(e - now) } ?: "Unavailable"
-                Text(it.appNames + " | " + it.status + " | estimated: " + left, style = MaterialTheme.typography.bodySmall)
-            }
-            if (upcoming.size > 4) {
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = { showAll = !showAll }) { Text(if (showAll) "Show less" else "Show all (" + upcoming.size + ")") }
-            }
-            Text("All dates are our own estimates and can change.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }
