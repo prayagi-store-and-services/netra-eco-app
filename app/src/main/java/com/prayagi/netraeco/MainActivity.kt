@@ -115,8 +115,10 @@ fun EcoScreen(resumeKey: Int) {
     var failed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var reload by remember { mutableIntStateOf(0) }
+    var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
 
     LaunchedEffect(resumeKey, reload) {
+        roadmap = withContext(Dispatchers.IO) { Net.fetchText(Roadmap.URL)?.let { Roadmap.parse(it) } }
         loading = true
         val result = loadRows(context)
         if (result == null) failed = true else { rows = result; failed = false }
@@ -150,6 +152,7 @@ fun EcoScreen(resumeKey: Int) {
             }
             Spacer(Modifier.height(4.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                item(key = "roadmap") { RoadmapSection(roadmap) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
             }
         }
