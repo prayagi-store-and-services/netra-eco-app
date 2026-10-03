@@ -23,6 +23,9 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 ## Installer file cleanup
 - Downloaded APKs live only in the app cache folder (`cache/updates/`). They are deleted when you come back to the app after the system installer closes (installed or cancelled), and never while a download is running. A new download also removes older files first.
 
+## Manual update check
+- The header has a "Check for update" button for Netra Eco itself. It reads Eco's own latest.json from this repo's latest release, says whether you are on the latest version, and offers Update only when a newer one exists. The download is checked for size and SHA-256 before the Android installer opens, and the user confirms the install.
+
 ## Permissions
 
 - `INTERNET` - to read the lists and download APKs.

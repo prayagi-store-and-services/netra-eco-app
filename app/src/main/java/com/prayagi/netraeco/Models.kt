@@ -70,3 +70,11 @@ fun statusLabel(status: Status): String = when (status) {
     Status.InstalledNewer -> "Newer than published"
     Status.Unavailable -> "Unavailable"
 }
+
+/** One-line answer for the "Check for update" button about Netra Eco itself. */
+fun selfUpdateMessage(installedName: String, status: Status, latestName: String?): String = when (status) {
+    Status.UpToDate -> "You are on the latest version ($installedName)."
+    Status.UpdateAvailable -> "Update available: " + (latestName ?: "newer version") + " (installed $installedName)."
+    Status.InstalledNewer -> "Installed version ($installedName) is newer than the published one."
+    Status.NotInstalled, Status.Unavailable -> "Unavailable: could not check for an update. Check your internet connection and try again."
+}
