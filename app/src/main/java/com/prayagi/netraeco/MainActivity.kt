@@ -81,10 +81,9 @@ private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Disp
     val catalogJson = Net.fetchText(Net.CATALOG_URL) ?: return@withContext null
     val apps = Net.parseCatalog(catalogJson)
     coroutineScope {
-        apps.map { app ->
+        (listOf(Net.selfApp(context)) + apps).map { app ->
             async {
-                val latest = Net.fetchText(app.latestJsonUrl)?.let { Net.parseLatest(it, app.repo) }
-                AppRow(app, Net.installed(context, app.packageName), latest)
+                AppRow(app, Net.installed(context, app.packageName), Net.fetchLatest(app))
             }
         }.awaitAll()
     }
@@ -136,10 +135,7 @@ fun EcoScreen(resumeKey: Int) {
                 Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD0ECE8))
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { reload++ }, enabled = !loading) {
-                        Text(if (loading) "Checking..." else "Check again", color = Color.White)
-                    }
-                    SelfUpdateButton()
+                    SelfUpdateButton(onRefresh = { reload++ })
                 }
             }
         }
@@ -177,7 +173,7 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf<String?>(null) }
-    val status = statusFor(row.installed?.first, row.latest?.versionCode)
+    val status = statusForRelease(row.installed?.first, row.installed?.second, row.latest)
 
     Card(
         Modifier.fillMaxWidth(),
@@ -260,7 +256,7 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
 }
 
 @Composable
-private fun SelfUpdateButton() {
+private fun SelfUpdateButton(onRefresh: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
@@ -275,9 +271,10 @@ private fun SelfUpdateButton() {
             release = null
             val self = Net.selfApp(context)
             val (installed, latest) = withContext(Dispatchers.IO) {
-                Net.installed(context, self.packageName) to Net.fetchText(self.latestJsonUrl)?.let { Net.parseLatest(it, self.repo) }
+                Net.installed(context, self.packageName) to Net.fetchLatest(self)
             }
-            val status = statusFor(installed?.first, latest?.versionCode)
+            onRefresh()
+            val status = statusForRelease(installed?.first, installed?.second, latest)
             message = selfUpdateMessage(installed?.second.orEmpty().ifBlank { "Unavailable" }, status, latest?.versionName)
             if (status == Status.UpdateAvailable) release = latest
             busy = false
