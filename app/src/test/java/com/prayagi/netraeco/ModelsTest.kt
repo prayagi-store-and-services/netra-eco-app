@@ -2,6 +2,7 @@ package com.prayagi.netraeco
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -35,5 +36,33 @@ class ModelsTest {
     @Test fun sizeFormatting() {
         assertEquals("Unavailable", formatSize(0))
         assertEquals("17.0 MB", formatSize(17L * 1024 * 1024))
+    }
+}
+
+class FreshUpdateTest {
+    private fun rel(code: Long, name: String) = LatestRelease("v$name", name, code, "", "u", "a".repeat(64), 1L)
+
+    @Test fun versionNamesCompareNumerically() {
+        assertTrue(compareVersions("1.1.15", "1.1.16") < 0)
+        assertTrue(compareVersions("1.10.0", "1.9.9") > 0)
+        assertEquals(0, compareVersions("v1.0", "1.0.0"))
+    }
+
+    @Test fun releaseWithoutCodeUsesNames() {
+        assertEquals(Status.UpdateAvailable, statusForRelease(17, "1.1.15", rel(0, "1.1.16")))
+        assertEquals(Status.UpToDate, statusForRelease(18, "1.1.16", rel(0, "1.1.16")))
+        assertEquals(Status.InstalledNewer, statusForRelease(19, "1.1.17", rel(0, "1.1.16")))
+    }
+
+    @Test fun releaseWithCodeUsesCode() {
+        assertEquals(Status.UpdateAvailable, statusForRelease(4, "1.0.3", rel(5, "1.0.4")))
+        assertEquals(Status.Unavailable, statusForRelease(4, "1.0.3", null))
+        assertEquals(Status.NotInstalled, statusForRelease(null, null, rel(5, "1.0.4")))
+    }
+
+    @Test fun digestParsing() {
+        assertEquals("a".repeat(64), Net.shaFromDigest("sha256:" + "A".repeat(64)))
+        assertNull(Net.shaFromDigest("md5:abc"))
+        assertNull(Net.shaFromDigest(""))
     }
 }

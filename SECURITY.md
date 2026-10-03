@@ -39,3 +39,5 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 - Download progress (v1.0.3): while an APK downloads, the app shows the percentage left and an estimated time left, calculated on the phone from the bytes received. Nothing extra is sent anywhere and no new library or permission is used.
 
 - Roadmap (v1.0.4): the app downloads one public file, roadmap.json, from the Netra Eco website to show upcoming features and a countdown to the next estimated release. It sends nothing about you. No new library or permission.
+
+- Fresher update check (v1.0.5): the app now asks the GitHub release API (public, no sign-in) for the newest release, with a no-cache request, then reads that release's latest.json. Nothing about you is sent. No new library or permission.

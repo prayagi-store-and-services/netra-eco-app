@@ -78,3 +78,25 @@ fun selfUpdateMessage(installedName: String, status: Status, latestName: String?
     Status.InstalledNewer -> "Installed version ($installedName) is newer than the published one."
     Status.NotInstalled, Status.Unavailable -> "Unavailable: could not check for an update. Check your internet connection and try again."
 }
+
+/** Compares dotted versions like 1.1.16; negative when a is older than b. Missing parts count as 0. */
+fun compareVersions(a: String, b: String): Int {
+    val pa = a.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+    val pb = b.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+    for (i in 0 until maxOf(pa.size, pb.size)) {
+        val c = (pa.getOrElse(i) { 0 }).compareTo(pb.getOrElse(i) { 0 })
+        if (c != 0) return c
+    }
+    return 0
+}
+
+/** Status using the version code when the release has one, else the version names (releases without a latest.json file). */
+fun statusForRelease(installedCode: Long?, installedName: String?, latest: LatestRelease?): Status = when {
+    latest == null -> Status.Unavailable
+    installedCode == null -> Status.NotInstalled
+    latest.versionCode > 0L -> statusFor(installedCode, latest.versionCode)
+    installedName.isNullOrBlank() -> Status.Unavailable
+    else -> compareVersions(installedName, latest.versionName).let { c ->
+        when { c < 0 -> Status.UpdateAvailable; c == 0 -> Status.UpToDate; else -> Status.InstalledNewer }
+    }
+}
