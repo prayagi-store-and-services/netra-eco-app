@@ -35,3 +35,5 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 
 - A new Netra app appears in the list as soon as it is added to `projects.json`. To also detect whether it is installed, its package name must be added to the manifest `<queries>` in a new version of this app.
 - Minimum Android version is 8.0 (API 26).
+
+- Download progress (v1.0.3): while an APK downloads, the app shows the percentage left and an estimated time left, calculated on the phone from the bytes received. Nothing extra is sent anywhere and no new library or permission is used.

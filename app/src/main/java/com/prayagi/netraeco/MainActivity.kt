@@ -173,6 +173,7 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var progress by remember { mutableStateOf<String?>(null) }
     val status = statusFor(row.installed?.first, row.latest?.versionCode)
 
     Card(
@@ -226,12 +227,13 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
                             busy = true
                             message = null
                             try {
-                                val file = withContext(Dispatchers.IO) { Net.download(context, row.app, latest) }
+                                val file = withContext(Dispatchers.IO) { Net.download(context, row.app, latest) { d, t, e -> progress = DownloadText.line(d, t, e) } }
                                 Net.install(context, file)
                             } catch (e: Exception) {
                                 message = e.message ?: "Download failed."
                             }
                             busy = false
+                            progress = null
                             onChanged()
                         }
                     }
@@ -249,6 +251,7 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
                 Status.UpToDate -> {}
             }
             message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            progress?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
         }
     }
 }
@@ -259,6 +262,7 @@ private fun SelfUpdateButton() {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var progress by remember { mutableStateOf<String?>(null) }
     var release by remember { mutableStateOf<LatestRelease?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     OutlinedButton(enabled = !busy, onClick = {
@@ -277,17 +281,19 @@ private fun SelfUpdateButton() {
         }
     }) { Text(if (busy) "Checking..." else "Check for update", color = Color.White) }
     message?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
+    progress?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
     release?.let { r ->
         Button(enabled = !busy, onClick = {
             scope.launch {
                 busy = true
                 try {
-                    val file = withContext(Dispatchers.IO) { Net.download(context, Net.selfApp(context), r) }
+                    val file = withContext(Dispatchers.IO) { Net.download(context, Net.selfApp(context), r) { d, t, e -> progress = DownloadText.line(d, t, e) } }
                     Net.install(context, file)
                 } catch (e: Exception) {
                     message = e.message ?: "Update failed."
                 }
                 busy = false
+                progress = null
             }
         }) { Text("Update to " + r.versionName) }
     }
