@@ -16,8 +16,9 @@ import java.security.MessageDigest
 object Net {
     const val CATALOG_URL = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
 
-    private fun open(url: String): HttpURLConnection {
+    private fun open(url: String, fresh: Boolean = false): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
+        if (fresh) { c.useCaches = false; c.setRequestProperty("Cache-Control", "no-cache") }
         c.connectTimeout = 10000
         c.readTimeout = 20000
         c.instanceFollowRedirects = true
@@ -26,14 +27,59 @@ object Net {
     }
 
     /** Small text download (catalog or latest.json). Returns null when offline or the server says no. */
-    fun fetchText(url: String): String? = try {
-        val c = open(url)
+    fun fetchText(url: String, fresh: Boolean = false): String? = try {
+        val c = open(url, fresh)
         if (c.responseCode != 200) null else {
             val bytes = c.inputStream.use { it.readBytes() }
             if (bytes.size > 1024 * 1024) null else String(bytes, Charsets.UTF_8)
         }
     } catch (e: Exception) {
         null
+    }
+
+    /** "sha256:abc..." from the GitHub API to a plain lowercase hash, or null when it is not a SHA-256. */
+    fun shaFromDigest(digest: String): String? =
+        digest.removePrefix("sha256:").lowercase().takeIf { digest.startsWith("sha256:") && isValidSha256(it) }
+
+    /**
+     * Newest release, read fresh: GitHub's release API first (a cache-busting parameter and no-cache header, so a just
+     * published release shows within seconds), then that tag's latest.json, then the older cached latest.json file.
+     * A release without a latest.json file (Battery Sentinel) is built from the API's size and SHA-256, with no version code.
+     */
+    fun fetchLatest(app: CatalogApp): LatestRelease? {
+        val fromApi = try {
+            val body = fetchText("https://api.github.com/repos/${app.repo}/releases/latest?_=${System.currentTimeMillis()}", fresh = true)
+            if (body == null) null else {
+                val o = JSONObject(body)
+                val tag = o.getString("tag_name")
+                if (!isValidTag(tag)) null else {
+                    val assets = o.getJSONArray("assets")
+                    var latestJsonUrl: String? = null
+                    var apkSize = 0L
+                    var apkSha: String? = null
+                    for (i in 0 until assets.length()) {
+                        val a = assets.getJSONObject(i)
+                        when (a.optString("name")) {
+                            "latest.json" -> latestJsonUrl = "https://github.com/${app.repo}/releases/download/$tag/latest.json"
+                            "app-release.apk" -> { apkSize = a.optLong("size"); apkSha = shaFromDigest(a.optString("digest")) }
+                        }
+                    }
+                    val viaJson = latestJsonUrl?.let { fetchText(it) }?.let { parseLatest(it, app.repo) }
+                    when {
+                        viaJson != null && viaJson.tag == tag -> viaJson
+                        apkSha != null && apkSize > 0L -> LatestRelease(
+                            tag = tag, versionName = tag.removePrefix("v"), versionCode = 0L, notes = "",
+                            apkUrl = "https://github.com/${app.repo}/releases/download/$tag/app-release.apk",
+                            sha256 = apkSha, size = apkSize
+                        )
+                        else -> null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+        return fromApi ?: fetchText(app.latestJsonUrl, fresh = true)?.let { parseLatest(it, app.repo) }
     }
 
     fun parseCatalog(json: String): List<CatalogApp> = try {
