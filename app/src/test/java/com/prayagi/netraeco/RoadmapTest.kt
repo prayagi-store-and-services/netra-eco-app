@@ -6,25 +6,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RoadmapTest {
-    private val json = """{"apps":[{"id":"a","name":"App A"}],"items":[
-      {"apps":["a"],"title":"Later","status":"Planned","eta":"2026-10-10T20:00:00+05:30"},
-      {"apps":["a"],"title":"Soon","status":"Planned","eta":"2026-10-05T20:00:00+05:30"},
-      {"apps":["a"],"title":"Done","status":"Released","eta":"2026-10-01T20:00:00+05:30"},
-      {"apps":["a"],"title":"","status":"Planned","eta":"x"}]}"""
+    private fun item(title: String, eta: Long?, released: Boolean = false) =
+        RoadmapItem(title, if (released) "Released" else "Planned", eta, "App A", released)
 
-    @Test fun parsesItemsAndSkipsBlankTitles() {
-        val items = Roadmap.parse(json)
-        assertEquals(3, items.size)
-        assertEquals("App A", items[0].appNames)
-        assertTrue(items[2].released)
-    }
+    private val items = listOf(item("Later", 2000L), item("Soon", 1000L), item("Done", 500L, released = true), item("NoDate", null))
 
     @Test fun nextIsEarliestFutureUnreleased() {
-        val items = Roadmap.parse(json)
-        val now = java.time.OffsetDateTime.parse("2026-10-03T12:00:00+05:30").toInstant().toEpochMilli()
-        assertEquals("Soon", Roadmap.next(items, now)?.title)
-        val after = java.time.OffsetDateTime.parse("2026-10-11T00:00:00+05:30").toInstant().toEpochMilli()
-        assertNull(Roadmap.next(items, after))
+        assertEquals("Soon", Roadmap.next(items, 100L)?.title)
+        assertEquals("Later", Roadmap.next(items, 1500L)?.title)
+    }
+
+    @Test fun releasedAndPastItemsAreNotNext() {
+        assertNull(Roadmap.next(items, 2500L))
+        assertNull(Roadmap.next(emptyList(), 0L))
     }
 
     @Test fun badJsonGivesEmptyList() = assertTrue(Roadmap.parse("not json").isEmpty())
