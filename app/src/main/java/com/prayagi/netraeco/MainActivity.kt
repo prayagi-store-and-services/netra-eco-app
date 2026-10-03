@@ -57,6 +57,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // Re-read installed versions when the user comes back from the system installer.
+        // Delete installer files left from a finished or cancelled install (not while a download runs).
+        Thread { Net.cleanLeftovers(applicationContext) }.start()
         resumeCount.intValue = resumeCount.intValue + 1
     }
 }
