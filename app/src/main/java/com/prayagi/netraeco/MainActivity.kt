@@ -14,6 +14,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -50,13 +64,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme { EcoScreen(resumeCount.intValue) }
+            NetraTheme { EcoScreen(resumeCount.intValue) }
         }
     }
 
     override fun onResume() {
         super.onResume()
         // Re-read installed versions when the user comes back from the system installer.
+        // Delete installer files left from a finished or cancelled install (not while a download runs).
+        Thread { Net.cleanLeftovers(applicationContext) }.start()
         resumeCount.intValue = resumeCount.intValue + 1
     }
 }
@@ -74,6 +90,24 @@ private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Disp
     }
 }
 
+private val Teal = Color(0xFF00796B)
+private val TealDark = Color(0xFF004D40)
+
+@Composable
+fun NetraTheme(content: @Composable () -> Unit) {
+    val dark = isSystemInDarkTheme()
+    val colors = if (dark) darkColorScheme(
+        primary = Color(0xFF4DB6AC), onPrimary = Color(0xFF00201C),
+        background = Color(0xFF101414), surface = Color(0xFF182020), onSurface = Color(0xFFE0E6E4),
+        surfaceVariant = Color(0xFF22302E)
+    ) else lightColorScheme(
+        primary = Teal, onPrimary = Color.White,
+        background = Color(0xFFF3F7F6), surface = Color.White, onSurface = Color(0xFF16201E),
+        surfaceVariant = Color(0xFFE0EEEB)
+    )
+    MaterialTheme(colorScheme = colors, content = content)
+}
+
 @Composable
 fun EcoScreen(resumeKey: Int) {
     val context = LocalContext.current
@@ -89,21 +123,44 @@ fun EcoScreen(resumeKey: Int) {
         loading = false
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Netra Eco", style = MaterialTheme.typography.headlineMedium)
-        Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = { reload++ }, enabled = !loading) { Text(if (loading) "Checking..." else "Check again") }
-        Spacer(Modifier.height(8.dp))
-        if (failed && rows == null) {
-            Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.")
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Box(
+            Modifier.fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Teal, TealDark)))
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 20.dp)
+        ) {
+            Column {
+                Text("Netra Eco", style = MaterialTheme.typography.headlineLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD0ECE8))
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = { reload++ }, enabled = !loading) {
+                    Text(if (loading) "Checking..." else "Check again", color = Color.White)
+                }
+            }
         }
-        if (failed && rows != null) {
-            Text("Could not refresh. Showing the last list that loaded.")
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            if (failed && rows == null) {
+                Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.", color = MaterialTheme.colorScheme.error)
+            }
+            if (failed && rows != null) {
+                Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.height(4.dp))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
+            }
         }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
-        }
+    }
+}
+
+@Composable
+private fun StatusPill(status: Status) {
+    val good = status == Status.UpToDate
+    val warn = status == Status.UpdateAvailable
+    val bg = when { good -> Color(0xFFD7F0DD); warn -> Color(0xFFFFE9B8); else -> MaterialTheme.colorScheme.surfaceVariant }
+    val fg = when { good -> Color(0xFF1B5E20); warn -> Color(0xFF6D4C00); else -> MaterialTheme.colorScheme.onSurface }
+    Box(Modifier.clip(RoundedCornerShape(50)).background(bg).padding(horizontal = 10.dp, vertical = 4.dp)) {
+        Text(statusLabel(status), color = fg, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -115,27 +172,52 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
     val status = statusFor(row.installed?.first, row.latest?.versionCode)
 
-    Card(Modifier.fillMaxWidth()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
         Column(Modifier.padding(16.dp)) {
-            Text(row.app.name, style = MaterialTheme.typography.titleMedium)
-            if (row.app.type.isNotBlank()) Text(row.app.type, style = MaterialTheme.typography.labelMedium)
-            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Teal, TealDark))),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(row.app.name.take(1).uppercase(), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.padding(start = 12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(row.app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    if (row.app.type.isNotBlank()) Text(row.app.type, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                }
+                StatusPill(status)
+            }
+            Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(8.dp))
-            Text("Installed: " + (row.installed?.second?.ifBlank { "version unavailable" } ?: "not installed"))
-            Text("Latest: " + (row.latest?.let { it.versionName + " (" + formatSize(it.size) + ")" } ?: "Unavailable"))
-            val notes = row.latest?.notes.orEmpty()
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Installed", style = MaterialTheme.typography.labelSmall)
+                    Text(row.installed?.second?.ifBlank { "Unavailable" } ?: "Not installed", fontWeight = FontWeight.Medium)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Latest", style = MaterialTheme.typography.labelSmall)
+                    Text(row.latest?.let { it.versionName + " - " + formatSize(it.size) } ?: "Unavailable", fontWeight = FontWeight.Medium)
+                }
+            }
+            val notes = usefulNotes(row.latest?.notes.orEmpty())
             if (notes.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
                 Text("What changed: " + notes.take(400), style = MaterialTheme.typography.bodySmall)
             }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                when (status) {
-                    Status.UpToDate -> Text("Up to date")
-                    Status.InstalledNewer -> Text("Installed version is newer than the published one")
-                    Status.Unavailable -> Text("Latest version Unavailable right now")
-                    Status.NotInstalled, Status.UpdateAvailable -> Button(enabled = !busy, onClick = {
+            Spacer(Modifier.height(10.dp))
+            when (status) {
+                Status.NotInstalled, Status.UpdateAvailable -> Button(
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    onClick = {
                         val latest = row.latest ?: return@Button
                         scope.launch {
                             busy = true
@@ -149,18 +231,21 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
                             busy = false
                             onChanged()
                         }
-                    }) {
-                        Text(
-                            when {
-                                busy -> "Downloading..."
-                                status == Status.NotInstalled -> "Download and install"
-                                else -> "Update"
-                            }
-                        )
                     }
+                ) {
+                    Text(
+                        when {
+                            busy -> "Downloading..."
+                            status == Status.NotInstalled -> "Download and install"
+                            else -> "Update"
+                        }
+                    )
                 }
+                Status.InstalledNewer -> Text("Installed version is newer than the published one", style = MaterialTheme.typography.bodySmall)
+                Status.Unavailable -> Text("Latest version Unavailable right now", style = MaterialTheme.typography.bodySmall)
+                Status.UpToDate -> {}
             }
-            message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
+            message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
         }
     }
 }

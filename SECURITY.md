@@ -20,6 +20,9 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 - Installed apps are found through the Android package list, limited to the Netra package names declared in the manifest (`<queries>`). The app cannot see your other apps.
 - Missing data shows as "Unavailable". No made-up ratings, download counts or version numbers.
 
+## Installer file cleanup
+- Downloaded APKs live only in the app cache folder (`cache/updates/`). They are deleted when you come back to the app after the system installer closes (installed or cancelled), and never while a download is running. A new download also removes older files first.
+
 ## Permissions
 
 - `INTERNET` - to read the lists and download APKs.

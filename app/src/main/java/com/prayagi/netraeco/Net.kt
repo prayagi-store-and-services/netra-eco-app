@@ -84,8 +84,36 @@ object Net {
         null
     }
 
+    /** Number of downloads running right now; installer files are only cleaned when it is 0. */
+    private val activeDownloads = java.util.concurrent.atomic.AtomicInteger(0)
+
+    /** Deletes every file in the folder and returns how many were removed. */
+    fun cleanDir(dir: File?): Int {
+        var n = 0
+        dir?.listFiles()?.forEach { if (it.delete()) n++ }
+        return n
+    }
+
+    /**
+     * Deletes downloaded installer files so nothing stays in storage after an install. Called when the
+     * screen comes back (for example after the system installer closes) and never during a download.
+     */
+    fun cleanLeftovers(context: Context) {
+        if (activeDownloads.get() != 0) return
+        try { cleanDir(File(context.cacheDir, "updates")) } catch (_: Exception) {}
+    }
+
     /** Downloads the APK and checks size and SHA-256. The file is deleted and an error thrown if anything is off. */
     fun download(context: Context, app: CatalogApp, release: LatestRelease): File {
+        activeDownloads.incrementAndGet()
+        try {
+            return downloadInternal(context, app, release)
+        } finally {
+            activeDownloads.decrementAndGet()
+        }
+    }
+
+    private fun downloadInternal(context: Context, app: CatalogApp, release: LatestRelease): File {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
         val file = File(dir, "${app.id}-${release.tag}.apk")
