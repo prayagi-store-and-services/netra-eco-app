@@ -133,8 +133,11 @@ fun EcoScreen(resumeKey: Int) {
                 Text("Netra Eco", style = MaterialTheme.typography.headlineLarge, color = Color.White, fontWeight = FontWeight.Bold)
                 Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD0ECE8))
                 Spacer(Modifier.height(12.dp))
-                OutlinedButton(onClick = { reload++ }, enabled = !loading) {
-                    Text(if (loading) "Checking..." else "Check again", color = Color.White)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { reload++ }, enabled = !loading) {
+                        Text(if (loading) "Checking..." else "Check again", color = Color.White)
+                    }
+                    SelfUpdateButton()
                 }
             }
         }
@@ -247,5 +250,46 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
             }
             message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
         }
+    }
+}
+
+@Composable
+private fun SelfUpdateButton() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var release by remember { mutableStateOf<LatestRelease?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    OutlinedButton(enabled = !busy, onClick = {
+        scope.launch {
+            busy = true
+            message = null
+            release = null
+            val self = Net.selfApp(context)
+            val (installed, latest) = withContext(Dispatchers.IO) {
+                Net.installed(context, self.packageName) to Net.fetchText(self.latestJsonUrl)?.let { Net.parseLatest(it, self.repo) }
+            }
+            val status = statusFor(installed?.first, latest?.versionCode)
+            message = selfUpdateMessage(installed?.second.orEmpty().ifBlank { "Unavailable" }, status, latest?.versionName)
+            if (status == Status.UpdateAvailable) release = latest
+            busy = false
+        }
+    }) { Text(if (busy) "Checking..." else "Check for update", color = Color.White) }
+    message?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
+    release?.let { r ->
+        Button(enabled = !busy, onClick = {
+            scope.launch {
+                busy = true
+                try {
+                    val file = withContext(Dispatchers.IO) { Net.download(context, Net.selfApp(context), r) }
+                    Net.install(context, file)
+                } catch (e: Exception) {
+                    message = e.message ?: "Update failed."
+                }
+                busy = false
+            }
+        }) { Text("Update to " + r.versionName) }
+    }
     }
 }
