@@ -1,6 +1,7 @@
 package com.prayagi.netraeco
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -67,6 +68,29 @@ class MainActivity : ComponentActivity() {
         setContent {
             NetraTheme { EcoScreen(resumeCount.intValue) }
         }
+    }
+
+    // Refresh the list the moment an app is installed, updated or removed, even if Eco stays on screen.
+    private val packageReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            resumeCount.intValue = resumeCount.intValue + 1
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val f = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addDataScheme("package")
+        }
+        registerReceiver(packageReceiver, f)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        try { unregisterReceiver(packageReceiver) } catch (e: IllegalArgumentException) { }
     }
 
     override fun onResume() {
@@ -208,6 +232,10 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
                 Column {
                     Text("Installed", style = MaterialTheme.typography.labelSmall)
                     Text(row.installed?.second?.ifBlank { "Unavailable" } ?: "Not installed", fontWeight = FontWeight.Medium)
+                    Text(
+                        if (row.installed != null) "version code " + row.installed.first + " - " + row.app.packageName else "Eco looked for " + row.app.packageName,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Latest", style = MaterialTheme.typography.labelSmall)
