@@ -177,7 +177,8 @@ fun EcoScreen(resumeKey: Int) {
                 Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
             }
         }
-        TickerStrip(roadmap)
+        val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
+        TickerStrip(roadmap?.let { Roadmap.pending(it, publishedVersions) })
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (failed && rows == null) {
                 Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.", color = MaterialTheme.colorScheme.error)
