@@ -10,6 +10,7 @@
         <package android:name="com.aistudio.reasoningquiz.tark" />
         <package android:name="com.aistudio.netrasensorhub.kxmpzq" />
         <package android:name="com.aistudio.sensorguard.prvsec" />
+        <package android:name="com.prayagi.netraplayer" />
     </queries>
 
     <application

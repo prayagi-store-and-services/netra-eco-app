@@ -23,6 +23,9 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 ## Roadmap strip speed (v1.0.8)
 - Patch: the scrolling strip at the top now moves at a calm reading pace (22 dp per second instead of 60). Touch and hold the strip to pause it. This is display only: no new permission, no new network call, no new library.
 
+## Netra Player listing (v1.0.9)
+- Patch: Netra Player is now in the list. The manifest `<queries>` gets one more package name (`com.prayagi.netraplayer`) so the app can tell whether Netra Player is installed. Nothing else is visible to Eco. No new permission, no new library.
+
 ## Installer file cleanup
 - Downloaded APKs live only in the app cache folder (`cache/updates/`). They are deleted when you come back to the app after the system installer closes (installed or cancelled), and never while a download is running. A new download also removes older files first.
 
