@@ -2,6 +2,9 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Next planned release per app (1.2.2)
+Each app card shows the next planned item for that app and a live countdown to its ETA, both read from the same public roadmap file as the strip. The ETA is approximate and says so; it can be earlier or later. If no ETA is set, or the roadmap cannot be read, the card says Unavailable. No new network call or permission.
+
 ## Future plans strip (1.2.1)
 The scrolling strip lists only plans that are not released yet. An item that names app versions is removed by itself once the latest published release of each named app (read from GitHub, the same data as the app cards) has reached that version. If a latest version cannot be read, the item stays, because it cannot be proven done. Nothing is hidden or marked done by hand, and no extra network call or permission was added.
 
