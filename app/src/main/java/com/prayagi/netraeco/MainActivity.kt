@@ -178,7 +178,8 @@ fun EcoScreen(resumeKey: Int) {
             }
         }
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
-        TickerStrip(roadmap?.let { Roadmap.pending(it, publishedVersions) })
+        val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
+        TickerStrip(pendingRoadmap)
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (failed && rows == null) {
                 Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.", color = MaterialTheme.colorScheme.error)
@@ -195,7 +196,7 @@ fun EcoScreen(resumeKey: Int) {
                         SelfUpdateButton(onRefresh = { reload++ })
                     }
                 }
-                items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
+                items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
                 item(key = "usage") { UsageCard() }
             }
         }
@@ -214,7 +215,7 @@ private fun StatusPill(status: Status) {
 }
 
 @Composable
-fun AppCard(row: AppRow, onChanged: () -> Unit) {
+fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
@@ -253,6 +254,23 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Latest", style = MaterialTheme.typography.labelSmall)
                     Text(row.latest?.let { it.versionName + " - " + formatSize(it.size) } ?: "Unavailable", fontWeight = FontWeight.Medium)
+                }
+            }
+            // Next planned release for this app, from the roadmap. Live countdown, approximate, may come earlier or later.
+            var tickNow by remember { mutableStateOf(System.currentTimeMillis()) }
+            LaunchedEffect(Unit) { while (true) { tickNow = System.currentTimeMillis(); delay(1000) } }
+            val nextPlan = pendingRoadmap?.let { Roadmap.nextFor(it, row.app.id) }
+            Spacer(Modifier.height(8.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
+                Text("Next planned release", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                val planEta = nextPlan?.etaMillis
+                if (nextPlan != null && planEta != null) {
+                    Text(nextPlan.title, style = MaterialTheme.typography.bodySmall)
+                    Text(if (planEta > tickNow) "Approximate ETA: " + Roadmap.countdown(planEta - tickNow) else Roadmap.countdown(0L), fontWeight = FontWeight.Medium)
+                    Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
+                } else {
+                    Text("Unavailable", fontWeight = FontWeight.Medium)
+                    Text(if (pendingRoadmap == null) "The roadmap could not be read." else "No planned release with an ETA is set for this app.", style = MaterialTheme.typography.labelSmall)
                 }
             }
             val notes = usefulNotes(row.latest?.notes.orEmpty())
