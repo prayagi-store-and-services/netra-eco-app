@@ -2,6 +2,7 @@ package com.prayagi.netraeco
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -281,6 +282,38 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
                 Status.InstalledNewer -> Text("Installed version is newer than the published one", style = MaterialTheme.typography.bodySmall)
                 Status.Unavailable -> Text("Latest version Unavailable right now", style = MaterialTheme.typography.bodySmall)
                 Status.UpToDate -> {}
+            }
+            if (row.installed != null) {
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        onClick = {
+                            val launch = context.packageManager.getLaunchIntentForPackage(row.app.packageName)
+                            if (launch == null) {
+                                message = "Cannot open " + row.app.name + ": Android has no screen to start for it."
+                            } else {
+                                try {
+                                    context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                } catch (e: Exception) {
+                                    message = "Cannot open " + row.app.name + ": " + (e.message ?: "Android refused.")
+                                }
+                            }
+                        }
+                    ) { Text("Open") }
+                    OutlinedButton(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        onClick = {
+                            try {
+                                context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:" + row.app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            } catch (e: Exception) {
+                                message = "Cannot start uninstall: " + (e.message ?: "Android refused.")
+                            }
+                        }
+                    ) { Text("Uninstall") }
+                }
             }
             message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             progress?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
