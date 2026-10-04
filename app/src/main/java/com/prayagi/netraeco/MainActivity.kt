@@ -229,12 +229,7 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(48.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Teal, TealDark))),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(row.app.name.take(1).uppercase(), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                }
+                AppIcon(row.app, 48.dp)
                 Spacer(Modifier.padding(start = 12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(row.app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -262,7 +257,13 @@ fun AppCard(row: AppRow, onChanged: () -> Unit) {
             val notes = usefulNotes(row.latest?.notes.orEmpty())
             if (notes.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
-                Text("What changed: " + notes.take(400), style = MaterialTheme.typography.bodySmall)
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)).padding(10.dp)
+                ) {
+                    Text("What's new in " + (row.latest?.versionName ?: ""), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(notes.take(600), style = MaterialTheme.typography.bodySmall)
+                }
             }
             Spacer(Modifier.height(10.dp))
             when (status) {
