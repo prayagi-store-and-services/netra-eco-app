@@ -7,6 +7,7 @@ Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows ea
 - `https://prayagi-store-and-services.github.io/netra-eco/projects.json` - the list of Netra apps (public file on the Netra Eco website).
 - `https://github.com/prayagi-store-and-services/<repo>/releases/latest/download/latest.json` - the newest version of each app (Battery Sentinel uses the `latest.json` on its website). Public files, no login.
 - `https://github.com/prayagi-store-and-services/<repo>/releases/download/<tag>/app-release.apk` - the APK itself.
+- `https://raw.githubusercontent.com/prayagi-store-and-services/<repo>/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp` (new in 1.2.0) - the launcher image of an app that is not installed, so its real icon can be shown. Only this one image path, only for repositories of this organization. An installed app shows its own icon from the phone. If neither can be read, a plain letter badge is shown instead, which is not the app icon.
 
 Nothing else. No analytics, no accounts, no keys or API tokens in the app, no personal data sent. Requests carry only the app name `netra-eco-app` as the user agent.
 
