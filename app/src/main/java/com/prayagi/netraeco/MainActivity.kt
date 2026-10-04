@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashReporter.install(this)
         setContent {
             NetraTheme { EcoScreen(resumeCount.intValue) }
         }
@@ -198,6 +199,7 @@ fun EcoScreen(resumeKey: Int) {
                 }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
                 item(key = "usage") { UsageCard() }
+                item(key = "crash") { CrashReportCard() }
             }
         }
     }
