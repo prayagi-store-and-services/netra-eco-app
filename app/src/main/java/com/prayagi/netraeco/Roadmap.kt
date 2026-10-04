@@ -46,7 +46,15 @@ import org.json.JSONObject
 import java.time.OffsetDateTime
 
 /** One roadmap entry, read from roadmap.json on the Netra Eco site (the same file the websites use). */
-data class RoadmapItem(val title: String, val status: String, val etaMillis: Long?, val appNames: String, val released: Boolean)
+data class RoadmapItem(
+    val title: String,
+    val status: String,
+    val etaMillis: Long?,
+    val appNames: String,
+    val released: Boolean,
+    /** Optional: (app id, version) pairs this item ships. When every app's latest published release has reached its version, the item is done. */
+    val ships: List<Pair<String, String>> = emptyList()
+)
 
 object Roadmap {
     const val URL = "https://prayagi-store-and-services.github.io/netra-eco/roadmap.json"
@@ -65,10 +73,45 @@ object Roadmap {
             val appNames = (0 until (ids?.length() ?: 0)).joinToString(", ") { names[ids!!.getString(it)] ?: ids.getString(it) }
             val eta = try { OffsetDateTime.parse(o.optString("eta")).toInstant().toEpochMilli() } catch (e: Exception) { null }
             val status = o.optString("status")
-            RoadmapItem(title, status, eta, appNames, status.startsWith("Released", ignoreCase = true))
+            val shipsArr = o.optJSONArray("ships")
+            val ships = (0 until (shipsArr?.length() ?: 0)).mapNotNull { k ->
+                val s = shipsArr!!.optJSONObject(k)
+                val a = s?.optString("app").orEmpty()
+                val v = s?.optString("version").orEmpty()
+                if (a.isBlank() || v.isBlank()) null else a to v
+            }
+            RoadmapItem(title, status, eta, appNames, status.startsWith("Released", ignoreCase = true), ships)
         }
     } catch (e: Exception) {
         emptyList()
+    }
+
+    /** "1.2.10" style compare. Null when either side has no digits. */
+    fun versionAtLeast(have: String, want: String): Boolean? {
+        fun parts(s: String): List<Int>? = s.trim().removePrefix("v").split(".").map { it.toIntOrNull() ?: return null }.takeIf { it.isNotEmpty() }
+        val h = parts(have) ?: return null
+        val w = parts(want) ?: return null
+        for (i in 0 until maxOf(h.size, w.size)) {
+            val a = h.getOrElse(i) { 0 }
+            val b = w.getOrElse(i) { 0 }
+            if (a != b) return a > b
+        }
+        return true
+    }
+
+    /**
+     * Removes every item whose release is proven by real data: the latest PUBLISHED version of each app it ships is at or above
+     * the version it names. Items with no version, or whose latest version could not be read, stay (we cannot prove them done).
+     * latest maps app id to the latest published versionName.
+     */
+    fun pending(items: List<RoadmapItem>, latest: Map<String, String>): List<RoadmapItem> = items.filter { item ->
+        if (item.released) return@filter false
+        if (item.ships.isEmpty()) return@filter true
+        val done = item.ships.all { (app, ver) ->
+            val have = latest[if (app == "bspn") "battery-sentinel" else if (app == "eco") "netra-eco" else app]
+            have != null && versionAtLeast(have, ver) == true
+        }
+        !done
     }
 
     /** The unreleased item with the earliest date that is still in the future; null when there is none. */
