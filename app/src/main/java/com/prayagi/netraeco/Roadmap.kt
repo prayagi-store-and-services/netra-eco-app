@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +17,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -85,6 +90,15 @@ object Ticker {
     const val TWO_HOURS = 2 * 3600 * 1000L
     const val THIRTY_MIN = 30 * 60 * 1000L
 
+    /** Reading speed of the strip. Was 60 dp per second, which was too fast to read; 22 dp per second is a calm reading pace. */
+    const val SPEED_DP_PER_SEC = 22f
+
+    /** Moves the strip forward by the time passed, wrapping at one text length. Pure, unit tested. */
+    fun advance(offsetPx: Float, deltaSec: Float, speedPxPerSec: Float, unitPx: Float): Float {
+        if (unitPx <= 0f || deltaSec <= 0f) return offsetPx
+        return (offsetPx + deltaSec * speedPxPerSec) % unitPx
+    }
+
     fun inProgress(item: RoadmapItem) = item.status.trim().equals("In progress", ignoreCase = true)
 
     fun tone(item: RoadmapItem, nowMillis: Long): Tone {
@@ -132,13 +146,15 @@ object Ticker {
     }
 }
 
-/** One black strip at the top, one line, scrolling left to right without stopping. */
+/** One black strip at the top, one line, scrolling left to right at a calm reading pace. Touch and hold to pause. */
 @Composable
 fun TickerStrip(items: List<RoadmapItem>?) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     val list = if (items == null) emptyList() else Ticker.upcoming(items)
-    Box(Modifier.fillMaxWidth().height(40.dp).background(Color.Black).clipToBounds(), contentAlignment = Alignment.CenterStart) {
+    var pressed by remember { mutableStateOf(false) }
+    var offsetPx by remember { mutableFloatStateOf(0f) }
+    Box(Modifier.fillMaxWidth().height(40.dp).background(Color.Black).clipToBounds().pointerInput(Unit) { detectTapGestures(onPress = { pressed = true; tryAwaitRelease(); pressed = false }) }, contentAlignment = Alignment.CenterStart) {
         if (list.isEmpty()) {
             Text("Roadmap Unavailable right now.", color = Ticker.color(Tone.GREY), fontSize = 14.sp, modifier = Modifier.offset(x = 16.dp))
             return@Box
@@ -152,12 +168,18 @@ fun TickerStrip(items: List<RoadmapItem>?) {
         var unit by remember { mutableIntStateOf(0) }
         val density = LocalDensity.current
         val screenPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
-        val durationMs = if (unit > 0) ((unit / density.density) / 60f * 1000f).toInt().coerceAtLeast(4000) else 12000
-        val p by rememberInfiniteTransition(label = "ticker").animateFloat(
-            0f, 1f, infiniteRepeatable(tween(durationMs, easing = LinearEasing), RepeatMode.Restart), label = "p"
-        )
+        val speedPx = Ticker.SPEED_DP_PER_SEC * density.density
+        LaunchedEffect(unit, pressed) {
+            if (unit <= 0 || pressed) return@LaunchedEffect
+            var last = withFrameNanos { it }
+            while (true) {
+                val t = withFrameNanos { it }
+                offsetPx = Ticker.advance(offsetPx, (t - last) / 1_000_000_000f, speedPx, unit.toFloat())
+                last = t
+            }
+        }
         val copies = if (unit > 0) (kotlin.math.ceil(screenPx / unit).toInt() + 2) else 3
-        Row(Modifier.wrapContentWidth(Alignment.Start, unbounded = true).offset { IntOffset((-unit + p * unit).toInt(), 0) }) {
+        Row(Modifier.wrapContentWidth(Alignment.Start, unbounded = true).offset { IntOffset((-unit + offsetPx).toInt(), 0) }) {
             repeat(copies) { i ->
                 Text(
                     text, fontSize = 15.sp, maxLines = 1, softWrap = false,
