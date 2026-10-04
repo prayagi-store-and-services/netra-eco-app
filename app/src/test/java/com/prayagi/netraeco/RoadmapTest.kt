@@ -52,7 +52,7 @@ class RoadmapTest {
 
     @Test fun tickerLabels() {
         assertEquals("App A: T - in 22 m", Ticker.label(it2("Planned", 22 * min), 0L))
-        assertEquals("T - Unavailable", Ticker.label(it2("Planned", null, "A, B"), 0L))
+        assertEquals("A, B: T - Unavailable", Ticker.label(it2("Planned", null, "A, B"), 0L))
         assertEquals("App A: T - IN PROGRESS", Ticker.label(it2("In progress", null), 0L))
         assertEquals("App A: T - estimate passed, check for update", Ticker.label(it2("Planned", 5L), 10L))
     }

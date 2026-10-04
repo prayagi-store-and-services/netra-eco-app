@@ -123,7 +123,7 @@ object Ticker {
     }
 
     fun label(item: RoadmapItem, nowMillis: Long): String {
-        val prefix = if (item.appNames.isNotBlank() && !item.appNames.contains(",")) item.appNames.substringBefore(" (") + ": " else ""
+        val prefix = if (item.appNames.isNotBlank()) item.appNames.split(",").joinToString(", ") { it.trim().substringBefore(" (") } + ": " else ""
         val eta = item.etaMillis
         val tail = when {
             inProgress(item) -> if (eta != null && eta > nowMillis) "IN PROGRESS, est. in " + left(eta - nowMillis) else "IN PROGRESS"
@@ -146,7 +146,7 @@ object Ticker {
     }
 }
 
-/** One black strip at the top, one line, scrolling left to right at a calm reading pace. Touch and hold to pause. */
+/** One black strip at the top, one line, scrolling right to left (text enters at the right edge and leaves at the left) at a calm reading pace. Touch and hold to pause. */
 @Composable
 fun TickerStrip(items: List<RoadmapItem>?) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -179,7 +179,7 @@ fun TickerStrip(items: List<RoadmapItem>?) {
             }
         }
         val copies = if (unit > 0) (kotlin.math.ceil(screenPx / unit).toInt() + 2) else 3
-        Row(Modifier.wrapContentWidth(Alignment.Start, unbounded = true).offset { IntOffset((-unit + offsetPx).toInt(), 0) }) {
+        Row(Modifier.wrapContentWidth(Alignment.Start, unbounded = true).offset { IntOffset((-offsetPx).toInt(), 0) }) {
             repeat(copies) { i ->
                 Text(
                     text, fontSize = 15.sp, maxLines = 1, softWrap = false,

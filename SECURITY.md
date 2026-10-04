@@ -23,6 +23,9 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 ## Roadmap strip speed (v1.0.8)
 - Patch: the scrolling strip at the top now moves at a calm reading pace (22 dp per second instead of 60). Touch and hold the strip to pause it. This is display only: no new permission, no new network call, no new library.
 
+## Ticker direction (v1.0.9)
+- Patch: the top strip now scrolls from right to left, like a normal news ticker, and every item names its app (several apps are joined with commas). Display only; nothing else changed.
+
 ## Netra Player listing (v1.0.9)
 - Patch: Netra Player is now in the list. The manifest `<queries>` gets one more package name (`com.prayagi.netraplayer`) so the app can tell whether Netra Player is installed. Nothing else is visible to Eco. No new permission, no new library.
 
