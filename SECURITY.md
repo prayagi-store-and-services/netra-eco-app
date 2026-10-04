@@ -20,6 +20,9 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 - Installed apps are found through the Android package list, limited to the Netra package names declared in the manifest (`<queries>`). The app cannot see your other apps.
 - Missing data shows as "Unavailable". No made-up ratings, download counts or version numbers.
 
+## Open and Uninstall buttons (v1.1.0)
+- Every installed Netra app card now has an Open button (starts the app's own launcher screen) and an Uninstall button (asks Android to remove the app). Uninstall needs one new normal permission, `REQUEST_DELETE_PACKAGES`, granted at install with no popup. Android always shows its own confirm dialog; Eco cannot uninstall silently and cannot skip it. Open and Uninstall work only for the Netra package names already in the manifest `<queries>`; Eco still cannot see any other app. No new library, no new network call, nothing is sent anywhere.
+
 ## Roadmap strip speed (v1.0.8)
 - Patch: the scrolling strip at the top now moves at a calm reading pace (22 dp per second instead of 60). Touch and hold the strip to pause it. This is display only: no new permission, no new network call, no new library.
 
