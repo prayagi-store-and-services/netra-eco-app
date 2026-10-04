@@ -58,3 +58,6 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 - Roadmap (v1.0.4): the app downloads one public file, roadmap.json, from the Netra Eco website to show upcoming features and a countdown to the next estimated release. It sends nothing about you. No new library or permission.
 
 - Fresher update check (v1.0.5): the app now asks the GitHub release API (public, no sign-in) for the newest release, with a no-cache request, then reads that release's latest.json. Nothing about you is sent. No new library or permission.
+
+## Standard header (v1.1.1)
+The header is now the Netra standard: 56 dp, only the app name, the installed version (from Android package info, "Unavailable" if missing) and the device date/time. The intro line and the Check for update button moved into the scrolling list; the future-plans strip stays pinned below the header. No new permission, network call or library. Every datum shown must have a real source, otherwise "Unavailable".

@@ -49,6 +49,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.statusBarsPadding
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -154,18 +157,24 @@ fun EcoScreen(resumeKey: Int) {
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        // Standard header (all Netra apps): 56 dp content height, only app name, version and date/time. Nothing else lives here.
+        var clockNow by remember { mutableStateOf(java.util.Date()) }
+        LaunchedEffect(Unit) { while (true) { clockNow = java.util.Date(); delay(30_000) } }
+        val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         Box(
             Modifier.fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Teal, TealDark)))
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 20.dp)
+                .statusBarsPadding()
+                .height(56.dp)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
-            Column {
-                Text("Netra Eco", style = MaterialTheme.typography.headlineLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD0ECE8))
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SelfUpdateButton(onRefresh = { reload++ })
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Netra Eco", fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("v$ownVersion", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
                 }
+                Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
             }
         }
         TickerStrip(roadmap)
@@ -178,6 +187,13 @@ fun EcoScreen(resumeKey: Int) {
             }
             Spacer(Modifier.height(4.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                item(key = "intro") {
+                    Column {
+                        Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        SelfUpdateButton(onRefresh = { reload++ })
+                    }
+                }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row) { reload++ } }
                 item(key = "usage") { UsageCard() }
             }
