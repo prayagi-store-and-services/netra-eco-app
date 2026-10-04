@@ -61,4 +61,12 @@ class RoadmapTest {
         val l = listOf(item("B", 2000L), item("Done", 1L, released = true), item("A", 1000L), item("None", null))
         assertEquals(listOf("A", "B", "None"), Ticker.upcoming(l).map { it.title })
     }
+
+    @Test fun stripAdvancesAtReadingSpeedAndWraps() {
+        assertEquals(22f, Ticker.advance(0f, 1f, 22f, 1000f), 0.001f)
+        assertEquals(10f, Ticker.advance(990f, 1f, 20f, 1000f), 0.001f)
+        assertEquals(5f, Ticker.advance(5f, 0f, 22f, 1000f), 0.001f)
+        assertEquals(5f, Ticker.advance(5f, 1f, 22f, 0f), 0.001f)
+        assertTrue(Ticker.SPEED_DP_PER_SEC < 30f)
+    }
 }
