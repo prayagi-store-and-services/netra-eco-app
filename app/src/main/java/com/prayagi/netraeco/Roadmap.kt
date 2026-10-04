@@ -53,7 +53,9 @@ data class RoadmapItem(
     val appNames: String,
     val released: Boolean,
     /** Optional: (app id, version) pairs this item ships. When every app's latest published release has reached its version, the item is done. */
-    val ships: List<Pair<String, String>> = emptyList()
+    val ships: List<Pair<String, String>> = emptyList(),
+    /** Roadmap app ids this item is for (bspn, kbc, netra-hub, prayagi-privacy, netra-player, eco). */
+    val appIds: List<String> = emptyList()
 )
 
 object Roadmap {
@@ -80,7 +82,8 @@ object Roadmap {
                 val v = s?.optString("version").orEmpty()
                 if (a.isBlank() || v.isBlank()) null else a to v
             }
-            RoadmapItem(title, status, eta, appNames, status.startsWith("Released", ignoreCase = true), ships)
+            val appIds = (0 until (ids?.length() ?: 0)).map { ids!!.getString(it) }
+            RoadmapItem(title, status, eta, appNames, status.startsWith("Released", ignoreCase = true), ships, appIds)
         }
     } catch (e: Exception) {
         emptyList()
@@ -112,6 +115,15 @@ object Roadmap {
             have != null && versionAtLeast(have, ver) == true
         }
         !done
+    }
+
+    /**
+     * The next planned item for one app: among the still-pending items that name the app, the one with the earliest ETA.
+     * Null when no pending item has an ETA for it. catalogId is the id used in the app catalog.
+     */
+    fun nextFor(pending: List<RoadmapItem>, catalogId: String): RoadmapItem? {
+        val rid = when (catalogId) { "battery-sentinel" -> "bspn"; "netra-eco" -> "eco"; else -> catalogId }
+        return pending.filter { rid in it.appIds && it.etaMillis != null }.minByOrNull { it.etaMillis!! }
     }
 
     /** The unreleased item with the earliest date that is still in the future; null when there is none. */
