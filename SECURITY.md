@@ -23,6 +23,9 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 ## Roadmap strip speed (v1.0.8)
 - Patch: the scrolling strip at the top now moves at a calm reading pace (22 dp per second instead of 60). Touch and hold the strip to pause it. This is display only: no new permission, no new network call, no new library.
 
+## Installed-app detection, clearer (v1.0.10)
+- Each card now shows which package name Eco looked for and, when found, the installed version code, so a wrong "Not installed" can be diagnosed. The list also refreshes the moment any app is installed, updated or removed (a receiver for the system package-added, replaced and removed events, registered only while Eco is open; it carries only a package name and Eco ignores everything except refreshing its own list). Still only the Netra package names in the manifest queries are visible to Eco. No new permission, no new library.
+
 ## Ticker direction (v1.0.9)
 - Patch: the top strip now scrolls from right to left, like a normal news ticker, and every item names its app (several apps are joined with commas). Display only; nothing else changed.
 
