@@ -68,3 +68,7 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 
 ## Standard header (v1.1.1)
 The header is now the Netra standard: 56 dp, only the app name, the installed version (from Android package info, "Unavailable" if missing) and the device date/time. The intro line and the Check for update button moved into the scrolling list; the future-plans strip stays pinned below the header. No new permission, network call or library. Every datum shown must have a real source, otherwise "Unavailable".
+
+## Crash report (version 1.2.3)
+
+- If the app crashes, a short report is saved on the device. Nothing is sent by itself. The "Crash report" card has a "Send crash report" button: it first shows the exact text (app, app version, phone model, Android version, the crash trace with class names and code locations only, no exception messages) and sends only if you tap Send; "Share instead" lets you pick any app. If no crash is saved it says Unavailable. A send counts as done only when the forwarding service (formsubmit.co) confirms it. No name, email, location, files or device ID is included.
