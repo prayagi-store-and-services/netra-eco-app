@@ -55,7 +55,7 @@ class EcoWidgetProvider : AppWidgetProvider() {
             val v = RemoteViews(context.packageName, R.layout.widget_eco)
             if (lines == null) {
                 v.setTextViewText(R.id.eco_title, "Unavailable")
-                v.setTextViewText(R.id.eco_lines, "No update check yet. Open Netra Eco once.")
+                v.setTextViewText(R.id.eco_lines, "No update check yet. Open " + NameGate.displayName(context) + " once.")
                 v.setTextViewText(R.id.eco_time, "")
             } else {
                 v.setTextViewText(R.id.eco_title, EcoWidgetStore.summary(p.getInt("updates", 0)))

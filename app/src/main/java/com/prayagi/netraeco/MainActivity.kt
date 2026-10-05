@@ -168,6 +168,8 @@ fun EcoScreen(resumeKey: Int) {
         // Standard header (all Netra apps): 56 dp content height, only app name, version and date/time. Nothing else lives here.
         var clockNow by remember { mutableStateOf(java.util.Date()) }
         LaunchedEffect(Unit) { while (true) { clockNow = java.util.Date(); delay(30_000) } }
+        var ecoName by remember { mutableStateOf(NameGate.displayName(context)) }
+        LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         Box(
             Modifier.fillMaxWidth()
@@ -179,7 +181,7 @@ fun EcoScreen(resumeKey: Int) {
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Netra Eco", fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(ecoName, fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
                     Text("v$ownVersion", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
                 }
                 Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)

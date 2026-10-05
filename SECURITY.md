@@ -78,3 +78,8 @@ The header is now the Netra standard: 56 dp, only the app name, the installed ve
 - New widget "Netra Eco - app updates": shows, for each Netra app, the installed version, the latest published version and the status, exactly as the last update check made inside the app found them, with the time of that check. Before the first check it shows "Unavailable".
 - Stored on this phone only (local preferences, not backed up because backup is off): one text line per app and the check time. Nothing is sent anywhere. The widget makes no network call and has no timer: the app redraws it after each check it already makes.
 - No new permission, network call or library. The widget receiver is exported because Android's launcher must send it update events; it handles only that action. Tapping the widget opens the app.
+
+## Dated display change (version 1.2.5)
+
+- The app now makes one extra small request per launch to a file on our own site and reads the server's date from the answer (the phone clock is never used for this). It sends no data about you. If the site has no such file yet, or there is no network, nothing changes. No new permission or library.
+- Stored on this phone only: a short display text, if one is ever published. A server date can be faked by someone who controls your network connection; the worst case is that the display text appears earlier or not at all. It cannot change anything else in the app.
