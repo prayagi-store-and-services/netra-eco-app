@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/eco_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#101414"
+    android:orientation="vertical"
+    android:padding="12dp">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="NETRA ECO - APP UPDATES" android:textColor="#4DB6AC" android:textSize="10sp" android:textStyle="bold" />
+    <TextView android:id="@+id/eco_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Unavailable" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+    <TextView android:id="@+id/eco_lines" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="No update check yet. Open Netra Eco once." android:textColor="#E0E6E4" android:textSize="11sp" />
+    <TextView android:id="@+id/eco_time" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="#7C8A88" android:textSize="9sp" />
+</LinearLayout>
