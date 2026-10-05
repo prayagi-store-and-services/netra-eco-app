@@ -209,6 +209,7 @@ fun EcoScreen(resumeKey: Int) {
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
+                item(key = "perms") { PermissionsCard(ecoPermissions()) }
             }
         }
     }
