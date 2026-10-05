@@ -113,13 +113,20 @@ class MainActivity : ComponentActivity() {
 private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Dispatchers.IO) {
     val catalogJson = Net.fetchText(Net.CATALOG_URL) ?: return@withContext null
     val apps = Net.parseCatalog(catalogJson)
-    coroutineScope {
+    val rows = coroutineScope {
         (listOf(Net.selfApp(context)) + apps).map { app ->
             async {
                 AppRow(app, Net.installed(context, app.packageName), Net.fetchLatest(app))
             }
         }.awaitAll()
     }
+    try {
+        val statuses = rows.map { statusForRelease(it.installed?.first, it.installed?.second, it.latest) }
+        val lines = rows.mapIndexed { i, r -> EcoWidgetStore.lineFor(r.app.name, r.installed?.second, r.latest?.versionName, statuses[i]) }
+        EcoWidgetStore.save(context, lines, statuses.count { it == Status.UpdateAvailable })
+        EcoWidgetProvider.refresh(context)
+    } catch (_: Exception) {}
+    rows
 }
 
 private val Teal = Color(0xFF00796B)
