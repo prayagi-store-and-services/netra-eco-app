@@ -32,13 +32,12 @@ object NameGate {
         return n
     }
 
+    private val NAME_FIELD = Regex("\"name\"\\s*:\\s*\"([^\"\\\\]*)\"")
+
+    /** Reads the "name" text from the small name.json file (plain text match, no JSON library needed). */
     fun parseName(json: String?): String? {
         if (json == null) return null
-        return try {
-            validName(org.json.JSONObject(json).optString("name", ""))
-        } catch (e: Exception) {
-            null
-        }
+        return validName(NAME_FIELD.find(json)?.groupValues?.get(1))
     }
 
     fun displayName(context: Context): String =
