@@ -32,9 +32,14 @@ object NameGate {
         return n
     }
 
-    fun parseName(json: String?): String? = try {
-        validName(org.json.JSONObject(json ?: return null).optString("name", ""))
-    } catch (e: Exception) { null }
+    fun parseName(json: String?): String? {
+        if (json == null) return null
+        return try {
+            validName(org.json.JSONObject(json).optString("name", ""))
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     fun displayName(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)?.takeIf { it.isNotBlank() } ?: OLD_NAME
