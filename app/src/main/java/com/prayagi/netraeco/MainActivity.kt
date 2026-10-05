@@ -206,6 +206,7 @@ fun EcoScreen(resumeKey: Int) {
                         SelfUpdateButton(onRefresh = { reload++ })
                     }
                 }
+                item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
