@@ -88,3 +88,8 @@ The header is now the Netra standard: 56 dp, only the app name, the installed ve
 
 - New "Permissions" card in the app: lists each permission the app uses (Internet, Install apps, Uninstall apps), the plain reason, and the live status read from Android when you open the screen (no timer). Tapping "Install apps" opens the Android page where you can allow or stop it. Internet and Uninstall apps are normal permissions, shown as always allowed.
 - No new permission, network call or library.
+
+## Festival banner (version 1.2.7)
+
+- A card at the top of the app shows today's festival (India calendar, bundled in the app, from timeanddate.com India 2026-2027) or "coming soon" for a festival within 3 days, with the live date and time. India's Independence Day (15 August) is shown too. It has no death anniversaries and no other country's days. After 2027 there is no data, so no banner is shown and nothing is invented. A date marked "may differ by a day" says so.
+- It works offline. No new permission, network call or library.
