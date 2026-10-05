@@ -1,0 +1,147 @@
+package com.prayagi.netraeco
+
+/**
+ * Festival, Independence Day and condolence banner data, bundled so it works offline.
+ * Same data as docs/banner.js on the website.
+ * Festivals: timeanddate.com India calendar 2026-2027 (no death anniversaries, no Muharram/Ashura, no martyrdom days).
+ * Independence Day: India only (15 August).
+ * After 2027 there is no festival data, so no festival banner is shown (nothing is invented).
+ * Condolences are added by hand in CONDOLENCES below, see docs/BANNER.md.
+ */
+data class Fest(val ymd: Int, val name: String, val dateMayShift: Boolean)
+data class Indep(val country: String, val month: Int, val day: Int)
+/** from/to are inclusive yyyymmdd. */
+data class Condolence(val from: Int, val to: Int, val name: String, val country: String, val text: String)
+
+object FestivalData {
+    /** Add a condolence entry here when an important person dies. Leave empty otherwise. */
+    val CONDOLENCES: List<Condolence> = listOf()
+
+    val FEST: List<Fest> = listOf(
+        Fest(20260103, "Hazarat Ali's Birthday", false),
+        Fest(20260113, "Lohri", false),
+        Fest(20260114, "Makar Sankranti", false),
+        Fest(20260114, "Pongal", false),
+        Fest(20260123, "Vasant Panchami", false),
+        Fest(20260126, "Republic Day", false),
+        Fest(20260201, "Guru Ravidas Jayanti", false),
+        Fest(20260212, "Maharishi Dayanand Saraswati Jayanti", false),
+        Fest(20260215, "Maha Shivaratri", false),
+        Fest(20260219, "Ramadan Start", false),
+        Fest(20260219, "Shivaji Jayanti", false),
+        Fest(20260303, "Holika Dahana", false),
+        Fest(20260304, "Holi", false),
+        Fest(20260319, "Gudi Padwa", false),
+        Fest(20260319, "Ugadi", false),
+        Fest(20260320, "Jamat Ul-Vida", false),
+        Fest(20260321, "Ramzan Id", false),
+        Fest(20260326, "Rama Navami", false),
+        Fest(20260331, "Mahavir Jayanti", false),
+        Fest(20260402, "Maundy Thursday", false),
+        Fest(20260403, "Good Friday", false),
+        Fest(20260405, "Easter Day", false),
+        Fest(20260414, "Ambedkar Jayanti", false),
+        Fest(20260414, "Mesadi", false),
+        Fest(20260414, "Vaisakhi", false),
+        Fest(20260415, "Bahag Bihu", false),
+        Fest(20260501, "Buddha Purnima", false),
+        Fest(20260501, "International Worker's Day", false),
+        Fest(20260509, "Birthday of Rabindranath", false),
+        Fest(20260528, "Bakrid", false),
+        Fest(20260716, "Rath Yatra", false),
+        Fest(20260729, "Guru Purnima", false),
+        Fest(20260826, "Milad un-Nabi", false),
+        Fest(20260826, "Onam", false),
+        Fest(20260828, "Raksha Bandhan", false),
+        Fest(20260904, "Janmashtami", false),
+        Fest(20260904, "Janmashtami (Smarta)", false),
+        Fest(20260914, "Ganesh Chaturthi", false),
+        Fest(20261002, "Mahatma Gandhi Jayanti", false),
+        Fest(20261011, "First Day of Sharad Navratri", false),
+        Fest(20261017, "First Day of Durga Puja Festivities", false),
+        Fest(20261018, "Maha Saptami", false),
+        Fest(20261019, "Maha Ashtami", false),
+        Fest(20261020, "Dussehra", false),
+        Fest(20261020, "Maha Navami", true),
+        Fest(20261021, "Durga Puja ends (Vijaya Dashami)", true),
+        Fest(20261026, "Maharishi Valmiki Jayanti", false),
+        Fest(20261029, "Karaka Chaturthi", false),
+        Fest(20261108, "Diwali/Deepavali", false),
+        Fest(20261108, "Naraka Chaturdasi", false),
+        Fest(20261109, "Govardhan Puja", false),
+        Fest(20261111, "Bhai Duj", false),
+        Fest(20261115, "Chhat Puja (Pratihar Sashthi/Surya Sashthi)", false),
+        Fest(20261124, "Guru Nanak Jayanti", false),
+        Fest(20261223, "Hazarat Ali's Birthday", false),
+        Fest(20261224, "Christmas Eve", false),
+        Fest(20261225, "Christmas", false),
+        Fest(20261231, "New Year's Eve", false),
+        Fest(20270101, "New Year's Day", false),
+        Fest(20270114, "Makar Sankranti", false),
+        Fest(20270115, "Guru Govind Singh Jayanti", false),
+        Fest(20270115, "Pongal", false),
+        Fest(20270126, "Republic Day", false),
+        Fest(20270209, "Ramadan Start", true),
+        Fest(20270211, "Vasant Panchami", false),
+        Fest(20270219, "Shivaji Jayanti", false),
+        Fest(20270220, "Guru Ravidas Jayanti", false),
+        Fest(20270302, "Maharishi Dayanand Saraswati Jayanti", false),
+        Fest(20270305, "Jamat Ul-Vida", false),
+        Fest(20270306, "Maha Shivaratri", false),
+        Fest(20270310, "Ramzan Id", true),
+        Fest(20270322, "Dolyatra", false),
+        Fest(20270322, "Holi", false),
+        Fest(20270322, "Holika Dahana", false),
+        Fest(20270325, "Maundy Thursday", false),
+        Fest(20270326, "Good Friday", false),
+        Fest(20270328, "Easter Day", false),
+        Fest(20270407, "Chaitra Sukhladi", false),
+        Fest(20270407, "Cheti Chand", false),
+        Fest(20270407, "Gudi Padwa", false),
+        Fest(20270407, "Ugadi", false),
+        Fest(20270414, "Ambedkar Jayanti", false),
+        Fest(20270414, "Mesadi", false),
+        Fest(20270414, "Vaisakhi", false),
+        Fest(20270414, "Vishu", false),
+        Fest(20270415, "Bahag Bihu (Assam)", false),
+        Fest(20270415, "Rama Navami", false),
+        Fest(20270415, "Vaisakhadi (Bengal)", false),
+        Fest(20270419, "Mahavir Jayanti", false),
+        Fest(20270501, "International Worker's Day", false),
+        Fest(20270509, "Birthday of Rabindranath", false),
+        Fest(20270517, "Bakrid", true),
+        Fest(20270520, "Buddha Purnima", false),
+        Fest(20270705, "Rath Yatra", false),
+        Fest(20270815, "Milad un-Nabi", true),
+        Fest(20270815, "Parsi New Year", false),
+        Fest(20270817, "Raksha Bandhan", false),
+        Fest(20270825, "Janmashtami", false),
+        Fest(20270825, "Janmashtami (Smarta)", false),
+        Fest(20270904, "Ganesh Chaturthi", false),
+        Fest(20270912, "Onam", false),
+        Fest(20270930, "First Day of Sharad Navratri", false),
+        Fest(20271002, "Mahatma Gandhi Jayanti", false),
+        Fest(20271005, "First Day of Durga Puja Festivities", false),
+        Fest(20271006, "Maha Saptami", false),
+        Fest(20271007, "Maha Ashtami", false),
+        Fest(20271008, "Maha Navami", false),
+        Fest(20271009, "Dussehra", false),
+        Fest(20271015, "Maharishi Valmiki Jayanti", false),
+        Fest(20271018, "Karaka Chaturthi", false),
+        Fest(20271028, "Naraka Chaturdasi", false),
+        Fest(20271029, "Diwali/Deepavali", false),
+        Fest(20271030, "Govardhan Puja", false),
+        Fest(20271031, "Bhai Duj", false),
+        Fest(20271104, "Chhat Puja (Pratihar Sashthi/Surya Sashthi)", false),
+        Fest(20271114, "Guru Nanak Jayanti", false),
+        Fest(20271212, "Hazarat Ali's Birthday", false),
+        Fest(20271224, "Christmas Eve", false),
+        Fest(20271225, "Christmas", false),
+        Fest(20271231, "New Year's Eve", false)
+    )
+
+    /** Only India's own Independence Day is shown. Other countries' independence days were removed on 4 Oct 2026 by the owner's decision. */
+    val INDEP: List<Indep> = listOf(
+        Indep("India", 8, 15)
+    )
+}
