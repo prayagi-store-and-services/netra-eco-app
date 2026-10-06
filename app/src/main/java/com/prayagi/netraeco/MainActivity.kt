@@ -67,8 +67,14 @@ data class AppRow(
 class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        UpdateAlert.handle(this, intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        UpdateAlert.start(this)
         CrashReporter.install(this)
         setContent {
             NetraTheme { EcoScreen(resumeCount.intValue) }
