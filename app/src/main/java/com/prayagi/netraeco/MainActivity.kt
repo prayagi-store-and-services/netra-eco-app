@@ -161,8 +161,10 @@ fun EcoScreen(resumeKey: Int) {
     var loading by remember { mutableStateOf(true) }
     var reload by remember { mutableIntStateOf(0) }
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
+    var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
 
     LaunchedEffect(resumeKey, reload) {
+        upcoming = withContext(Dispatchers.IO) { Net.fetchText(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
         roadmap = withContext(Dispatchers.IO) { Net.fetchText(Roadmap.URL)?.let { Roadmap.parse(it) } }
         loading = true
         val result = loadRows(context)
@@ -215,6 +217,7 @@ fun EcoScreen(resumeKey: Int) {
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList()) }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
+                items(upcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u) }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
