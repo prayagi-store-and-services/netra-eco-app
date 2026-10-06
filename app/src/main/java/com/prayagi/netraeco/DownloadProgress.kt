@@ -38,9 +38,13 @@ object DownloadText {
         else -> "${seconds / 3600} h ${(seconds % 3600) / 60} min"
     }
 
+    fun percentDone(done: Long, total: Long): Int? =
+        if (total <= 0L || done < 0L || done > total) null else (done * 100 / total).toInt()
+
+    /** Progress only goes up: "40% downloaded". */
     fun line(done: Long, total: Long, eta: Long?): String {
-        val left = percentLeft(done, total)
-        val pct = if (left == null) "Unavailable" else "$left% left"
+        val p = percentDone(done, total)
+        val pct = if (p == null) "Unavailable" else "$p% downloaded"
         return "$pct, time left: ${formatEta(eta)} (estimated)"
     }
 }
