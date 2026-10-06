@@ -312,7 +312,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                                 val file = withContext(Dispatchers.IO) { Net.download(context, row.app, latest) { d, t, e -> progress = DownloadText.line(d, t, e) } }
                                 Net.install(context, file)
                             } catch (e: Exception) {
-                                message = e.message ?: "Download failed."
+                                message = plainFailure(e, "Download failed.")
                             }
                             busy = false
                             progress = null
@@ -346,7 +346,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                                 try {
                                     context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                                 } catch (e: Exception) {
-                                    message = "Cannot open " + row.app.name + ": " + (e.message ?: "Android refused.")
+                                    message = "Cannot open " + row.app.name + ". " + plainFailure(e, "Android refused.")
                                 }
                             }
                         }
@@ -358,7 +358,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                             try {
                                 context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:" + row.app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                             } catch (e: Exception) {
-                                message = "Cannot start uninstall: " + (e.message ?: "Android refused.")
+                                message = "Cannot start uninstall. " + plainFailure(e, "Android refused.")
                             }
                         }
                     ) { Text("Uninstall") }
@@ -405,7 +405,7 @@ private fun SelfUpdateButton(onRefresh: () -> Unit) {
                     val file = withContext(Dispatchers.IO) { Net.download(context, Net.selfApp(context), r) { d, t, e -> progress = DownloadText.line(d, t, e) } }
                     Net.install(context, file)
                 } catch (e: Exception) {
-                    message = e.message ?: "Update failed."
+                    message = plainFailure(e, "Update failed.")
                 }
                 busy = false
                 progress = null
