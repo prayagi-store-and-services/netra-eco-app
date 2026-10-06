@@ -2,6 +2,9 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Plain failure messages (1.2.8)
+When a download, update, open or uninstall fails, the app now shows one plain sentence (for example "No internet, or the server did not answer") instead of the raw system text such as "Unable to resolve host". The app's own messages (checksum, allow installs) are unchanged. No new permission, library or network call.
+
 ## Next planned release per app (1.2.2)
 Each app card shows the next planned item for that app and a live countdown to its ETA, both read from the same public roadmap file as the strip. The ETA is approximate and says so; it can be earlier or later. If no ETA is set, or the roadmap cannot be read, the card says Unavailable. No new network call or permission.
 
