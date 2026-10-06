@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Needed so the Uninstall button can ask Android to remove a Netra app. Android still shows its own confirm dialog. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
