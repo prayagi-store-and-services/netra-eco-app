@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## App card layout (1.2.11)
+
+The latest version and size no longer wrap onto the package line. Layout only: no new permission, library or network call.
+
 ## Downloads fix and download list (v1.2.10)
 - Download progress now counts up (percent downloaded) and the time left no longer rises. Several apps can download at the same time. Finished files stay in a Downloads list with Install and Delete, and are deleted automatically once that version is installed.
 - Files stay in the app's private cache folder only. No new permission, library or network call.

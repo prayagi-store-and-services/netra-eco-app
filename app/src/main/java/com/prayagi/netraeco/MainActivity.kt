@@ -263,7 +263,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text("Installed", style = MaterialTheme.typography.labelSmall)
                     Text(row.installed?.second?.ifBlank { "Unavailable" } ?: "Not installed", fontWeight = FontWeight.Medium)
                     Text(
@@ -271,9 +271,9 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
-                Column(horizontalAlignment = Alignment.End) {
+                Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
                     Text("Latest", style = MaterialTheme.typography.labelSmall)
-                    Text(row.latest?.let { it.versionName + " - " + formatSize(it.size) } ?: "Unavailable", fontWeight = FontWeight.Medium)
+                    Text(row.latest?.let { it.versionName + " - " + formatSize(it.size) } ?: "Unavailable", fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
                 }
             }
             // Next planned release for this app, from the roadmap. Live countdown, approximate, may come earlier or later.
