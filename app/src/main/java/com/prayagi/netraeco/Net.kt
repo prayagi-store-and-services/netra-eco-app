@@ -143,6 +143,9 @@ object Net {
     /** Number of downloads running right now; installer files are only cleaned when it is 0. */
     private val activeDownloads = java.util.concurrent.atomic.AtomicInteger(0)
 
+    /** True while any download (from a screen or from the update notification) is running. */
+    fun downloadsRunning(): Boolean = activeDownloads.get() != 0
+
     /** Deletes every file in the folder and returns how many were removed. */
     fun cleanDir(dir: File?): Int {
         var n = 0
@@ -156,7 +159,7 @@ object Net {
      */
     fun cleanLeftovers(context: Context) {
         if (activeDownloads.get() != 0) return
-        try { cleanDir(File(context.cacheDir, "updates")) } catch (_: Exception) {}
+        try { DownloadCenter.cleanFinished(context) } catch (_: Exception) {}
     }
 
     /** Downloads the APK and checks size and SHA-256. The file is deleted and an error thrown if anything is off. */
@@ -171,7 +174,8 @@ object Net {
 
     private fun downloadInternal(context: Context, app: CatalogApp, release: LatestRelease, onProgress: ((Long, Long, Long?) -> Unit)?): File {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
-        dir.listFiles()?.forEach { it.delete() }
+        // Only this app's older files go; other apps' downloads (running or finished) stay.
+        dir.listFiles()?.filter { it.name.startsWith(app.id + "-") }?.forEach { it.delete() }
         val file = File(dir, "${app.id}-${release.tag}.apk")
         val c = open(release.apkUrl)
         if (c.responseCode != 200) throw IllegalStateException("Download failed (server answered ${c.responseCode}).")

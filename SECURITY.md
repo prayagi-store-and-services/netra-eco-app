@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Downloads fix and download list (v1.2.10)
+- Download progress now counts up (percent downloaded) and the time left no longer rises. Several apps can download at the same time. Finished files stay in a Downloads list with Install and Delete, and are deleted automatically once that version is installed.
+- Files stay in the app's private cache folder only. No new permission, library or network call.
+
 ## Update alert (v1.2.9)
 - Every 6 hours (network needed) the app checks its own public GitHub release and, when a newer version exists, shows one notification. Tapping it downloads the build, checks size and SHA-256, and opens the Android installer. The notification plays the normal notification sound.
 - New permission: POST_NOTIFICATIONS (asked once on Android 13+; if refused, no notification is shown). New library: AndroidX WorkManager work-runtime-ktx 2.10.0. No new server, no personal data.

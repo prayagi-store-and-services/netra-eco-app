@@ -212,6 +212,7 @@ fun EcoScreen(resumeKey: Int) {
                         SelfUpdateButton(onRefresh = { reload++ })
                     }
                 }
+                item(key = "downloads") { DownloadManagerCard(rows ?: emptyList()) }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
                 item(key = "usage") { UsageCard() }
@@ -305,35 +306,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
             }
             Spacer(Modifier.height(10.dp))
             when (status) {
-                Status.NotInstalled, Status.UpdateAvailable -> Button(
-                    enabled = !busy,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    onClick = {
-                        val latest = row.latest ?: return@Button
-                        scope.launch {
-                            busy = true
-                            message = null
-                            try {
-                                val file = withContext(Dispatchers.IO) { Net.download(context, row.app, latest) { d, t, e -> progress = DownloadText.line(d, t, e) } }
-                                Net.install(context, file)
-                            } catch (e: Exception) {
-                                message = plainFailure(e, "Download failed.")
-                            }
-                            busy = false
-                            progress = null
-                            onChanged()
-                        }
-                    }
-                ) {
-                    Text(
-                        when {
-                            busy -> "Downloading..."
-                            status == Status.NotInstalled -> "Download and install"
-                            else -> "Update"
-                        }
-                    )
-                }
+                Status.NotInstalled, Status.UpdateAvailable -> AppDownloadButton(row, status)
                 Status.InstalledNewer -> Text("Installed version is newer than the published one", style = MaterialTheme.typography.bodySmall)
                 Status.Unavailable -> Text("Latest version Unavailable right now", style = MaterialTheme.typography.bodySmall)
                 Status.UpToDate -> {}
@@ -404,19 +377,7 @@ private fun SelfUpdateButton(onRefresh: () -> Unit) {
     message?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
     progress?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
     release?.let { r ->
-        Button(enabled = !busy, onClick = {
-            scope.launch {
-                busy = true
-                try {
-                    val file = withContext(Dispatchers.IO) { Net.download(context, Net.selfApp(context), r) { d, t, e -> progress = DownloadText.line(d, t, e) } }
-                    Net.install(context, file)
-                } catch (e: Exception) {
-                    message = plainFailure(e, "Update failed.")
-                }
-                busy = false
-                progress = null
-            }
-        }) { Text("Update to " + r.versionName) }
+        SelfDownloadButton(r)
     }
     }
 }

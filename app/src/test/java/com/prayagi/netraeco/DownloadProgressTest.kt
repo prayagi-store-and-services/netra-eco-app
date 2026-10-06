@@ -33,7 +33,8 @@ class DownloadProgressTest {
     @Test fun percentAndText() {
         assertEquals(75, DownloadText.percentLeft(25, 100))
         assertNull(DownloadText.percentLeft(5, 0))
-        assertEquals("75% left, time left: 1 min 5 s (estimated)", DownloadText.line(25, 100, 65))
+        assertEquals("25% downloaded, time left: 1 min 5 s (estimated)", DownloadText.line(25, 100, 65))
+        assertEquals(25, DownloadText.percentDone(25, 100))
         assertEquals("Unavailable, time left: Unavailable (estimated)", DownloadText.line(5, 0, null))
         assertEquals("2 h 3 min", DownloadText.formatEta(7380))
     }
