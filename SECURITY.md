@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Multiple upcoming targets (v1.2.13)
+
+Upcoming cards support separately labelled public and beta targets. Date-only targets never imply a launch hour; near the target date they show approximate hours ranges. Known-time countdowns show total hours at 72 hours or less, and days above that. Past targets remain estimates, never proof of a release. No new permissions, dependencies, data collection or destinations. Planned cards have no install or download action.
+
 ## Coming soon list (v1.2.12)
 
 The app now also reads an "upcoming" list from the same public projects.json and shows each planned app as a card with an approximate countdown. These cards have no download or update button. No new permission, library or network address.
