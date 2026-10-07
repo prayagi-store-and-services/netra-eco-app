@@ -133,7 +133,11 @@ object Roadmap {
     fun countdown(ms: Long): String {
         if (ms <= 0L) return "Estimate passed, still being finished"
         val s = ms / 1000
-        return "%dd %02dh %02dm %02ds".format(s / 86400, s % 86400 / 3600, s % 3600 / 60, s % 60)
+        return if (ms <= 72 * 3600 * 1000L) {
+            "%dh %02dm %02ds".format(s / 3600, s % 3600 / 60, s % 60)
+        } else {
+            "%dd %02dh %02dm %02ds".format(s / 86400, s % 86400 / 3600, s % 3600 / 60, s % 60)
+        }
     }
 }
 
