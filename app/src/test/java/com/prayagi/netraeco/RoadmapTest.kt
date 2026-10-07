@@ -24,8 +24,15 @@ class RoadmapTest {
     @Test fun badJsonGivesEmptyList() = assertTrue(Roadmap.parse("not json").isEmpty())
 
     @Test fun countdownText() {
-        assertEquals("1d 02h 03m 04s", Roadmap.countdown(((26 * 3600 + 3 * 60 + 4) * 1000L)))
+        assertEquals("26h 03m 04s", Roadmap.countdown(((26 * 3600 + 3 * 60 + 4) * 1000L)))
         assertEquals("Estimate passed, still being finished", Roadmap.countdown(0))
+    }
+
+    @Test fun switchesAtExactly72Hours() {
+        val hours = 3600_000L
+        assertEquals("72h 00m 00s", Roadmap.countdown(72 * hours))
+        assertEquals("71h 59m 59s", Roadmap.countdown(72 * hours - 1000))
+        assertEquals("3d 00h 00m 01s", Roadmap.countdown(72 * hours + 1000))
     }
 
     private fun it2(status: String, eta: Long?, apps: String = "App A") = RoadmapItem("T", status, eta, apps, false)
