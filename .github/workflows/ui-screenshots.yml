@@ -128,11 +128,20 @@ jobs:
 
           sh("shell", "monkey", "-p", "com.prayagi.netraeco", "-c", "android.intent.category.LAUNCHER", "1")
           time.sleep(8)
-          if find("Allow"):
-              tap("Allow")
-              time.sleep(2)
+          def dismiss():
+              for _ in range(4):
+                  if find("isn't responding"):
+                      tap("Wait")
+                  elif find("Don") and find("Allow"):
+                      tap("Allow")
+                  else:
+                      break
+                  time.sleep(2)
+          dismiss()
           shot("home")
+          dismiss()
           b = scroll_to("Open Trikaal", 30)
+          dismiss()
           shot("trikaal-entry")
           if b:
               tap("Open Trikaal")
