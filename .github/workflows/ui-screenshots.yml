@@ -96,6 +96,14 @@ jobs:
                   if sub.lower() in t.lower():
                       return b
               return None
+          def tap_exact(t):
+              for tx, b in nodes():
+                  if tx.strip() == t:
+                      sh("shell", "input", "tap", str((b[0] + b[2]) // 2), str((b[1] + b[3]) // 2))
+                      time.sleep(1.5)
+                      return True
+              print("NOT FOUND exact", t, flush=True)
+              return False
           def tap(sub, tries=1):
               b = find(sub)
               if not b:
@@ -171,6 +179,8 @@ jobs:
                   tap("Choose date of birth")
                   time.sleep(2)
                   shot("date-picker")
+                  tap_exact("1")
+                  shot("date-1-selected")
                   tap("OK")
                   shot("after-date-ok")
                   time.sleep(1)
@@ -188,6 +198,9 @@ jobs:
                   sh("shell", "input", "text", "Allahabad")
                   time.sleep(2)
                   shot("place-search-allahabad")
+                  sh("shell", "input", "keyevent", "4")
+                  time.sleep(1.5)
+                  shot("place-suggestions-keyboard-hidden")
                   tap("Prayagraj")
                   time.sleep(1)
               shot("form-filled")
