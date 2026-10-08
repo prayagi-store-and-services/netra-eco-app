@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Trikaal kundli (v1.2.13)
+
+Netra Eco now has a Trikaal card: enter a name, birth date, time and place to see a kundli chart (North or South style), planet positions, Vimshottari dasha, current transits and a daily card. All calculation runs on the phone with the Swiss Ephemeris (Moshier mode, AGPL, source in astro-core). Saved profiles stay in the app's private storage on the phone. No new permission, no network call, no account, no data leaves the device. Values with no vetted rule show "Unavailable"; predictions are not claimed. Results are not checked against professional software for every case, and the card says so.
+
 ## Coming soon list (v1.2.12)
 
 The app now also reads an "upcoming" list from the same public projects.json and shows each planned app as a card with an approximate countdown. These cards have no download or update button. No new permission, library or network address.
