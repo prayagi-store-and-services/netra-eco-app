@@ -121,9 +121,14 @@ jobs:
               time.sleep(0.8)
               sh("shell", "input", "text", value)
               time.sleep(0.8)
+              sh("shell", "input", "keyevent", "66")
+              time.sleep(0.8)
 
           sh("shell", "monkey", "-p", "com.prayagi.netraeco", "-c", "android.intent.category.LAUNCHER", "1")
           time.sleep(8)
+          if find("Allow"):
+              tap("Allow")
+              time.sleep(2)
           shot("home")
           b = scroll_to("Open Trikaal", 30)
           shot("trikaal-entry")
