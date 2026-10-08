@@ -14,6 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
+import androidx.core.os.CancellationSignal
+import android.os.Handler
+import android.os.Looper
 import com.prayagi.trikaal.PRAYAGRAJ
 import com.prayagi.trikaal.PanchangPlace
 import java.time.ZoneId
@@ -41,14 +45,31 @@ object TrikaalPlaces {
     }
 }
 
+/** Asks the phone once for a fresh approximate fix. Calls back exactly once, with null when no provider is on or nothing arrives in 20 s. Nothing leaves the phone. */
+@SuppressLint("MissingPermission")
+fun requestFreshFix(c: Context, done: (Pair<Double, Double>?) -> Unit) {
+    val lm = c.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+    val provider = lm?.let { m -> listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER).firstOrNull { runCatching { m.isProviderEnabled(it) }.getOrDefault(false) } }
+    if (lm == null || provider == null || ContextCompat.checkSelfPermission(c, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) { done(null); return }
+    var finished = false
+    val cancel = CancellationSignal()
+    val handler = Handler(Looper.getMainLooper())
+    fun finish(v: Pair<Double, Double>?) { if (!finished) { finished = true; handler.removeCallbacksAndMessages(null); done(v) } }
+    handler.postDelayed({ cancel.cancel(); finish(null) }, 20_000)
+    LocationManagerCompat.getCurrentLocation(lm, provider, cancel, ContextCompat.getMainExecutor(c)) { loc -> finish(loc?.let { it.latitude to it.longitude }) }
+}
+
 @Composable fun TrikaalLocationChoice(place: PanchangPlace, onPlace: (PanchangPlace) -> Unit) {
     val ctx = LocalContext.current
     var choice by remember { mutableStateOf(TrikaalPlaces.choice(ctx)) }
     var note by remember { mutableStateOf("") }
+    fun use(ll: Pair<Double, Double>?) {
+        if (ll == null) { TrikaalPlaces.setChoice(ctx, "no"); choice = "no"; note = "Location unavailable on this phone right now (is location switched on?). Using Prayagraj."; onPlace(PRAYAGRAJ) }
+        else { TrikaalPlaces.save(ctx, ll.first, ll.second); choice = "yes"; note = ""; onPlace(TrikaalPlaces.load(ctx)) }
+    }
     fun apply() {
         val ll = TrikaalPlaces.lastKnown(ctx)
-        if (ll == null) { TrikaalPlaces.setChoice(ctx, "no"); choice = "no"; note = "Location unavailable on this phone right now. Using Prayagraj."; onPlace(PRAYAGRAJ) }
-        else { TrikaalPlaces.save(ctx, ll.first, ll.second); choice = "yes"; note = ""; onPlace(TrikaalPlaces.load(ctx)) }
+        if (ll != null) use(ll) else { note = "Finding your location..."; requestFreshFix(ctx) { use(it) } }
     }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) apply() else { TrikaalPlaces.setChoice(ctx, "no"); choice = "no"; note = "Permission declined. Using Prayagraj."; onPlace(PRAYAGRAJ) }
