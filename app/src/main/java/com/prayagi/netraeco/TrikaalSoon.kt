@@ -39,8 +39,10 @@ private fun countdownText(eta: LocalDate, today: LocalDate): String {
     LaunchedEffect(Unit) { while (true) { today = LocalDate.now(zone); delay(30_000) } }
     var show by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = androidx.compose.ui.Alignment.End) {
+        if (show) androidx.compose.material3.Surface(shadowElevation = 4.dp, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)) {
+            Text("Kundli PDF is not available in this version. ${countdownText(LocalDate.of(2026, 10, 22), today)} (target 2026-10-22, moves if work slips).", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(8.dp))
+        }
         androidx.compose.material3.ExtendedFloatingActionButton(onClick = { show = !show }) { Text("Download PDF (Coming Soon)") }
-        if (show) Text("Kundli PDF is not available in this version. ${countdownText(LocalDate.of(2026, 10, 22), today)} (target 2026-10-22, moves if work slips).", style = MaterialTheme.typography.bodySmall)
     }
 }
 

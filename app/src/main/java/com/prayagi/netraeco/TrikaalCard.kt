@@ -11,7 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
+import kotlin.random.Random
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -26,27 +30,56 @@ import kotlinx.coroutines.withContext
 private val Ivory=Color(0xFFFAF7F2)
 private val Maroon=Color(0xFF5E1724)
 private val Saffron=Color(0xFFC85A17)
+private val Night=Color(0xFF0A0E2A)
+private val Night2=Color(0xFF1B2150)
+private val NightHigh=Color(0xFF262D66)
+private val Gold=Color(0xFFF2C14E)
+private val Cream=Color(0xFFFFF4DC)
+/** Static starry night sky (no animation, no network). Stars are fixed by a seed so the sky never changes between runs. */
+@Composable private fun StarrySky(modifier:Modifier=Modifier) {
+    Canvas(modifier.background(Brush.verticalGradient(listOf(Color(0xFF070A22),Color(0xFF151245),Color(0xFF2A1A52))))) {
+        val r=Random(108)
+        repeat(220){
+            val x=r.nextFloat()*size.width;val y=r.nextFloat()*size.height
+            val big=r.nextInt(14)==0
+            val rad=(if(big) 2.2f else 0.6f+r.nextFloat()*1.1f)*density
+            val a=0.35f+r.nextFloat()*0.65f
+            drawCircle(if(r.nextInt(5)==0) Gold.copy(alpha=a) else Color.White.copy(alpha=a),rad,Offset(x,y))
+            if(big){val l=rad*3.2f;drawLine(Color.White.copy(alpha=0.55f),Offset(x-l,y),Offset(x+l,y),density*0.8f);drawLine(Color.White.copy(alpha=0.55f),Offset(x,y-l),Offset(x,y+l),density*0.8f)}
+        }
+        val cx=size.width*0.86f;val cy=size.height*0.07f;val mr=22f*density
+        drawCircle(Gold.copy(alpha=0.18f),mr*1.9f,Offset(cx,cy))
+        drawCircle(Color(0xFFFFE9A8),mr,Offset(cx,cy))
+        drawCircle(Color(0xFF151245),mr*0.88f,Offset(cx+mr*0.45f,cy-mr*0.1f))
+    }
+}
 private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
 
 @Composable fun TrikaalCard(initiallyOpen:Boolean = false) {
     var open by remember { mutableStateOf(initiallyOpen) }
     val placeCtx = androidx.compose.ui.platform.LocalContext.current
     var place by remember { mutableStateOf(TrikaalPlaces.load(placeCtx)) }
-    Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-        Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge)
+    Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=Night2,contentColor=Cream)) { Column(Modifier.padding(16.dp)) {
+        Text("✦ NETRA TRIKAAL ✦",style=MaterialTheme.typography.titleLarge,color=Gold)
         Text("Vedic chart calculations • Lahiri • local profiles")
-        OutlinedButton(onClick={open=true}){Text("Open Trikaal / त्रिकाल खोलें")}
+        OutlinedButton(onClick={open=true},colors=ButtonDefaults.outlinedButtonColors(contentColor=Gold),border=androidx.compose.foundation.BorderStroke(1.dp,Gold)){Text("Open Trikaal / त्रिकाल खोलें")}
     } }
     if(open) androidx.compose.ui.window.Dialog(onDismissRequest={open=false},properties=androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth=false)) {
-        MaterialTheme(colorScheme=lightColorScheme(primary=Maroon,secondary=Saffron,background=Ivory,surface=Ivory,onSurface=Maroon)) {
-            Surface(Modifier.fillMaxSize(),color=Ivory) {
+        MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Night,secondary=Color(0xFFFFB74D),background=Night,surface=Night,onSurface=Cream,onBackground=Cream,surfaceVariant=Night2,onSurfaceVariant=Cream,surfaceContainerHigh=NightHigh,surfaceContainerHighest=NightHigh,surfaceContainer=Night2,outline=Gold,outlineVariant=Color(0xFF5A5F99))) {
+            Surface(Modifier.fillMaxSize(),color=Night) {
+                StarrySky(Modifier.fillMaxSize())
                 Column(Modifier.safeDrawingPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
                     TrikaalTicker(place)
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge);TextButton(onClick={open=false}){Text("Close / बंद")}}
+                    var hasKundli by remember { mutableStateOf(false) }
+                    androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { Text("✦ NETRA TRIKAAL ✦",style=MaterialTheme.typography.titleLarge,color=Gold);TextButton(onClick={open=false}){Text("Close / बंद")}}
                         TrikaalLocationChoice(place) { place = it }
-                        TrikaalContent()
+                        TrikaalContent { hasKundli = it }
                         TrikaalSoon()
+                        if(hasKundli) androidx.compose.foundation.layout.Spacer(Modifier.height(80.dp))
+                    }
+                    if(hasKundli) androidx.compose.foundation.layout.Box(Modifier.align(androidx.compose.ui.Alignment.BottomEnd).padding(4.dp)) { KundliPdfSoon() }
                     }
                 }
             }
@@ -54,27 +87,21 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
     }
 }
 
-@Composable private fun TrikaalContent() {
+@Composable private fun TrikaalContent(onKundli: (Boolean) -> Unit = {}) {
     val context=LocalContext.current;val scope=rememberCoroutineScope()
     var profile by remember { mutableStateOf(TrikaalProfile("","","","","","","","")) }
     var profiles by remember { mutableStateOf(TrikaalProfiles.read(context)) }
     var chart by remember { mutableStateOf<Chart?>(null) };var status by remember { mutableStateOf("") }
+    LaunchedEffect(chart != null) { onKundli(chart != null) }
     var busy by remember { mutableStateOf(false) };var view by remember { mutableStateOf("Quick") }
     var layout by remember { mutableStateOf("North") }
     var defaultKey by remember { mutableStateOf(TrikaalProfiles.defaultKey(context)) }
     var transits by remember { mutableStateOf<Computation<List<Transit>>?>(null) }
     var asOf by remember { mutableStateOf<Instant?>(null) }
     Text("Birth details / जन्म विवरण",style=MaterialTheme.typography.titleMedium)
-    Text("Gregorian date, recorded local time, IANA timezone and coordinates are required. Nothing is guessed or sent to a server.",style=MaterialTheme.typography.bodySmall)
+    Text("Name, date, time and place are all you need to fill in. Nothing is guessed or sent to a server.",style=MaterialTheme.typography.bodySmall)
     @Composable fun field(label:String,value:String,change:(String)->Unit) { OutlinedTextField(value=value,onValueChange=change,label={Text(label)},singleLine=true,modifier=Modifier.fillMaxWidth()) }
-    field("Name / नाम (optional)",profile.name){profile=profile.copy(name=it)}
-    field("Date YYYY-MM-DD / जन्म तिथि",profile.date){profile=profile.copy(date=it)}
-    field("Time HH:mm[:ss] / जन्म समय",profile.time){profile=profile.copy(time=it)}
-    field("IANA timezone, e.g. Asia/Kolkata",profile.zone){profile=profile.copy(zone=it)}
-    field("Latitude -90 to 90 / अक्षांश",profile.latitude){profile=profile.copy(latitude=it)}
-    field("Longitude -180 to 180 / देशांतर",profile.longitude){profile=profile.copy(longitude=it)}
-    field("Place label / स्थान (optional)",profile.place){profile=profile.copy(place=it)}
-    field("Recorded UTC offset, only if ambiguous (e.g. +05:30)",profile.offset){profile=profile.copy(offset=it)}
+    TrikaalBirthForm(profile){profile=it}
     suspend fun calculate(snapshot:TrikaalProfile) {
         busy=true;chart=null;transits=null;status="Calculating on device..."
         val result=withContext(Dispatchers.Default) {
@@ -104,12 +131,12 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
         HorizontalDivider()
         Row { listOf("Quick","Detailed","Technical").forEach{v->TextButton(onClick={view=v}){Text(if(v==view)"• $v" else v)}} }
         Text("Kundli / कुंडली",style=MaterialTheme.typography.titleLarge)
+        if(c.input.placeLabel?.isNotBlank()==true) Text("Place at birth / जन्म स्थान: ${c.input.placeLabel}",style=MaterialTheme.typography.bodyMedium)
         Text("Lagna / लग्न: ${SIGN_NAMES[c.lagnaRashi]} ${deg(c.lagna%30)}")
         Text("Moon / चंद्र: ${SIGN_NAMES[c.positions.single{it.graha==Graha.MOON}.rashi]}")
         if(view!="Quick") {
             Row { listOf("North","South").forEach{v->TextButton(onClick={layout=v}){Text("$v chart")}} }
             KundliDrawing(c,layout)
-            KundliPdfSoon()
         }
         c.positions.forEach { p ->
             Text("${p.graha.label}: ${SIGN_NAMES[p.rashi]} ${deg(p.degreeInSign)}${if(p.retrograde)" R" else ""}")
