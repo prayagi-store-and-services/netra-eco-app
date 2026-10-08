@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "Netra Eco"
 
 include(":app")
+include(":astro-core")
