@@ -41,7 +41,11 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "emulator" "system-images;android-34;google_apis;x86_64"
+          mkdir -p $HOME/.android/avd
+          export ANDROID_AVD_HOME=$HOME/.android/avd
           echo no | avdmanager create avd -n t -k "system-images;android-34;google_apis;x86_64" -d pixel_6 --force
+          avdmanager list avd
+          $ANDROID_HOME/emulator/emulator -list-avds
           ls -l /dev/kvm || true
           nohup $ANDROID_HOME/emulator/emulator -avd t -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -accel on > emu.log 2>&1 &
           sleep 20
