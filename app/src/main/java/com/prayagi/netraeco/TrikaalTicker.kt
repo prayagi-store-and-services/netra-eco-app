@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.prayagi.trikaal.*
 import com.prayagi.trikaal.Tone as PTone
 import java.time.*
@@ -107,7 +108,7 @@ private fun left(from: Instant, to: Instant): String {
     }
     Box(Modifier.fillMaxWidth().height(40.dp).background(Color(0xFFFFF8E1)).border(1.dp, Color(0xFF5E1724)).clipToBounds().onSizeChanged { boxW = it.width },
         contentAlignment = Alignment.CenterStart) {
-        Text(text, maxLines = 1, softWrap = false, style = MaterialTheme.typography.bodyMedium,
+        Text(text, maxLines = 1, softWrap = false, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 18.sp),
             onTextLayout = { textW = it.size.width },
             modifier = Modifier.wrapContentWidth(Alignment.Start, unbounded = true).offset { IntOffset(offset.roundToInt(), 0) })
     }
