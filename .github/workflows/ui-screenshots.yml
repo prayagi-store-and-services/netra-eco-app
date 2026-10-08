@@ -185,7 +185,7 @@ jobs:
                       for _ in range(16):
                           if find("1990") is not None and any(t.strip() == "1990" for t, _b in nodes()):
                               break
-                          sh("shell", "input", "swipe", "540", "1500", "540", "900", "300")
+                          sh("shell", "input", "swipe", "540", "1000", "540", "1700", "300")
                           time.sleep(0.8)
                       tap_exact("1990")
                       time.sleep(1.5)
