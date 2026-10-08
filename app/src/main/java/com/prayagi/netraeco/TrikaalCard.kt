@@ -97,6 +97,7 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
         HorizontalDivider()
         Row { listOf("Quick","Detailed","Technical").forEach{v->TextButton(onClick={view=v}){Text(if(v==view)"• $v" else v)}} }
         Text("Kundli / कुंडली",style=MaterialTheme.typography.titleLarge)
+        if(c.input.placeLabel?.isNotBlank()==true) Text("Place at birth / जन्म स्थान: ${c.input.placeLabel}",style=MaterialTheme.typography.bodyMedium)
         Text("Lagna / लग्न: ${SIGN_NAMES[c.lagnaRashi]} ${deg(c.lagna%30)}")
         Text("Moon / चंद्र: ${SIGN_NAMES[c.positions.single{it.graha==Graha.MOON}.rashi]}")
         if(view!="Quick") {
