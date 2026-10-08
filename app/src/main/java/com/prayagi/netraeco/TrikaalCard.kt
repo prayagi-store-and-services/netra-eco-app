@@ -42,11 +42,16 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
             Surface(Modifier.fillMaxSize(),color=Ivory) {
                 Column(Modifier.safeDrawingPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
                     TrikaalTicker(place)
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    var hasKundli by remember { mutableStateOf(false) }
+                    androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge);TextButton(onClick={open=false}){Text("Close / बंद")}}
                         TrikaalLocationChoice(place) { place = it }
-                        TrikaalContent()
+                        TrikaalContent { hasKundli = it }
                         TrikaalSoon()
+                        if(hasKundli) androidx.compose.foundation.layout.Spacer(Modifier.height(80.dp))
+                    }
+                    if(hasKundli) androidx.compose.foundation.layout.Box(Modifier.align(androidx.compose.ui.Alignment.BottomEnd).padding(4.dp)) { KundliPdfSoon() }
                     }
                 }
             }
@@ -54,11 +59,12 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
     }
 }
 
-@Composable private fun TrikaalContent() {
+@Composable private fun TrikaalContent(onKundli: (Boolean) -> Unit = {}) {
     val context=LocalContext.current;val scope=rememberCoroutineScope()
     var profile by remember { mutableStateOf(TrikaalProfile("","","","","","","","")) }
     var profiles by remember { mutableStateOf(TrikaalProfiles.read(context)) }
     var chart by remember { mutableStateOf<Chart?>(null) };var status by remember { mutableStateOf("") }
+    LaunchedEffect(chart != null) { onKundli(chart != null) }
     var busy by remember { mutableStateOf(false) };var view by remember { mutableStateOf("Quick") }
     var layout by remember { mutableStateOf("North") }
     var defaultKey by remember { mutableStateOf(TrikaalProfiles.defaultKey(context)) }
@@ -103,7 +109,6 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
         if(view!="Quick") {
             Row { listOf("North","South").forEach{v->TextButton(onClick={layout=v}){Text("$v chart")}} }
             KundliDrawing(c,layout)
-            KundliPdfSoon()
         }
         c.positions.forEach { p ->
             Text("${p.graha.label}: ${SIGN_NAMES[p.rashi]} ${deg(p.degreeInSign)}${if(p.retrograde)" R" else ""}")
