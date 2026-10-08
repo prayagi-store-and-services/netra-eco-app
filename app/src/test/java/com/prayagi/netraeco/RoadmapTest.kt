@@ -69,4 +69,20 @@ class RoadmapTest {
         assertEquals(5f, Ticker.advance(5f, 1f, 22f, 0f), 0.001f)
         assertTrue(Ticker.SPEED_DP_PER_SEC < 30f)
     }
+
+    @Test fun tickerRowsListEveryUpcomingItemWithVersionAndEta() {
+        val ships = listOf("netra-hub" to "1.3.0")
+        val a = RoadmapItem("Driving mode", "In progress", 1_000_000L, "Hub", false, ships)
+        val b = RoadmapItem("No data", "Planned", null, "", false)
+        val c = RoadmapItem("Done", "Released", 5L, "Hub", true)
+        val rows = Ticker.rows(listOf(b, c, a), 0L)
+        assertEquals(2, rows.size)
+        assertEquals("Driving mode", rows[0].title)
+        assertEquals("1.3.0", rows[0].version)
+        assertTrue(rows[0].eta.endsWith("IST"))
+        assertTrue(rows[0].countdown.startsWith("In progress"))
+        assertEquals("Unavailable", rows[1].version)
+        assertEquals("Unavailable", rows[1].eta)
+        assertEquals("Unavailable", rows[1].app)
+    }
 }
