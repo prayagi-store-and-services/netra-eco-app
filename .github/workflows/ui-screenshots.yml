@@ -179,13 +179,22 @@ jobs:
                   tap("Choose date of birth")
                   time.sleep(2)
                   shot("date-picker")
-                  sh("shell", "input", "tap", "611", "468")
-                  time.sleep(1.5)
-                  shot("date-edit-mode")
-                  sh("shell", "input", "tap", "360", "640")
-                  time.sleep(1)
-                  sh("shell", "input", "text", "10011990")
-                  time.sleep(1.5)
+                  if tap("year"):
+                      time.sleep(1.5)
+                      shot("year-list")
+                      for _i in range(14):
+                          if any(t.strip() == "1990" for t, _b in nodes()):
+                              break
+                          sh("shell", "input", "swipe", "540", "1000", "540", "1250", "900")
+                          time.sleep(1.2)
+                      shot("year-list-1990-visible")
+                      tap_exact("1990")
+                      time.sleep(1.5)
+                      for tx, bb in nodes():
+                          if tx.strip() == "1" and bb[1] > 650:
+                              sh("shell", "input", "tap", str((bb[0] + bb[2]) // 2), str((bb[1] + bb[3]) // 2))
+                              time.sleep(1.5)
+                              break
                   shot("date-1-selected")
                   tap("OK")
                   shot("after-date-ok")
