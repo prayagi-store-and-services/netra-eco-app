@@ -82,17 +82,17 @@ private val TIME_FMT = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
     OutlinedButton(onClick = { showTime = true }, modifier = Modifier.fillMaxWidth()) { Text(if (time != null) "Birth time: ${TIME_FMT.format(time)}" else "Choose birth time / जन्म समय (AM/PM)") }
     if (time != null) TextButton(onClick = { onChange(profile.copy(time = "")) }) { Text("I do not know my birth time") }
     else Text("No birth time chosen: the chart will show Unavailable instead of guessing.", style = MaterialTheme.typography.bodySmall)
-    OutlinedTextField(
-        value = query,
-        onValueChange = { query = it; selected = null; onChange(profile.copy(place = it, latitude = "", longitude = "", zone = "")) },
-        label = { Text("Birth place / जन्म स्थान (type your city)") }, singleLine = true, modifier = Modifier.fillMaxWidth()
-    )
     hits.forEach { c ->
         TextButton(onClick = {
             query = c.label; selected = c
             onChange(profile.copy(place = PlaceHistory.asOf(c, date).label, latitude = c.lat.toString(), longitude = c.lon.toString(), zone = c.tz, offset = ""))
         }, modifier = Modifier.fillMaxWidth()) { Text(c.label, modifier = Modifier.fillMaxWidth()) }
     }
+    OutlinedTextField(
+        value = query,
+        onValueChange = { query = it; selected = null; onChange(profile.copy(place = it, latitude = "", longitude = "", zone = "")) },
+        label = { Text("Birth place / जन्म स्थान (type your city)") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+    )
     if (profile.latitude.isNotBlank()) Text("Place at birth: ${profile.place}" + (asOf?.note?.takeIf { it.isNotBlank() }?.let { "\n$it" } ?: ""), style = MaterialTheme.typography.bodySmall)
     else if (query.length >= 2 && hits.isEmpty() && cities.isNotEmpty()) Text("Unavailable: this place is not in the built-in list. Try the nearest larger city.", style = MaterialTheme.typography.bodySmall)
     Text("Places from GeoNames (geonames.org, CC BY 4.0), stored in the app. Latitude, longitude and time zone are filled in for you.", style = MaterialTheme.typography.bodySmall)
