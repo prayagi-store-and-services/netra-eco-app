@@ -65,16 +65,9 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
     var transits by remember { mutableStateOf<Computation<List<Transit>>?>(null) }
     var asOf by remember { mutableStateOf<Instant?>(null) }
     Text("Birth details / जन्म विवरण",style=MaterialTheme.typography.titleMedium)
-    Text("Gregorian date, recorded local time, IANA timezone and coordinates are required. Nothing is guessed or sent to a server.",style=MaterialTheme.typography.bodySmall)
+    Text("Name, date, time and place are all you need to fill in. Nothing is guessed or sent to a server.",style=MaterialTheme.typography.bodySmall)
     @Composable fun field(label:String,value:String,change:(String)->Unit) { OutlinedTextField(value=value,onValueChange=change,label={Text(label)},singleLine=true,modifier=Modifier.fillMaxWidth()) }
-    field("Name / नाम (optional)",profile.name){profile=profile.copy(name=it)}
-    field("Date YYYY-MM-DD / जन्म तिथि",profile.date){profile=profile.copy(date=it)}
-    field("Time HH:mm[:ss] / जन्म समय",profile.time){profile=profile.copy(time=it)}
-    field("IANA timezone, e.g. Asia/Kolkata",profile.zone){profile=profile.copy(zone=it)}
-    field("Latitude -90 to 90 / अक्षांश",profile.latitude){profile=profile.copy(latitude=it)}
-    field("Longitude -180 to 180 / देशांतर",profile.longitude){profile=profile.copy(longitude=it)}
-    field("Place label / स्थान (optional)",profile.place){profile=profile.copy(place=it)}
-    field("Recorded UTC offset, only if ambiguous (e.g. +05:30)",profile.offset){profile=profile.copy(offset=it)}
+    TrikaalBirthForm(profile){profile=it}
     suspend fun calculate(snapshot:TrikaalProfile) {
         busy=true;chart=null;transits=null;status="Calculating on device..."
         val result=withContext(Dispatchers.Default) {
