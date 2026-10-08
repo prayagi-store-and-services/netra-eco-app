@@ -67,12 +67,15 @@ private val TIME_FMT = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
     val ctx = LocalContext.current
     var cities by remember { mutableStateOf<List<City>>(emptyList()) }
     LaunchedEffect(Unit) { cities = withContext(Dispatchers.IO) { TrikaalCities.all(ctx) } }
-    var query by remember(profile.place) { mutableStateOf(profile.place) }
+    var query by remember { mutableStateOf(profile.place) }
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
     val date = runCatching { LocalDate.parse(profile.date) }.getOrNull()
     val time = runCatching { LocalTime.parse(profile.time) }.getOrNull()
-    val hits = remember(query, cities, profile.latitude) { if (profile.latitude.isNotBlank() && query == profile.place) emptyList() else TrikaalCities.search(cities, query) }
+    var selected by remember { mutableStateOf<City?>(null) }
+    val asOf = selected?.let { PlaceHistory.asOf(it, date) }
+    LaunchedEffect(asOf?.label) { asOf?.let { if (it.label != profile.place) onChange(profile.copy(place = it.label)) } }
+    val hits = remember(query, cities, selected) { if (selected != null && query == selected?.label) emptyList() else TrikaalCities.search(cities, query) }
 
     OutlinedTextField(value = profile.name, onValueChange = { onChange(profile.copy(name = it)) }, label = { Text("Name / नाम") }, singleLine = true, modifier = Modifier.fillMaxWidth())
     OutlinedButton(onClick = { showDate = true }, modifier = Modifier.fillMaxWidth()) { Text(if (date != null) "Date of birth: ${DOB_FMT.format(date)}" else "Choose date of birth / जन्म तिथि") }
@@ -81,16 +84,16 @@ private val TIME_FMT = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
     else Text("No birth time chosen: the chart will show Unavailable instead of guessing.", style = MaterialTheme.typography.bodySmall)
     OutlinedTextField(
         value = query,
-        onValueChange = { query = it; onChange(profile.copy(place = it, latitude = "", longitude = "", zone = "")) },
+        onValueChange = { query = it; selected = null; onChange(profile.copy(place = it, latitude = "", longitude = "", zone = "")) },
         label = { Text("Birth place / जन्म स्थान (type your city)") }, singleLine = true, modifier = Modifier.fillMaxWidth()
     )
     hits.forEach { c ->
         TextButton(onClick = {
-            query = c.label
-            onChange(profile.copy(place = c.label, latitude = c.lat.toString(), longitude = c.lon.toString(), zone = c.tz, offset = ""))
+            query = c.label; selected = c
+            onChange(profile.copy(place = PlaceHistory.asOf(c, date).label, latitude = c.lat.toString(), longitude = c.lon.toString(), zone = c.tz, offset = ""))
         }, modifier = Modifier.fillMaxWidth()) { Text(c.label, modifier = Modifier.fillMaxWidth()) }
     }
-    if (profile.latitude.isNotBlank()) Text("Place set: ${profile.place}", style = MaterialTheme.typography.bodySmall)
+    if (profile.latitude.isNotBlank()) Text("Place at birth: ${profile.place}" + (asOf?.note?.takeIf { it.isNotBlank() }?.let { "\n$it" } ?: ""), style = MaterialTheme.typography.bodySmall)
     else if (query.length >= 2 && hits.isEmpty() && cities.isNotEmpty()) Text("Unavailable: this place is not in the built-in list. Try the nearest larger city.", style = MaterialTheme.typography.bodySmall)
     Text("Places from GeoNames (geonames.org, CC BY 4.0), stored in the app. Latitude, longitude and time zone are filled in for you.", style = MaterialTheme.typography.bodySmall)
 
