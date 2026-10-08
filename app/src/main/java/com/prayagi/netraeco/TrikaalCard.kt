@@ -30,6 +30,8 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
 
 @Composable fun TrikaalCard(initiallyOpen:Boolean = false) {
     var open by remember { mutableStateOf(initiallyOpen) }
+    val placeCtx = androidx.compose.ui.platform.LocalContext.current
+    var place by remember { mutableStateOf(TrikaalPlaces.load(placeCtx)) }
     Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
         Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge)
         Text("Vedic chart calculations • Lahiri • local profiles")
@@ -38,9 +40,14 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
     if(open) androidx.compose.ui.window.Dialog(onDismissRequest={open=false},properties=androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth=false)) {
         MaterialTheme(colorScheme=lightColorScheme(primary=Maroon,secondary=Saffron,background=Ivory,surface=Ivory,onSurface=Maroon)) {
             Surface(Modifier.fillMaxSize(),color=Ivory) {
-                Column(Modifier.safeDrawingPadding().padding(16.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge);TextButton(onClick={open=false}){Text("Close / बंद")}}
-                    TrikaalContent()
+                Column(Modifier.safeDrawingPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    TrikaalTicker(place)
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge);TextButton(onClick={open=false}){Text("Close / बंद")}}
+                        TrikaalLocationChoice(place) { place = it }
+                        TrikaalContent()
+                        TrikaalSoon()
+                    }
                 }
             }
         }
@@ -54,6 +61,7 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
     var chart by remember { mutableStateOf<Chart?>(null) };var status by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) };var view by remember { mutableStateOf("Quick") }
     var layout by remember { mutableStateOf("North") }
+    var defaultKey by remember { mutableStateOf(TrikaalProfiles.defaultKey(context)) }
     var transits by remember { mutableStateOf<Computation<List<Transit>>?>(null) }
     var asOf by remember { mutableStateOf<Instant?>(null) }
     Text("Birth details / जन्म विवरण",style=MaterialTheme.typography.titleMedium)
@@ -67,28 +75,30 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
     field("Longitude -180 to 180 / देशांतर",profile.longitude){profile=profile.copy(longitude=it)}
     field("Place label / स्थान (optional)",profile.place){profile=profile.copy(place=it)}
     field("Recorded UTC offset, only if ambiguous (e.g. +05:30)",profile.offset){profile=profile.copy(offset=it)}
-    Button(enabled=!busy,onClick={
-        scope.launch {
-            busy=true;chart=null;transits=null;status="Calculating on device..."
-            val snapshot=profile
-            val result=withContext(Dispatchers.Default) {
-                try {
-                    val b=BirthInput(snapshot.name,LocalDate.parse(snapshot.date),snapshot.time.takeIf{it.isNotBlank()}?.let(LocalTime::parse),snapshot.zone.takeIf{it.isNotBlank()},snapshot.latitude.toDoubleOrNull(),snapshot.longitude.toDoubleOrNull(),snapshot.place,snapshot.offset.takeIf{it.isNotBlank()}?.let(ZoneOffset::of))
-                    AstroCore.computeChart(b)
-                } catch(e:Exception) { Computation.Unavailable("Invalid date, time or offset. Use the shown formats.") }
-            }
-            when(result) {
-                is Computation.Available -> { chart=result.value;status="Calculated. Nothing uploaded."; val now=Instant.now();asOf=now;transits=withContext(Dispatchers.Default){AstroCore.gochar(now,result.value)} }
-                is Computation.Unavailable -> status="Unavailable: ${result.reason}"
-            }
-            busy=false
+    suspend fun calculate(snapshot:TrikaalProfile) {
+        busy=true;chart=null;transits=null;status="Calculating on device..."
+        val result=withContext(Dispatchers.Default) {
+            try {
+                val b=BirthInput(snapshot.name,LocalDate.parse(snapshot.date),snapshot.time.takeIf{it.isNotBlank()}?.let(LocalTime::parse),snapshot.zone.takeIf{it.isNotBlank()},snapshot.latitude.toDoubleOrNull(),snapshot.longitude.toDoubleOrNull(),snapshot.place,snapshot.offset.takeIf{it.isNotBlank()}?.let(ZoneOffset::of))
+                AstroCore.computeChart(b)
+            } catch(e:Exception) { Computation.Unavailable("Invalid date, time or offset. Use the shown formats.") }
         }
-    }){Text(if(busy)"Calculating..." else "Calculate / गणना")}
+        when(result) {
+            is Computation.Available -> { chart=result.value;status="Calculated. Nothing uploaded."; val now=Instant.now();asOf=now;transits=withContext(Dispatchers.Default){AstroCore.gochar(now,result.value)} }
+            is Computation.Unavailable -> status="Unavailable: ${result.reason}"
+        }
+        busy=false
+    }
+    LaunchedEffect(Unit) { TrikaalProfiles.defaultProfile(context)?.let { profile=it; calculate(it) } }
+    Button(enabled=!busy,onClick={ scope.launch { calculate(profile) } }){Text(if(busy)"Calculating..." else "Calculate / गणना")}
     Text(status)
-    OutlinedButton(enabled=!busy,onClick={scope.launch{val p=profile;val ok=withContext(Dispatchers.IO){TrikaalProfiles.save(context,p)};profiles=TrikaalProfiles.read(context);status=if(ok)"Saved on this device only." else "Unavailable: profile could not be saved."}}){Text("Save locally / सहेजें")}
+    OutlinedButton(enabled=!busy,onClick={scope.launch{val p=profile;val ok=withContext(Dispatchers.IO){TrikaalProfiles.save(context,p)};profiles=TrikaalProfiles.read(context);status=if(ok)"Saved on this device only." else "Unavailable: profile not saved (up to ${TrikaalProfiles.MAX_PROFILES} profiles; delete one first)."}}){Text("Save locally / सहेजें")}
     profiles.forEach { p -> Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-        TextButton(onClick={profile=p;chart=null;transits=null}){Text("${p.name.ifBlank{"Profile"}} · ${p.date}")}
-        TextButton(onClick={scope.launch{withContext(Dispatchers.IO){TrikaalProfiles.delete(context,p)};profiles=TrikaalProfiles.read(context)}}){Text("Delete")}
+        TextButton(onClick={profile=p;scope.launch{calculate(p)}}){Text((if(TrikaalProfiles.key(p)==defaultKey)"★ " else "")+"${p.name.ifBlank{"Profile"}} · ${p.date}")}
+        Row {
+            TextButton(onClick={scope.launch{withContext(Dispatchers.IO){TrikaalProfiles.setDefault(context,p)};defaultKey=TrikaalProfiles.defaultKey(context)}}){Text(if(TrikaalProfiles.key(p)==defaultKey)"Default" else "Make default")}
+            TextButton(onClick={scope.launch{withContext(Dispatchers.IO){TrikaalProfiles.delete(context,p)};profiles=TrikaalProfiles.read(context);defaultKey=TrikaalProfiles.defaultKey(context)}}){Text("Delete")}
+        }
     } }
     chart?.let { c ->
         HorizontalDivider()
@@ -99,6 +109,7 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
         if(view!="Quick") {
             Row { listOf("North","South").forEach{v->TextButton(onClick={layout=v}){Text("$v chart")}} }
             KundliDrawing(c,layout)
+            KundliPdfSoon()
         }
         c.positions.forEach { p ->
             Text("${p.graha.label}: ${SIGN_NAMES[p.rashi]} ${deg(p.degreeInSign)}${if(p.retrograde)" R" else ""}")
@@ -125,8 +136,14 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
             is Computation.Unavailable -> Text("Unavailable: ${t.reason}")
             null -> Text("Unavailable: transits not calculated")
         }
-        Text("Daily card / दैनिक",style=MaterialTheme.typography.titleMedium)
-        Text("Computed snapshot: Moon in ${((transits as? Computation.Available)?.value?.firstOrNull{it.position.graha==Graha.MOON})?.position?.let{SIGN_NAMES[it.rashi]} ?: "Unavailable"}. Current dasha: ${current?.first?.lord?.label ?: "Unavailable"}. This is a calculation summary, not a forecast. Lucky numbers, colours and predictive positives/negatives: Unavailable without a verified named classical rule table.")
+        Text("Daily rashifal / आज का राशिफल: ${c.input.name.ifBlank{"this profile"}}"+(if(TrikaalProfiles.key(profile)==defaultKey)" (default profile)" else ""),style=MaterialTheme.typography.titleMedium)
+        when(val tr=transits) {
+            is Computation.Available -> when(val r=Rashifal.daily(c,tr.value,periods,now)) {
+                is Computation.Available -> r.value.forEach { l -> Text(l.title,style=MaterialTheme.typography.titleSmall);Text(l.text);Text("Rule: ${l.rule}",style=MaterialTheme.typography.bodySmall) }
+                is Computation.Unavailable -> Text("Unavailable: ${r.reason}")
+            }
+            else -> Text("Unavailable: refresh Gochar to calculate today's rashifal")
+        }
     }
     HorizontalDivider()
     Text("Readings follow Vedic principles, not scientific certainty. Not medical, legal or financial advice. / यह वैदिक गणना है, वैज्ञानिक निश्चितता नहीं।",style=MaterialTheme.typography.bodySmall)
