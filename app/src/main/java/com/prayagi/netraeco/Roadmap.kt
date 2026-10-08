@@ -14,7 +14,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.withFrameNanos
@@ -189,6 +199,27 @@ object Ticker {
         return prefix + item.title + " - " + tail
     }
 
+    /** One line of the tap-to-open list: app, feature, version and ETA with countdown. Missing data says Unavailable. */
+    data class TickerRow(val app: String, val title: String, val version: String, val eta: String, val countdown: String)
+
+    private val etaFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, h:mm a", Locale.ENGLISH).withZone(ZoneId.of("Asia/Kolkata"))
+
+    fun rows(items: List<RoadmapItem>, nowMillis: Long): List<TickerRow> = upcoming(items).map { item ->
+        val eta = item.etaMillis
+        TickerRow(
+            app = item.appNames.split(",").joinToString(", ") { it.trim().substringBefore(" (") }.ifBlank { "Unavailable" },
+            title = item.title,
+            version = item.ships.joinToString(", ") { it.second }.ifBlank { "Unavailable" },
+            eta = if (eta == null) "Unavailable" else etaFormat.format(Instant.ofEpochMilli(eta)) + " IST",
+            countdown = when {
+                inProgress(item) -> if (eta != null && eta > nowMillis) "In progress, est. in " + left(eta - nowMillis) else "In progress"
+                eta == null -> "Unavailable"
+                eta <= nowMillis -> "Estimate passed, check for update"
+                else -> "in " + left(eta - nowMillis)
+            }
+        )
+    }
+
     fun upcoming(items: List<RoadmapItem>): List<RoadmapItem> =
         items.filter { !it.released }.sortedBy { it.etaMillis ?: Long.MAX_VALUE }
 
@@ -208,8 +239,9 @@ fun TickerStrip(items: List<RoadmapItem>?) {
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     val list = if (items == null) emptyList() else Ticker.upcoming(items)
     var pressed by remember { mutableStateOf(false) }
+    var showList by remember { mutableStateOf(false) }
     var offsetPx by remember { mutableFloatStateOf(0f) }
-    Box(Modifier.fillMaxWidth().height(40.dp).background(Color.Black).clipToBounds().pointerInput(Unit) { detectTapGestures(onPress = { pressed = true; tryAwaitRelease(); pressed = false }) }, contentAlignment = Alignment.CenterStart) {
+    Box(Modifier.fillMaxWidth().height(40.dp).background(Color.Black).clipToBounds().pointerInput(Unit) { detectTapGestures(onPress = { pressed = true; tryAwaitRelease(); pressed = false }, onTap = { showList = true }) }, contentAlignment = Alignment.CenterStart) {
         if (list.isEmpty()) {
             Text("Roadmap Unavailable right now.", color = Ticker.color(Tone.GREY), fontSize = 14.sp, modifier = Modifier.offset(x = 16.dp))
             return@Box
@@ -242,5 +274,23 @@ fun TickerStrip(items: List<RoadmapItem>?) {
                 )
             }
         }
+    }
+    if (showList) {
+        val rowsNow = Ticker.rows(items ?: emptyList(), now)
+        AlertDialog(
+            onDismissRequest = { showList = false },
+            confirmButton = { TextButton(onClick = { showList = false }) { Text("Close") } },
+            title = { Text("Coming soon") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (rowsNow.isEmpty()) Text("Roadmap Unavailable right now.")
+                    rowsNow.forEach { r ->
+                        Text(r.app + " - " + r.title, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+                        Text("Version " + r.version + "  |  ETA " + r.eta + "  |  " + r.countdown, fontSize = 13.sp)
+                    }
+                    Text("Dates are our own estimates and can change.", fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
+                }
+            }
+        )
     }
 }
