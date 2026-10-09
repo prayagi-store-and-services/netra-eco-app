@@ -141,7 +141,17 @@ private val TealDark = Color(0xFF004D40)
 @Composable
 fun NetraTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
-    val colors = if (dark) darkColorScheme(
+    val colors = if (RedesignGate.isOn()) {
+        if (dark) darkColorScheme(
+            primary = Color(0xFFFFB74D), onPrimary = Color(0xFF2B1700),
+            background = Color(0xFF0E1224), surface = Color(0xFF171C33), onSurface = Color(0xFFE8EAF6),
+            surfaceVariant = Color(0xFF232A47)
+        ) else lightColorScheme(
+            primary = Color(0xFF283593), onPrimary = Color.White,
+            background = Color(0xFFF4F5FB), surface = Color.White, onSurface = Color(0xFF1A1C2E),
+            surfaceVariant = Color(0xFFE3E6F5)
+        )
+    } else if (dark) darkColorScheme(
         primary = Color(0xFF4DB6AC), onPrimary = Color(0xFF00201C),
         background = Color(0xFF101414), surface = Color(0xFF182020), onSurface = Color(0xFFE0E6E4),
         surfaceVariant = Color(0xFF22302E)
