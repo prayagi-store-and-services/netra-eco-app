@@ -15,6 +15,7 @@
         <package android:name="com.aistudio.netrasensorhub.kxmpzq" />
         <package android:name="com.aistudio.sensorguard.prvsec" />
         <package android:name="com.prayagi.netraplayer" />
+        <package android:name="com.prayagi.netratrikaal" />
     </queries>
 
     <application
