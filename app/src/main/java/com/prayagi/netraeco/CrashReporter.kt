@@ -64,7 +64,7 @@ object CrashReporter {
             json.put("stack_trace", trace)
             val c = URL(ENDPOINT).openConnection() as HttpURLConnection
             c.requestMethod = "POST"; c.connectTimeout = 10000; c.readTimeout = 15000; c.doOutput = true
-            c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "application/json")
+            c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "application/json"); c.setRequestProperty("Origin", "https://prayagi-store-and-services.github.io"); c.setRequestProperty("Referer", "https://prayagi-store-and-services.github.io/")
             c.outputStream.use { it.write(json.toString().toByteArray(Charsets.UTF_8)) }
             val ok = c.responseCode in 200..299 && accepted(c.inputStream.bufferedReader().use { it.readText() })
             c.disconnect()
@@ -96,7 +96,7 @@ object CrashReporter {
             json.put("app_version", appVersion(context)); json.put("stack_trace", trace)
             val c = URL(ENDPOINT).openConnection() as HttpURLConnection
             c.requestMethod = "POST"; c.connectTimeout = 10000; c.readTimeout = 15000; c.doOutput = true
-            c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "application/json")
+            c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "application/json"); c.setRequestProperty("Origin", "https://prayagi-store-and-services.github.io"); c.setRequestProperty("Referer", "https://prayagi-store-and-services.github.io/")
             c.outputStream.use { it.write(json.toString().toByteArray(Charsets.UTF_8)) }
             val ok = c.responseCode in 200..299 && accepted(c.inputStream.bufferedReader().use { it.readText() })
             c.disconnect()
