@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
             setContentView(box)
             return
         }
+        com.prayagi.netraeco.festival.JayMataDi.greetIfDue(this)
         UpdateAlert.start(this)
         CrashReporter.install(this)
         setContent {
