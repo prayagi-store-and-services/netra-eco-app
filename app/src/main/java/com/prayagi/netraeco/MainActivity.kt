@@ -180,7 +180,7 @@ fun NetraTheme(content: @Composable () -> Unit) {
         background = Color(0xFFF3F7F6), surface = Color.White, onSurface = Color(0xFF16201E),
         surfaceVariant = Color(0xFFE0EEEB)
     )
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = com.prayagi.netraeco.festival.festiveScheme(colors), content = content)
 }
 
 @Composable
