@@ -46,7 +46,6 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
                         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { Text("NETRA TRIKAAL",style=MaterialTheme.typography.titleLarge);TextButton(onClick={open=false}){Text("Close / बंद")}}
                         TrikaalLocationChoice(place) { place = it }
                         TrikaalContent()
-                        TrikaalSoon()
                     }
                 }
             }
@@ -109,7 +108,6 @@ private fun deg(value:Double)=String.format(Locale.ROOT,"%.4f°",value)
         if(view!="Quick") {
             Row { listOf("North","South").forEach{v->TextButton(onClick={layout=v}){Text("$v chart")}} }
             KundliDrawing(c,layout)
-            KundliPdfSoon()
         }
         c.positions.forEach { p ->
             Text("${p.graha.label}: ${SIGN_NAMES[p.rashi]} ${deg(p.degreeInSign)}${if(p.retrograde)" R" else ""}")
