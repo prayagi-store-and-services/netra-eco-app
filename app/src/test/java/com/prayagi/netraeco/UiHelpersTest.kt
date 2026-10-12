@@ -17,4 +17,12 @@ class UiHelpersTest {
         Status.values().forEach { assertEquals(false, statusLabel(it).isBlank()) }
         assertEquals("Update available", statusLabel(Status.UpdateAvailable))
     }
+
+    @Test fun searchMatchesNameTypeAndSummaryWords() {
+        assertEquals(true, matchesQuery("", "Hub"))
+        assertEquals(true, matchesQuery("  ", "Hub"))
+        assertEquals(true, matchesQuery("batt", "Battery Sentinel", "app", "Charging alerts"))
+        assertEquals(true, matchesQuery("charging battery", "Battery Sentinel", "app", "Charging alerts"))
+        assertEquals(false, matchesQuery("kundli", "Battery Sentinel", "app", "Charging alerts"))
+    }
 }
