@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Usage count is opt-in (v1.2.22)
+
+The anonymous daily usage counter (adds 1 to a public counter, no ID, no location, no app data) used to be on by default. It is now OFF by default: nothing is sent until the user turns it on in Settings. People who never touched the switch are therefore no longer counted. This follows the privacy-first and DPDP consent rule. No new permission, library or network address.
+
 ## App search (v1.2.21)
 
 A search box above the app list filters the apps by name, type and description. It runs only on the phone over the list already loaded. What you type is not stored, logged or sent anywhere. No new permission, library or network address.

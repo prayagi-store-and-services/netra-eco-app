@@ -449,7 +449,7 @@ private fun UsageCard() {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
                 Text("Share anonymous usage count", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                Text("Once a day the app adds 1 to a public counter so the Netra site can show roughly how many people use it. No ID, no location, no files.", style = MaterialTheme.typography.bodySmall)
+                Text("Once a day the app adds 1 to a public counter so the Netra site can show roughly how many people use it. No ID, no location, no files. Off by default: nothing is sent unless you turn it on.", style = MaterialTheme.typography.bodySmall)
             }
             Switch(checked = on, onCheckedChange = { on = it; UsagePing.setEnabled(context, it) })
         }
