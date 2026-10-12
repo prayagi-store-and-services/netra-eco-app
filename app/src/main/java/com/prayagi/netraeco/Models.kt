@@ -100,3 +100,11 @@ fun statusForRelease(installedCode: Long?, installedName: String?, latest: Lates
         when { c < 0 -> Status.UpdateAvailable; c == 0 -> Status.UpToDate; else -> Status.InstalledNewer }
     }
 }
+
+/** Search over the app list. Runs on the phone only. Blank query matches everything; otherwise every word must appear in the name, type or summary. */
+fun matchesQuery(query: String, vararg fields: String): Boolean {
+    val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    if (words.isEmpty()) return true
+    val hay = fields.joinToString(" ").lowercase()
+    return words.all { hay.contains(it) }
+}
