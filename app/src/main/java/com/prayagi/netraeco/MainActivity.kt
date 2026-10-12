@@ -35,6 +35,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -192,6 +194,7 @@ fun EcoScreen(resumeKey: Int) {
     var reload by remember { mutableIntStateOf(0) }
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
+    var query by remember { mutableStateOf("") }
 
     LaunchedEffect(resumeKey, reload) {
         upcoming = withContext(Dispatchers.IO) { Net.fetchText(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
@@ -236,7 +239,29 @@ fun EcoScreen(resumeKey: Int) {
                 Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(4.dp))
+            val searching = query.isNotBlank()
+            val shownRows = (rows ?: emptyList()).filter { matchesQuery(query, it.app.name, it.app.type, it.app.summary) }
+            val shownUpcoming = upcoming.filter { matchesQuery(query, it.name, it.type, it.summary) }
+            if (rows != null) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it.take(60) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Search apps") },
+                    trailingIcon = { if (searching) TextButton(onClick = { query = "" }) { Text("Clear") } }
+                )
+                Spacer(Modifier.height(8.dp))
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                if (searching) {
+                    if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
+                        item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
+                    }
+                    items(shownRows, key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
+                    items(shownUpcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u) }
+                    return@LazyColumn
+                }
                 item(key = "intro") {
                     Column {
                         Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium)
