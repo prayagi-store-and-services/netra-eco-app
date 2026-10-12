@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Not-built items removed from the Trikaal card (v1.2.23)
+
+The Trikaal card showed a list of planned features and a "PDF soon" button that did nothing yet. Both are hidden until they work. No calculation changed. No new permission, library or network address.
+
 ## Beta channel (workflow only, no app change)
 
 A separate workflow, Beta Release, can publish a signed test build as a GitHub pre-release with a tag like v1.2.23-beta.1. It only runs from main and uses the same signing key and tests as the stable release. The in-app updater reads only the latest stable release, so a beta is never offered to anyone automatically. Testers install it by hand from the Releases page (see BETA.md) and give feedback through a public issue form that warns against personal data. The beta process sends nothing from the phone and adds no permission, library, server or billing.
