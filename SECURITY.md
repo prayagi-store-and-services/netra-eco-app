@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## App search (v1.2.21)
+
+A search box above the app list filters the apps by name, type and description. It runs only on the phone over the list already loaded. What you type is not stored, logged or sent anywhere. No new permission, library or network address.
+
 ## Region guard (v1.2.18)
 
 The app refuses to open when the phone's SIM or network country is on a built-in block list (PK, BD, AF, CN, KP). The check runs only on the phone, uses no permission, no network call and no IP lookup, and nothing is stored or sent. With no signal, or an Indian SIM, it never blocks. It is a deterrent, not foolproof: removing the SIM or changing the language region bypasses it.
