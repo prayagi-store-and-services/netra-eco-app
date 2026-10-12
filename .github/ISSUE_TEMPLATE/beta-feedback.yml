@@ -1,0 +1,28 @@
+name: Beta feedback
+description: Tell us what worked or broke in a Netra Eco beta build
+title: "[Beta] "
+labels: ["beta-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: Issues are public. Please do not include your name, phone number, location or other personal data.
+  - type: input
+    id: version
+    attributes:
+      label: Beta version (for example v1.2.23-beta.1)
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone model and Android version
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to repeat it

@@ -2,6 +2,10 @@
 
 Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
+## Beta channel (workflow only, no app change)
+
+A separate workflow, Beta Release, can publish a signed test build as a GitHub pre-release with a tag like v1.2.23-beta.1. It only runs from main and uses the same signing key and tests as the stable release. The in-app updater reads only the latest stable release, so a beta is never offered to anyone automatically. Testers install it by hand from the Releases page (see BETA.md) and give feedback through a public issue form that warns against personal data. The beta process sends nothing from the phone and adds no permission, library, server or billing.
+
 ## Usage count is opt-in (v1.2.22)
 
 The anonymous daily usage counter (adds 1 to a public counter, no ID, no location, no app data) used to be on by default. It is now OFF by default: nothing is sent until the user turns it on in Settings. People who never touched the switch are therefore no longer counted. This follows the privacy-first and DPDP consent rule. No new permission, library or network address.
