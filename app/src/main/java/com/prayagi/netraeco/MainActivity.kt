@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -195,6 +197,7 @@ fun EcoScreen(resumeKey: Int) {
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
     var query by remember { mutableStateOf("") }
+    var cat by remember { mutableStateOf<AppCategory?>(null) }
 
     LaunchedEffect(resumeKey, reload) {
         upcoming = withContext(Dispatchers.IO) { Net.fetchText(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
@@ -253,6 +256,18 @@ fun EcoScreen(resumeKey: Int) {
                 )
                 Spacer(Modifier.height(8.dp))
             }
+            val catRows = (rows ?: emptyList()).map { it to AppCategories.classify(it.app.name, it.app.type, it.app.summary, it.app.categories) }
+            val catUp = upcoming.map { it to AppCategories.classify(it.name, it.type, it.summary) }
+            val usedCats = AppCategory.values().filter { c -> catRows.any { c in it.second } || catUp.any { c in it.second } }
+            if (rows != null && !searching && usedCats.size > 1) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (cat == null) Button(onClick = { cat = null }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { cat = null }) { Text("All", maxLines = 1) }
+                    usedCats.forEach { c ->
+                        if (cat == c) Button(onClick = { cat = null }) { Text(c.label, maxLines = 1) } else OutlinedButton(onClick = { cat = c }) { Text(c.label, maxLines = 1) }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (searching) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
@@ -260,6 +275,15 @@ fun EcoScreen(resumeKey: Int) {
                     }
                     items(shownRows, key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
                     items(shownUpcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u) }
+                    return@LazyColumn
+                }
+                val picked = cat
+                if (picked != null) {
+                    val inRows = catRows.filter { picked in it.second }.map { it.first }
+                    val inUp = catUp.filter { picked in it.second }.map { it.first }
+                    item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
+                    items(inRows, key = { "c-" + it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
+                    items(inUp, key = { "cu-" + it.id }) { u -> UpcomingCard(u) }
                     return@LazyColumn
                 }
                 item(key = "intro") {
@@ -315,6 +339,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                 Column(Modifier.weight(1f)) {
                     Text(row.app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     if (row.app.type.isNotBlank()) Text(row.app.type, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(AppCategories.classify(row.app.name, row.app.type, row.app.summary, row.app.categories).joinToString(" · ") { it.label }, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
                 StatusPill(status)
             }
@@ -336,8 +361,6 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                 }
             }
             // Next planned release for this app, from the roadmap. Live countdown, approximate, may come earlier or later.
-            var tickNow by remember { mutableStateOf(System.currentTimeMillis()) }
-            LaunchedEffect(Unit) { while (true) { tickNow = System.currentTimeMillis(); delay(1000) } }
             val nextPlan = pendingRoadmap?.let { Roadmap.nextFor(it, row.app.id) }
             Spacer(Modifier.height(8.dp))
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
@@ -345,7 +368,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
                 val planEta = nextPlan?.etaMillis
                 if (nextPlan != null && planEta != null) {
                     Text(nextPlan.title, style = MaterialTheme.typography.bodySmall)
-                    Text(if (planEta > tickNow) "Approximate ETA: " + Roadmap.countdown(planEta - tickNow) else Roadmap.countdown(0L), fontWeight = FontWeight.Medium)
+                    LiveCountdown(planEta, true)
                     Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
                 } else {
                     Text("Unavailable", fontWeight = FontWeight.Medium)

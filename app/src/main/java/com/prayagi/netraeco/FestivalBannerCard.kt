@@ -28,7 +28,7 @@ fun FestivalBannerCard(modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) {
         while (true) {
             now = Date()
-            delay(1000)
+            delay(60_000)
         }
     }
     val banner: Banner = remember(java.text.SimpleDateFormat("yyyyMMdd").format(now)) {

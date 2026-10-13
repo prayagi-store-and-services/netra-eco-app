@@ -96,7 +96,8 @@ object Net {
                 repo = repo,
                 packageName = pkg,
                 latestJsonUrl = o.optString("latestJson").ifBlank { "https://github.com/$repo/releases/latest/download/latest.json" },
-                siteUrl = o.optString("site")
+                siteUrl = o.optString("site"),
+                categories = o.optJSONArray("categories")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
             )
         }
     } catch (e: Exception) {

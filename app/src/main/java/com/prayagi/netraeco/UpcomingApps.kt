@@ -44,8 +44,6 @@ object Upcoming {
 
 @Composable
 fun UpcomingCard(app: UpcomingApp) {
-    var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
         Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         if (app.type.isNotBlank()) Text(app.type, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -56,7 +54,7 @@ fun UpcomingCard(app: UpcomingApp) {
             Text("Coming soon", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             val eta = app.etaMillis
             if (eta != null) {
-                Text(Roadmap.countdown(eta - now), fontWeight = FontWeight.Medium)
+                LiveCountdown(eta, false)
                 Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
             } else {
                 Text("Unavailable", fontWeight = FontWeight.Medium)
