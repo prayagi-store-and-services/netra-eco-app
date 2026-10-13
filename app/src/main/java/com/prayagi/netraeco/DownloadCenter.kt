@@ -57,6 +57,16 @@ object DownloadCenter {
     private const val PREFS = "netra_eco_downloads"
 
     fun keyFor(app: CatalogApp, release: LatestRelease) = "${app.id}-${release.tag}.apk"
+
+    /** Remembers a finished, verified file (for example one fetched in the background) so the list keeps it until it is installed. */
+    fun register(c: Context, app: CatalogApp, release: LatestRelease) {
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+    }
+
+    /** True when the verified file for this release is already saved (a verified download is exactly the expected size). */
+    fun hasFile(c: Context, app: CatalogApp, release: LatestRelease): Boolean =
+        File(dir(c), keyFor(app, release)).let { it.exists() && it.length() == release.size }
     private fun dir(c: Context) = File(c.cacheDir, "updates").apply { mkdirs() }
     private fun put(i: Item) { items.value = items.value + (i.key to i) }
 
