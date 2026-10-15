@@ -144,3 +144,6 @@ The header is now the Netra standard: 56 dp, only the app name, the installed ve
 
 - A card at the top of the app shows today's festival (India calendar, bundled in the app, from timeanddate.com India 2026-2027) or "coming soon" for a festival within 3 days, with the live date and time. India's Independence Day (15 August) is shown too. It has no death anniversaries and no other country's days. After 2027 there is no data, so no banner is shown and nothing is invented. A date marked "may differ by a day" says so.
 - It works offline. No new permission, network call or library.
+
+
+Visible version row now ends with " | Netra Ecosystem" per owner instruction. No permissions, identifiers, signing or data changes from this attribution. Header rendering is reviewed before release.
