@@ -131,11 +131,11 @@ object Net {
         null
     }
 
-    /** Netra Eco itself, so the manual "Check for update" button can use the same download and install flow. */
+    /** Netra Ecosystem itself, so the manual "Check for update" button can use the same download and install flow. */
     const val SELF_REPO = "prayagi-store-and-services/netra-eco-app"
 
     fun selfApp(context: Context) = CatalogApp(
-        id = "netra-eco", name = "Netra Eco", type = "", summary = "", repo = SELF_REPO,
+        id = "netra-eco", name = "Netra Ecosystem", type = "", summary = "", repo = SELF_REPO,
         packageName = context.packageName,
         latestJsonUrl = "https://github.com/$SELF_REPO/releases/latest/download/latest.json",
         siteUrl = ""
@@ -221,7 +221,7 @@ object Net {
                 Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
-            throw IllegalStateException("Allow installs from Netra Eco, then tap the button again.")
+            throw IllegalStateException("Allow installs from Netra Ecosystem, then tap the button again.")
         }
         val uri = FileProvider.getUriForFile(context, context.packageName + ".updates", file)
         context.startActivity(
