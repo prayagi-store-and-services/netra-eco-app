@@ -43,6 +43,7 @@ android {
     targetCompatibility = JavaVersion.VERSION_11
   }
   buildFeatures { compose = true }
+  testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
 dependencies {
@@ -54,4 +55,9 @@ dependencies {
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.work.runtime.ktx)
   testImplementation(libs.junit)
+  testImplementation("org.robolectric:robolectric:4.16.1")
+  testImplementation("io.github.takahirom.roborazzi:roborazzi:1.59.0")
+  testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.59.0")
+  testImplementation("androidx.compose.ui:ui-test-junit4")
+  debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
