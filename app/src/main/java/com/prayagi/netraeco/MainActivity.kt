@@ -478,7 +478,7 @@ fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("v$ownVersion", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                    Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
                 }
                 Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
             }
