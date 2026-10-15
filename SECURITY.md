@@ -1,6 +1,10 @@
-# Security notes - Netra Eco
+# Security notes - Netra Ecosystem
 
-Netra Eco is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
+## Public brand rename (v1.2.26)
+
+Visible catalog app name is now Netra Ecosystem, including the offline header, Android label and widget. Package IDs, repository URLs, installer paths, permissions, signing key and saved data are unchanged. The old date/network name gate no longer controls new builds; no name-fetch request is needed. Existing releases are not rewritten. This is a branding change, not a security patch.
+
+Netra Ecosystem is a small catalog app for the Netra apps by Prayagi Team. It shows each Netra app, whether it is installed, the newest version, and lets you download and install or update it directly.
 
 ## Not-built items removed from the Trikaal card (v1.2.23)
 
@@ -28,7 +32,7 @@ Crash and feedback reports from the app now send the website address as the orig
 
 ## Trikaal kundli (v1.2.13)
 
-Netra Eco now has a Trikaal card: enter a name, birth date, time and place to see a kundli chart (North or South style), planet positions, Vimshottari dasha, current transits and a daily card. All calculation runs on the phone with the Swiss Ephemeris (Moshier mode, AGPL, source in astro-core). Up to 5 saved profiles with a default one stay in the app's private storage on the phone. One optional permission: approximate location (ACCESS_COARSE_LOCATION), asked with a clear yes or no. It is used only on the phone to work out Rahu Kaal, muhurat and tithi for your place, is stored only in the app's private storage and is never sent anywhere. If you decline, Prayagraj is used. No network call, no account, no data leaves the device. Values with no vetted rule show "Unavailable"; predictions are not claimed. Results are not checked against professional software for every case, and the card says so.
+Netra Ecosystem now has a Trikaal card: enter a name, birth date, time and place to see a kundli chart (North or South style), planet positions, Vimshottari dasha, current transits and a daily card. All calculation runs on the phone with the Swiss Ephemeris (Moshier mode, AGPL, source in astro-core). Up to 5 saved profiles with a default one stay in the app's private storage on the phone. One optional permission: approximate location (ACCESS_COARSE_LOCATION), asked with a clear yes or no. It is used only on the phone to work out Rahu Kaal, muhurat and tithi for your place, is stored only in the app's private storage and is never sent anywhere. If you decline, Prayagraj is used. No network call, no account, no data leaves the device. Values with no vetted rule show "Unavailable"; predictions are not claimed. Results are not checked against professional software for every case, and the card says so.
 
 ## Coming soon list (v1.2.12)
 
@@ -57,7 +61,7 @@ The scrolling strip lists only plans that are not released yet. An item that nam
 
 ## What the app talks to
 
-- `https://prayagi-store-and-services.github.io/netra-eco/projects.json` - the list of Netra apps (public file on the Netra Eco website).
+- `https://prayagi-store-and-services.github.io/netra-eco/projects.json` - the list of Netra apps (public file on the Netra Ecosystem website).
 - `https://github.com/prayagi-store-and-services/<repo>/releases/latest/download/latest.json` - the newest version of each app (Battery Sentinel uses the `latest.json` on its website). Public files, no login.
 - `https://github.com/prayagi-store-and-services/<repo>/releases/download/<tag>/app-release.apk` - the APK itself.
 - `https://raw.githubusercontent.com/prayagi-store-and-services/<repo>/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp` (new in 1.2.0) - the launcher image of an app that is not installed, so its real icon can be shown. Only this one image path, only for repositories of this organization. An installed app shows its own icon from the phone. If neither can be read, a plain letter badge is shown instead, which is not the app icon.
@@ -93,7 +97,7 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 - Downloaded APKs live only in the app cache folder (`cache/updates/`). They are deleted when you come back to the app after the system installer closes (installed or cancelled), and never while a download is running. A new download also removes older files first.
 
 ## Manual update check
-- The header has a "Check for update" button for Netra Eco itself. It reads Eco's own latest.json from this repo's latest release, says whether you are on the latest version, and offers Update only when a newer one exists. The download is checked for size and SHA-256 before the Android installer opens, and the user confirms the install.
+- The header has a "Check for update" button for Netra Ecosystem itself. It reads Eco's own latest.json from this repo's latest release, says whether you are on the latest version, and offers Update only when a newer one exists. The download is checked for size and SHA-256 before the Android installer opens, and the user confirms the install.
 
 ## Permissions
 
@@ -109,7 +113,7 @@ Nothing else. No analytics, no accounts, no keys or API tokens in the app, no pe
 
 - Download progress (v1.0.3): while an APK downloads, the app shows the percentage left and an estimated time left, calculated on the phone from the bytes received. Nothing extra is sent anywhere and no new library or permission is used.
 
-- Roadmap (v1.0.4): the app downloads one public file, roadmap.json, from the Netra Eco website to show upcoming features and a countdown to the next estimated release. It sends nothing about you. No new library or permission.
+- Roadmap (v1.0.4): the app downloads one public file, roadmap.json, from the Netra Ecosystem website to show upcoming features and a countdown to the next estimated release. It sends nothing about you. No new library or permission.
 
 - Fresher update check (v1.0.5): the app now asks the GitHub release API (public, no sign-in) for the newest release, with a no-cache request, then reads that release's latest.json. Nothing about you is sent. No new library or permission.
 
@@ -122,7 +126,7 @@ The header is now the Netra standard: 56 dp, only the app name, the installed ve
 
 ## Home screen widget (version 1.2.4)
 
-- New widget "Netra Eco - app updates": shows, for each Netra app, the installed version, the latest published version and the status, exactly as the last update check made inside the app found them, with the time of that check. Before the first check it shows "Unavailable".
+- New widget "Netra Ecosystem - app updates": shows, for each Netra app, the installed version, the latest published version and the status, exactly as the last update check made inside the app found them, with the time of that check. Before the first check it shows "Unavailable".
 - Stored on this phone only (local preferences, not backed up because backup is off): one text line per app and the check time. Nothing is sent anywhere. The widget makes no network call and has no timer: the app redraws it after each check it already makes.
 - No new permission, network call or library. The widget receiver is exported because Android's launcher must send it update events; it handles only that action. Tapping the widget opens the app.
 
