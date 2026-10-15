@@ -34,7 +34,7 @@ object EcoWidgetStore {
 }
 
 /**
- * Netra Eco widget: the result of the last update check made inside the app (installed version, latest published
+ * Netra Ecosystem widget: the result of the last update check made inside the app (installed version, latest published
  * version, status for each Netra app) and when it was checked. No check yet shows "Unavailable". The widget makes no
  * network call and has no timer: the app redraws it after each check.
  */
