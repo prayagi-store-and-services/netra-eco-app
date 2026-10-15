@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.time.OffsetDateTime
 
-/** One roadmap entry, read from roadmap.json on the Netra Eco site (the same file the websites use). */
+/** One roadmap entry, read from roadmap.json on the Netra Ecosystem site (the same file the websites use). */
 data class RoadmapItem(
     val title: String,
     val status: String,

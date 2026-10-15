@@ -72,7 +72,7 @@ fun statusLabel(status: Status): String = when (status) {
     Status.Unavailable -> "Unavailable"
 }
 
-/** One-line answer for the "Check for update" button about Netra Eco itself. */
+/** One-line answer for the "Check for update" button about Netra Ecosystem itself. */
 fun selfUpdateMessage(installedName: String, status: Status, latestName: String?): String = when (status) {
     Status.UpToDate -> "You are on the latest version ($installedName)."
     Status.UpdateAvailable -> "Update available: " + (latestName ?: "newer version") + " (installed $installedName)."

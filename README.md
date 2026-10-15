@@ -1,6 +1,6 @@
-# Netra Eco (app)
+# Netra Ecosystem (app)
 
-One app to see, download, install and update all Netra apps by Prayagi Team. Part of the Netra Eco family: https://prayagi-store-and-services.github.io/netra-eco/
+One app to see, download, install and update all Netra apps by Prayagi Team. Part of the Netra Ecosystem family: https://prayagi-store-and-services.github.io/netra-eco/
 
 Releases: https://github.com/prayagi-store-and-services/netra-eco-app/releases
 

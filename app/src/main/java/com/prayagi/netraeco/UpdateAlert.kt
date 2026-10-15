@@ -35,7 +35,7 @@ object UpdateAlert {
     private const val NOTIFICATION_ID = 7431
     private const val WORK_NAME = "netra_update_alert"
     private const val PREFS = "netra_update_alert"
-    // Netra Eco beeps (default notification sound); the other apps use a silent channel.
+    // Netra Ecosystem beeps (default notification sound); the other apps use a silent channel.
     private const val BEEP = true
     private val CHANNEL_ID = if (BEEP) "netra_app_update_beep" else "netra_app_update"
 

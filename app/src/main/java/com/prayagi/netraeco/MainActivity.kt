@@ -215,22 +215,7 @@ fun EcoScreen(resumeKey: Int) {
         var ecoName by remember { mutableStateOf(NameGate.displayName(context)) }
         LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
-        Box(
-            Modifier.fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(Teal, TealDark)))
-                .statusBarsPadding()
-                .height(56.dp)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(ecoName, fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("v$ownVersion", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
-                }
-                Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
-            }
-        }
+        EcoHeader(ecoName, ownVersion, clockNow)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
         TickerStrip(pendingRoadmap)
@@ -477,4 +462,25 @@ private fun UsageCard() {
             Switch(checked = on, onCheckedChange = { on = it; UsagePing.setEnabled(context, it) })
         }
     }
+}
+
+/** Shared production header, rendered by the brand regression test at a narrow phone width. */
+@Composable
+fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
+    Box(
+            Modifier.fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Teal, TealDark)))
+                .statusBarsPadding()
+                .height(56.dp)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                }
+                Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+            }
+        }
 }

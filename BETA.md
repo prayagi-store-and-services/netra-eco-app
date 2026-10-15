@@ -1,4 +1,4 @@
-# Netra Eco beta channel
+# Netra Ecosystem beta channel
 
 A beta is a test build that comes before a stable release. It is free, optional and separate from the stable app.
 
@@ -6,7 +6,7 @@ A beta is a test build that comes before a stable release. It is free, optional 
 1. Open the Releases page of this repository: https://github.com/prayagi-store-and-services/netra-eco-app/releases
 2. Pick a release marked "Pre-release" with a tag like `v1.2.23-beta.1`.
 3. Download `NetraEco-<tag>.apk` and check the sha256 written in the release notes if you wish.
-4. Open the file on your phone and allow installing from your browser when Android asks. It installs over your current Netra Eco and keeps your data, because it is signed with the same key.
+4. Open the file on your phone and allow installing from your browser when Android asks. It installs over your current Netra Ecosystem and keeps your data, because it is signed with the same key.
 
 The stable updater inside the app only reads the latest stable release, so a beta never reaches people who did not choose it. To leave the beta, wait for the next stable release (the app updates itself) or uninstall and install the stable APK from the latest non-pre-release.
 
