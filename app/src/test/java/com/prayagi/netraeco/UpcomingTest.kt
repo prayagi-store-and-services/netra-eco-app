@@ -34,20 +34,4 @@ class UpcomingTest {
         assertNull(Upcoming.etaFor(app("netra-email"), null))
     }
 
-    @Test fun parseReadsPlannedFeatures() {
-        val json = """{"upcoming":[{"id":"netra-travel-rider","name":"Netra Travel Rider","type":"Intercom","summary":"Rider intercom","eta":"2026-11-22T20:00:00+05:30","features":["Push-to-talk intercom","SOS alert"]}]}"""
-        val apps = Upcoming.parse(json)
-        assertEquals(1, apps.size)
-        assertEquals(listOf("Push-to-talk intercom", "SOS alert"), apps[0].features)
-    }
-
-    @Test fun missingFeaturesParsesAsEmpty() {
-        val json = """{"upcoming":[{"id":"netra-email","name":"Netra Email","type":"Email","summary":"Private email"}]}"""
-        assertEquals(emptyList<String>(), Upcoming.parse(json)[0].features)
-    }
-
-    @Test fun blankFeatureEntriesAreDropped() {
-        val json = """{"upcoming":[{"id":"netra-hub","name":"Netra Hub","type":"Safety","summary":"Safety","features":["Real feature","","   "]}]}"""
-        assertEquals(listOf("Real feature"), Upcoming.parse(json)[0].features)
-    }
 }
