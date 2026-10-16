@@ -4,7 +4,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class AppRequestsTest {
     @Test fun dailyGuardBlocksSecondSendSameDay() {
         assertTrue(AppRequests.canSendToday(null, "2026-10-16"))
