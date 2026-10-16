@@ -1,11 +1,15 @@
 package com.prayagi.netraeco
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,10 +30,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
@@ -113,10 +119,34 @@ private suspend fun loadBitmap(url: String): Bitmap? = withContext(Dispatchers.I
     }
 }
 
+/** Network type behind the autoplay decision. */
+enum class PreviewNetwork { WIFI, MOBILE_OR_OTHER, OFFLINE }
+
+object VideoAutoplay {
+    /**
+     * Autoplay is allowed on Wi-Fi only. On mobile data (or anything else) the video shows a
+     * tap-to-play poster and downloads nothing until the user taps. Offline behaves the same way:
+     * no download attempt without a tap.
+     */
+    fun shouldAutoplay(net: PreviewNetwork): Boolean = net == PreviewNetwork.WIFI
+}
+
+private fun currentNetwork(ctx: Context): PreviewNetwork {
+    val cm = ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        ?: return PreviewNetwork.OFFLINE
+    val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return PreviewNetwork.OFFLINE
+    return if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+        PreviewNetwork.WIFI
+    } else {
+        PreviewNetwork.MOBILE_OR_OTHER
+    }
+}
+
 /**
  * The Play-Store-style preview on an app card: the promo video and a screenshot strip. Rendered
  * only while at least one real medium exists; hidden otherwise, and hidden when the manifest
- * cannot be read (we never invent a preview).
+ * cannot be read (we never invent a preview). Video autoplays on Wi-Fi only; on mobile data it
+ * waits for a tap and fetches no video bytes before it.
  */
 @Composable
 fun PreviewBlock(appId: String) {
@@ -131,22 +161,45 @@ fun PreviewBlock(appId: String) {
         Spacer(Modifier.height(6.dp))
         val vurl = m.videoUrl
         if (vurl != null) {
-            AndroidView(
-                factory = { ctx ->
-                    VideoView(ctx).apply {
-                        val mc = MediaController(ctx)
-                        mc.setAnchorView(this)
-                        setMediaController(mc)
-                        setVideoURI(Uri.parse(vurl))
+            val ctx = LocalContext.current
+            var tappedToPlay by remember(vurl) { mutableStateOf(false) }
+            // Decided once per video: Wi-Fi autoplays, anything else waits for the tap below.
+            val autoplay = remember(vurl) { VideoAutoplay.shouldAutoplay(currentNetwork(ctx)) }
+            if (autoplay || tappedToPlay) {
+                AndroidView(
+                    factory = { viewCtx ->
+                        VideoView(viewCtx).apply {
+                            val mc = MediaController(viewCtx)
+                            mc.setAnchorView(this)
+                            setMediaController(mc)
+                            setVideoURI(Uri.parse(vurl))
+                            setOnPreparedListener { start() }
+                        }
+                    },
+                    onRelease = { it.stopPlayback() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Black)
+                )
+            } else {
+                // Tap-to-play poster: the VideoView (and its download) does not exist before the tap.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Black)
+                        .clickable { tappedToPlay = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("▶", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+                        Text("Tap to play", color = Color.White, style = MaterialTheme.typography.labelSmall)
                     }
-                },
-                onRelease = { it.stopPlayback() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.Black)
-            )
+                }
+            }
             Text(m.videoLabel + " - real features only", style = MaterialTheme.typography.labelSmall)
             Spacer(Modifier.height(8.dp))
         }
