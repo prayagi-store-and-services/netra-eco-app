@@ -259,7 +259,7 @@ fun EcoScreen(resumeKey: Int) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
                     }
                     items(shownRows, key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
-                    items(shownUpcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u) }
+                    items(shownUpcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u, pendingRoadmap) }
                     return@LazyColumn
                 }
                 val picked = cat
@@ -268,7 +268,7 @@ fun EcoScreen(resumeKey: Int) {
                     val inUp = catUp.filter { picked in it.second }.map { it.first }
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
                     items(inRows, key = { "c-" + it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
-                    items(inUp, key = { "cu-" + it.id }) { u -> UpcomingCard(u) }
+                    items(inUp, key = { "cu-" + it.id }) { u -> UpcomingCard(u, pendingRoadmap) }
                     return@LazyColumn
                 }
                 item(key = "intro") {
@@ -282,7 +282,7 @@ fun EcoScreen(resumeKey: Int) {
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList()) }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
-                items(upcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u) }
+                items(upcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u, pendingRoadmap) }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
@@ -330,6 +330,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
+            PreviewBlock(row.app.id)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f)) {
