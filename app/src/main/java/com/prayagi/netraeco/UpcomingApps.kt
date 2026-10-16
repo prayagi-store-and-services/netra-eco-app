@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
 import org.json.JSONObject
 
 /** One planned app shown as "Coming soon" (no download, no update). Read from the "upcoming" list in projects.json. */
-data class UpcomingApp(val id: String, val name: String, val type: String, val summary: String, val etaMillis: Long?)
+data class UpcomingApp(val id: String, val name: String, val type: String, val summary: String, val etaMillis: Long?, val features: List<String> = emptyList())
 
 object Upcoming {
     /**
@@ -42,7 +42,8 @@ object Upcoming {
             val name = o.optString("name")
             if (id.isBlank() || name.isBlank()) null else UpcomingApp(
                 id, name, o.optString("type"), o.optString("summary"),
-                o.optString("eta").takeIf { it.isNotBlank() }?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
+                o.optString("eta").takeIf { it.isNotBlank() }?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() },
+                o.optJSONArray("features")?.let { fa -> (0 until fa.length()).mapNotNull { fa.optString(it).takeIf(String::isNotBlank) } } ?: emptyList()
             )
         }
     } catch (e: Exception) {
@@ -57,6 +58,11 @@ fun UpcomingCard(app: UpcomingApp, pendingRoadmap: List<RoadmapItem>?) {
         if (app.type.isNotBlank()) Text(app.type, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(8.dp))
         if (app.summary.isNotBlank()) Text(app.summary, style = MaterialTheme.typography.bodyMedium)
+        if (app.features.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text("Planned features (planned, may change):", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            app.features.forEach { Text("- $it", style = MaterialTheme.typography.bodyMedium) }
+        }
         Spacer(Modifier.height(10.dp))
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
             Text("Coming soon", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
