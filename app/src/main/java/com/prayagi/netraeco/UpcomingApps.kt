@@ -26,6 +26,14 @@ import org.json.JSONObject
 data class UpcomingApp(val id: String, val name: String, val type: String, val summary: String, val etaMillis: Long?)
 
 object Upcoming {
+    /**
+     * The ETA to show on a Coming soon card: the app's own eta when the site sets one, otherwise
+     * the earliest still-pending roadmap item that names the app (roadmap.json is the same source
+     * the websites use). Null when neither exists, and null when the roadmap could not be read.
+     */
+    fun etaFor(app: UpcomingApp, pendingRoadmap: List<RoadmapItem>?): Long? =
+        app.etaMillis ?: pendingRoadmap?.let { Roadmap.nextFor(it, app.id)?.etaMillis }
+
     fun parse(json: String): List<UpcomingApp> = try {
         val arr = JSONObject(json).optJSONArray("upcoming")
         if (arr == null) emptyList() else (0 until arr.length()).mapNotNull { i ->
@@ -43,7 +51,7 @@ object Upcoming {
 }
 
 @Composable
-fun UpcomingCard(app: UpcomingApp) {
+fun UpcomingCard(app: UpcomingApp, pendingRoadmap: List<RoadmapItem>?) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
         Text(app.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         if (app.type.isNotBlank()) Text(app.type, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -52,13 +60,13 @@ fun UpcomingCard(app: UpcomingApp) {
         Spacer(Modifier.height(10.dp))
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
             Text("Coming soon", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            val eta = app.etaMillis
+            val eta = Upcoming.etaFor(app, pendingRoadmap)
             if (eta != null) {
                 LiveCountdown(eta, false)
                 Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
             } else {
                 Text("Unavailable", fontWeight = FontWeight.Medium)
-                Text("No release time is set yet.", style = MaterialTheme.typography.labelSmall)
+                Text(if (pendingRoadmap == null) "The roadmap could not be read." else "No release time is set yet.", style = MaterialTheme.typography.labelSmall)
             }
         }
     }
