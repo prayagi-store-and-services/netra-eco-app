@@ -1,5 +1,10 @@
 # Security notes - Netra Ecosystem
 
+## Preview media and Coming soon dates (v1.2.27)
+
+Each app card can now show a Play-Store-style preview: the app's promo video and real screenshots. The list comes from one public media.json file on the Netra website, so a website update appears in the app on its own. Only addresses under the Netra websites (prayagi-store-and-services.github.io) are accepted; anything else is ignored, and an app with no video and no real screenshots simply shows no preview. Coming soon cards now also read their approximate date from the same public roadmap.json as the website, so a card that used to say "Unavailable" shows the planned date once one exists; cards with no planned date (idea stage) still honestly say "Unavailable". Media and dates are only read and shown on the phone; nothing is stored or sent. No new permission, library or server - the network calls use the same website the app already reads.
+
+
 ## Public brand rename (v1.2.26)
 
 Visible catalog app name is now Netra Ecosystem, including the offline header, Android label and widget. Package IDs, repository URLs, installer paths, permissions, signing key and saved data are unchanged. The old date/network name gate no longer controls new builds; no name-fetch request is needed. Existing releases are not rewritten. This is a branding change, not a security patch.
