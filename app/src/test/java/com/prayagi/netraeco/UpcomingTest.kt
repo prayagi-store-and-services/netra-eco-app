@@ -33,4 +33,5 @@ class UpcomingTest {
     @Test fun unreadableRoadmapLeavesEtaUnknown() {
         assertNull(Upcoming.etaFor(app("netra-email"), null))
     }
+
 }
