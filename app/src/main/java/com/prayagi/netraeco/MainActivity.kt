@@ -68,6 +68,24 @@ data class AppRow(
     val latest: LatestRelease?
 )
 
+/** A released app or a coming-soon app in one shared alphabetical list; a coming-soon card keeps its place when the app goes live. */
+sealed interface EcoEntry {
+    val displayName: String
+    val itemKey: String
+    data class Live(val row: AppRow) : EcoEntry {
+        override val displayName: String get() = row.app.name
+        override val itemKey: String get() = "l-" + row.app.id
+    }
+    data class Soon(val up: UpcomingApp) : EcoEntry {
+        override val displayName: String get() = up.name
+        override val itemKey: String get() = "up-" + up.id
+    }
+}
+
+/** Released and coming-soon apps merged into one A-Z list (Netra prefix ignored, letter by letter). */
+private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): List<EcoEntry> =
+    AppSort.sorted(rows.map { EcoEntry.Live(it) } + upcoming.map { EcoEntry.Soon(it) }) { it.displayName }
+
 class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
 
@@ -143,20 +161,23 @@ class MainActivity : ComponentActivity() {
 private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Dispatchers.IO) {
     val catalogJson = Net.fetchText(Net.CATALOG_URL) ?: return@withContext null
     val apps = Net.parseCatalog(catalogJson)
+    val self = Net.selfApp(context)
     val rows = coroutineScope {
-        (listOf(Net.selfApp(context)) + apps).map { app ->
+        // The catalog may list Netra Ecosystem itself; this phone's own entry comes from selfApp only.
+        (listOf(self) + apps.filter { it.id != self.id && it.packageName != self.packageName }).map { app ->
             async {
                 AppRow(app, Net.installed(context, app.packageName), Net.fetchLatest(app))
             }
         }.awaitAll()
     }
+    val sortedRows = AppSort.sorted(rows) { it.app.name }
     try {
-        val statuses = rows.map { statusForRelease(it.installed?.first, it.installed?.second, it.latest) }
-        val lines = rows.mapIndexed { i, r -> EcoWidgetStore.lineFor(r.app.name, r.installed?.second, r.latest?.versionName, statuses[i]) }
+        val statuses = sortedRows.map { statusForRelease(it.installed?.first, it.installed?.second, it.latest) }
+        val lines = sortedRows.mapIndexed { i, r -> EcoWidgetStore.lineFor(r.app.name, r.installed?.second, r.latest?.versionName, statuses[i]) }
         EcoWidgetStore.save(context, lines, statuses.count { it == Status.UpdateAvailable })
         EcoWidgetProvider.refresh(context)
     } catch (_: Exception) {}
-    rows
+    sortedRows
 }
 
 private val Teal = Color(0xFF00796B)
@@ -258,8 +279,12 @@ fun EcoScreen(resumeKey: Int) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
                     }
-                    items(shownRows, key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
-                    items(shownUpcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u, pendingRoadmap) }
+                    items(mergedEcoEntries(shownRows, shownUpcoming), key = { it.itemKey }) { e ->
+                        when (e) {
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap) { reload++ }
+                            is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
+                        }
+                    }
                     return@LazyColumn
                 }
                 val picked = cat
@@ -267,8 +292,12 @@ fun EcoScreen(resumeKey: Int) {
                     val inRows = catRows.filter { picked in it.second }.map { it.first }
                     val inUp = catUp.filter { picked in it.second }.map { it.first }
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
-                    items(inRows, key = { "c-" + it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
-                    items(inUp, key = { "cu-" + it.id }) { u -> UpcomingCard(u, pendingRoadmap) }
+                    items(mergedEcoEntries(inRows, inUp), key = { it.itemKey }) { e ->
+                        when (e) {
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap) { reload++ }
+                            is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
+                        }
+                    }
                     return@LazyColumn
                 }
                 item(key = "intro") {
@@ -281,8 +310,12 @@ fun EcoScreen(resumeKey: Int) {
                 item(key = "trikaal") { TrikaalCard() }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList()) }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
-                items(rows ?: emptyList(), key = { it.app.id }) { row -> AppCard(row, pendingRoadmap) { reload++ } }
-                items(upcoming, key = { "up-" + it.id }) { u -> UpcomingCard(u, pendingRoadmap) }
+                items(mergedEcoEntries(rows ?: emptyList(), upcoming), key = { it.itemKey }) { e ->
+                    when (e) {
+                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap) { reload++ }
+                        is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
+                    }
+                }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
