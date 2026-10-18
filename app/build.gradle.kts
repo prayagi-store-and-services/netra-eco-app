@@ -11,8 +11,8 @@ android {
     applicationId = "com.prayagi.netraeco"
     minSdk = 26
     targetSdk = 36
-    versionCode = 45
-    versionName = "1.2.31"
+    versionCode = 46
+    versionName = "1.2.32"
   }
 
   signingConfigs {
@@ -42,7 +42,8 @@ android {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
-  buildFeatures { compose = true }
+  buildFeatures { compose = true
+    buildConfig = true }
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
