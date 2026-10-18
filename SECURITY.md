@@ -152,3 +152,5 @@ The header is now the Netra standard: 56 dp, only the app name, the installed ve
 
 
 Visible version row now ends with " | Netra Ecosystem" per owner instruction. No permissions, identifiers, signing or data changes from this attribution. Header rendering is reviewed before release.
+
+2026-10-18 crash-report facts (1.2.32): crash reports now stamp the app version and crash time at the moment of the crash, from the compile-time version constant (a PackageManager lookup can fail mid-crash and was the one path that could save version "unknown"; an old crash viewed after an update also no longer borrows the newer app's version label). BuildConfig generation is enabled for this. Reports saved by older versions keep the honest "unknown (crash was saved by an older app version)" label. Reports still contain only app name, version, crash time, phone model, Android version and the sanitized trace; no new data, permission or network change.
