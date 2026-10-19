@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Needed so the Uninstall button can ask Android to remove a Netra app. Android still shows its own confirm dialog. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- Time Speak Out: half-hour time announcements. Exact when Android allows it, honest fallback otherwise. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Re-schedule the time announcements after a phone restart. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Lets this app see whether each Netra app is installed (Android 11+ package visibility). Only these packages. -->
     <queries>
@@ -35,6 +39,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".TimeSpeakReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.prayagi.netraeco.action.TIME_SPEAK" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".EcoWidgetProvider"
