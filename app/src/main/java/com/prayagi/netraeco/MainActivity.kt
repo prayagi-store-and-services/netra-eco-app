@@ -117,6 +117,8 @@ class MainActivity : ComponentActivity() {
         }
         com.prayagi.netraeco.festival.JayMataDi.greetIfDue(this)
         UpdateAlert.start(this)
+        // Keep the half-hour time announcements scheduled across app updates and process restarts.
+        TimeSpeakOut.scheduleNext(this)
         CrashReporter.install(this)
         setContent {
             NetraTheme { EcoScreen(resumeCount.intValue) }
@@ -318,6 +320,7 @@ fun EcoScreen(resumeKey: Int) {
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
+                item(key = "timespeak") { TimeSpeakCard() }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
