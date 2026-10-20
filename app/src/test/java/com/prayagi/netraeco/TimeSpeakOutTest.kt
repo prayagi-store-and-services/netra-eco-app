@@ -59,12 +59,12 @@ class TimeSpeakOutTest {
         assertEquals("समय है, दोपहर के 12 बजे।", TimeSpeaker.hindiTime(at(12, 0)))
         assertEquals("समय है, सुबह के 6 बजे।", TimeSpeaker.hindiTime(at(6, 0)))
     }
-}
+
     @Test fun slotLinesMatchSpeakerWording() {
-        val at = at(10, 30)
-        val (hi, en) = TimeSpeakOut.slotLines(at)
-        assertEquals(TimeSpeaker.hindiTime(at), hi)
-        assertEquals(TimeSpeaker.englishTime(at), en)
+        val t = at(10, 30)
+        val (hi, en) = TimeSpeakOut.slotLines(t)
+        assertEquals(TimeSpeaker.hindiTime(t), hi)
+        assertEquals(TimeSpeaker.englishTime(t), en)
     }
 
     @Test fun slotLinesForSlotNotRequestTime() {
@@ -74,3 +74,4 @@ class TimeSpeakOutTest {
         val (_, en) = TimeSpeakOut.slotLines(slotAt)
         assertTrue(en.contains("10:30"))
     }
+}
