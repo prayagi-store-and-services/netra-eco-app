@@ -119,6 +119,9 @@ class MainActivity : ComponentActivity() {
         UpdateAlert.start(this)
         // Keep the half-hour time announcements scheduled across app updates and process restarts.
         TimeSpeakOut.scheduleNext(this)
+        // Warm the voice engine while the app is open so a slot announcement starts the instant
+        // the alarm fires instead of waiting for the engine to start first.
+        if (TimeSpeakOut.isEnabled(this)) TimeSpeaker.get(this)
         CrashReporter.install(this)
         setContent {
             NetraTheme { EcoScreen(resumeCount.intValue) }
