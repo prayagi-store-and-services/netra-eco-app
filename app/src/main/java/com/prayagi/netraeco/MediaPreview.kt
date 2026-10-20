@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
@@ -106,14 +107,29 @@ object MediaPreviewStore {
     }
 }
 
-private val shotCache = HashMap<String, Bitmap?>()
+/** Small memory-bounded cache: full-res shots would cost tens of MB each and stall the list. */
+private val shotCache = object : android.util.LruCache<String, Bitmap>(24 * 1024 * 1024) {
+    override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+}
 
-private suspend fun loadBitmap(url: String): Bitmap? = withContext(Dispatchers.IO) {
+private fun open(url: String): java.net.HttpURLConnection? = try {
+    val c = URL(url).openConnection() as java.net.HttpURLConnection
+    c.connectTimeout = 8000
+    c.readTimeout = 8000
+    if (c.responseCode == 200) c else null
+} catch (e: Exception) {
+    null
+}
+
+/** Decodes at roughly [targetHeightPx] instead of full camera resolution; two passes, bounds first. */
+private suspend fun loadBitmap(url: String, targetHeightPx: Int): Bitmap? = withContext(Dispatchers.IO) {
     try {
-        val c = URL(url).openConnection() as java.net.HttpURLConnection
-        c.connectTimeout = 8000
-        c.readTimeout = 8000
-        if (c.responseCode != 200) null else c.inputStream.use { BitmapFactory.decodeStream(it) }
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        open(url)?.inputStream?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return@withContext null
+        val opts = BitmapFactory.Options().apply {
+            inSampleSize = PreviewFocus.sampleSize(bounds.outWidth, bounds.outHeight, targetHeightPx)
+        }
+        open(url)?.inputStream?.use { BitmapFactory.decodeStream(it, null, opts) }
     } catch (e: Exception) {
         null
     }
@@ -149,7 +165,7 @@ private fun currentNetwork(ctx: Context): PreviewNetwork {
  * waits for a tap and fetches no video bytes before it.
  */
 @Composable
-fun PreviewBlock(appId: String) {
+fun PreviewBlock(appId: String, previewActive: Boolean, previewVisible: Boolean) {
     var media by remember(appId) { mutableStateOf<PreviewMedia?>(null) }
     LaunchedEffect(appId) {
         media = MediaPreviewStore.load()?.get(appId)
@@ -163,9 +179,14 @@ fun PreviewBlock(appId: String) {
         if (vurl != null) {
             val ctx = LocalContext.current
             var tappedToPlay by remember(vurl) { mutableStateOf(false) }
+            // A card scrolled out of view forgets its tap, so playback never survives off-screen.
+            LaunchedEffect(previewVisible) { if (!previewVisible) tappedToPlay = false }
             // Decided once per video: Wi-Fi autoplays, anything else waits for the tap below.
             val autoplay = remember(vurl) { VideoAutoplay.shouldAutoplay(currentNetwork(ctx)) }
-            if (autoplay || tappedToPlay) {
+            // At most one card autoplays (the one filling most of the screen); a tap on any
+            // visible card plays that one. This is what keeps the list smooth (20 Oct fix).
+            val mayPlay = (previewActive && autoplay) || (tappedToPlay && previewVisible)
+            if (mayPlay) {
                 AndroidView(
                     factory = { viewCtx ->
                         VideoView(viewCtx).apply {
@@ -216,12 +237,14 @@ fun PreviewBlock(appId: String) {
 
 @Composable
 private fun ShotImage(url: String, label: String) {
-    var bmp by remember(url) { mutableStateOf<Bitmap?>(shotCache[url]) }
+    var bmp by remember(url) { mutableStateOf<Bitmap?>(shotCache.get(url)) }
+    val density = LocalDensity.current
     LaunchedEffect(url) {
         if (bmp != null) return@LaunchedEffect
-        val got = loadBitmap(url)
+        val targetPx = with(density) { 220.dp.roundToPx() }
+        val got = loadBitmap(url, targetPx)
         if (got != null) {
-            shotCache[url] = got
+            shotCache.put(url, got)
             bmp = got
         }
     }
