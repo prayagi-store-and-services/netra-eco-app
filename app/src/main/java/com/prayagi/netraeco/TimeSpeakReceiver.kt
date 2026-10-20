@@ -25,10 +25,22 @@ class TimeSpeakReceiver : BroadcastReceiver() {
                 val ringer = try { am?.ringerMode ?: AudioManager.RINGER_MODE_NORMAL } catch (_: Exception) { AudioManager.RINGER_MODE_NORMAL }
                 val skip = TimeSpeakOut.skipReason(now, ringer)
                 if (skip == null) {
+                    // The line for this slot was computed when the alarm was scheduled, so it
+                    // starts speaking immediately - nothing to fetch or work out first.
+                    val slotAt = intent.getLongExtra(TimeSpeakOut.EXTRA_SLOT_AT, now)
+                    val hi = intent.getStringExtra(TimeSpeakOut.EXTRA_LINE_HI)
+                        ?: TimeSpeaker.hindiTime(slotAt)
+                    val en = intent.getStringExtra(TimeSpeakOut.EXTRA_LINE_EN)
+                        ?: TimeSpeaker.englishTime(slotAt)
                     // Keep the process alive until the line finishes (or the watchdog ends it).
                     val pending = goAsync()
-                    TimeSpeaker.get(context).speakTime(now, isTest = false) { pending.finish() }
-                    TimeSpeakOut.markFired(context, spokeAt = now, skipReason = null)
+                    val accepted = TimeSpeaker.get(context).speakSlot(hi, en) { pending.finish() }
+                    if (accepted) {
+                        TimeSpeakOut.markFired(context, spokeAt = slotAt, skipReason = null)
+                    } else {
+                        pending.finish()
+                        TimeSpeakOut.markFired(context, spokeAt = null, skipReason = "Voice engine Unavailable on this phone")
+                    }
                 } else {
                     TimeSpeakOut.markFired(context, spokeAt = null, skipReason = skip)
                 }
