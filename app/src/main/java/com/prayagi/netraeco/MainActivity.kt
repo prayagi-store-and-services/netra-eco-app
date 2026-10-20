@@ -278,14 +278,31 @@ fun EcoScreen(resumeKey: Int) {
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+            // Smooth scrolling (20 Oct): which live-app card may autoplay its preview video.
+            // Only the most-visible live card gets the token; every other card shows a poster.
+            val activePreviewKey by remember {
+                androidx.compose.runtime.derivedStateOf {
+                    val info = listState.layoutInfo
+                    PreviewFocus.pickActive(
+                        info.visibleItemsInfo.map { VisibleEntry(it.key as? String ?: "", it.offset, it.size) },
+                        info.viewportStartOffset, info.viewportEndOffset
+                    )
+                }
+            }
+            val visiblePreviewKeys by remember {
+                androidx.compose.runtime.derivedStateOf {
+                    listState.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }.toSet()
+                }
+            }
+            LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (searching) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
                     }
                     items(mergedEcoEntries(shownRows, shownUpcoming), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap) { reload++ }
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -298,7 +315,7 @@ fun EcoScreen(resumeKey: Int) {
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
                     items(mergedEcoEntries(inRows, inUp), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap) { reload++ }
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -316,7 +333,7 @@ fun EcoScreen(resumeKey: Int) {
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 items(mergedEcoEntries(rows ?: emptyList(), upcoming), key = { it.itemKey }) { e ->
                     when (e) {
-                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap) { reload++ }
+                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys) { reload++ }
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
@@ -341,7 +358,7 @@ private fun StatusPill(status: Status) {
 }
 
 @Composable
-fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Unit) {
+fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Boolean, previewVisible: Boolean, onChanged: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
@@ -368,7 +385,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, onChanged: () -> Un
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
-            PreviewBlock(row.app.id)
+            PreviewBlock(row.app.id, previewActive, previewVisible)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f)) {
