@@ -12,6 +12,7 @@ import android.speech.tts.UtteranceProgressListener
 import java.util.Calendar
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Speaks the time. Follows the ecosystem rule (Deepak, 19 Oct 2026): while the app speaks it
@@ -64,6 +65,10 @@ class TimeSpeaker private constructor(private val appContext: Context) {
     @Volatile private var hindi = false
     private val pendingFocus = ConcurrentHashMap<String, Any?>()
 
+    /** One line waiting for the voice engine to finish starting; the newest request wins. */
+    private class PendingLine(val text: String, val onFinished: (() -> Unit)?)
+    private val pendingLine = AtomicReference<PendingLine?>()
+
     init {
         try {
             tts = TextToSpeech(appContext) { status -> onInit(status) }
@@ -93,6 +98,8 @@ class TimeSpeaker private constructor(private val appContext: Context) {
             override fun onError(utteranceId: String?) { utteranceId?.let { releaseFocusFor(it) } }
         })
         ready = true
+        // A line requested while the engine was still starting speaks the moment it can.
+        pendingLine.getAndSet(null)?.let { speak(it.text, it.onFinished) }
     }
 
     /** True once a usable voice is set up; false means speech is Unavailable on this phone. */
@@ -102,12 +109,36 @@ class TimeSpeaker private constructor(private val appContext: Context) {
      * Speaks the time line for [nowMillis]. When [isTest] the line is clearly labelled as a test.
      * [onFinished] runs when the line is done, failed, or could not start.
      */
-    fun speakTime(nowMillis: Long, isTest: Boolean, onFinished: (() -> Unit)? = null) {
+    fun speakTime(nowMillis: Long, isTest: Boolean, onFinished: (() -> Unit)? = null): Boolean {
         val line = if (hindi) hindiTime(nowMillis) else englishTime(nowMillis)
         val text = if (isTest) {
             if (hindi) "परीक्षण घोषणा। $line" else "Test announcement. $line"
         } else line
-        speak(text, onFinished)
+        return speakOrQueue(text, onFinished)
+    }
+
+    /**
+     * Speaks a precomputed announcement line (Hindi or English wording chosen by the voice in
+     * use). The line is built when the slot is scheduled, so at the slot there is nothing left
+     * to compute: the moment the alarm fires, this text goes straight to the speaker. When the
+     * voice engine is still starting (cold process), the line is queued and spoken the instant
+     * the engine is ready instead of being dropped.
+     * Returns false only when this phone has no usable voice engine at all.
+     */
+    fun speakSlot(hindiLine: String, englishLine: String, onFinished: (() -> Unit)? = null): Boolean {
+        val text = if (hindi) hindiLine else englishLine
+        return speakOrQueue(text, onFinished)
+    }
+
+    /** True when spoken right away or queued for a starting engine; false when no engine exists. */
+    private fun speakOrQueue(text: String, onFinished: (() -> Unit)?): Boolean {
+        if (tts == null) return false
+        if (ready) {
+            speak(text, onFinished)
+        } else {
+            pendingLine.set(PendingLine(text, onFinished))
+        }
+        return true
     }
 
     private fun speak(text: String, onFinished: (() -> Unit)?) {
