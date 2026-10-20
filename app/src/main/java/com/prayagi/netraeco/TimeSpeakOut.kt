@@ -15,6 +15,9 @@ import java.util.Calendar
  */
 object TimeSpeakOut {
     const val ACTION_SPEAK = "com.prayagi.netraeco.action.TIME_SPEAK"
+    const val EXTRA_SLOT_AT = "slot_at"
+    const val EXTRA_LINE_HI = "line_hi"
+    const val EXTRA_LINE_EN = "line_en"
     private const val PREFS = "time_speak_out"
     private const val KEY_ENABLED = "enabled"
     private const val KEY_LAST_SPOKE = "last_spoke_at"
@@ -93,13 +96,25 @@ object TimeSpeakOut {
         return try { am.canScheduleExactAlarms() } catch (_: Exception) { false }
     }
 
-    private fun pendingIntent(context: Context): PendingIntent {
+    private fun pendingIntent(context: Context, slotAt: Long? = null): PendingIntent {
         val intent = Intent(context, TimeSpeakReceiver::class.java).setAction(ACTION_SPEAK)
+        if (slotAt != null) {
+            // The spoken line is computed now, at scheduling time, so the announcement starts
+            // the instant the slot fires instead of first working out what to say.
+            val (hi, en) = slotLines(slotAt)
+            intent.putExtra(EXTRA_SLOT_AT, slotAt)
+            intent.putExtra(EXTRA_LINE_HI, hi)
+            intent.putExtra(EXTRA_LINE_EN, en)
+        }
         return PendingIntent.getBroadcast(
             context, 7331, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
+
+    /** The Hindi and English wordings for the given slot. Pure, unit-tested. */
+    fun slotLines(slotMillis: Long): Pair<String, String> =
+        TimeSpeaker.hindiTime(slotMillis) to TimeSpeaker.englishTime(slotMillis)
 
     /**
      * Schedules the next single alarm and returns when it will fire, or null when disabled.
@@ -109,7 +124,7 @@ object TimeSpeakOut {
         if (!isEnabled(context)) return null
         val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return null
         val at = nextSlotMillis(from)
-        val pi = pendingIntent(context)
+        val pi = pendingIntent(context, at)
         try {
             if (canScheduleExact(context)) {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
