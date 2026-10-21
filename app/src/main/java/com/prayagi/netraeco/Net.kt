@@ -211,6 +211,7 @@ object Net {
             file.delete()
             throw IllegalStateException("The downloaded file did not match its checksum, so it was not installed.")
         }
+        DownloadCount.countFinishedDownload(context, app.repo)
         return file
     }
 
