@@ -1,5 +1,9 @@
 # Security notes - Netra Ecosystem
 
+## Time Speak Out crash fix (v1.2.36)
+
+Bug fix: when Android refused audio focus while the app was about to speak the time, the focus handle was null and was stored in a ConcurrentHashMap, which rejects null values, so the alarm receiver crashed with a NullPointerException (automatic crash report, Android 16). A small registry now stores a safe marker for a refused focus, so the line is still spoken and released exactly once. On-device logic only: no new permission, no new library, no network address, nothing stored or sent.
+
 ## Smooth scrolling with preview media (v1.2.34)
 
 Scrolling had gone heavy again after preview media landed in v1.2.27 (reported by the owner, 20 Oct 2026): on Wi-Fi every visible app card started its own inline video, and screenshots were decoded at full camera resolution into an unbounded in-memory map. Both are fixed without removing the feature. At most one card now plays a video - the live-app card that fills most of the screen; every other card shows the tap-to-play poster, and playback stops when its card leaves the screen. Screenshots are decoded at display size (never full resolution) into a small memory-bounded cache (24 MB), so the list stays light and old images are dropped automatically. The media trust rule is unchanged: only addresses under the Netra websites are accepted, nothing is stored or sent, and on mobile data a video still downloads nothing until a tap. No new permission, library or server.

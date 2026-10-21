@@ -11,8 +11,8 @@ android {
     applicationId = "com.prayagi.netraeco"
     minSdk = 26
     targetSdk = 36
-    versionCode = 49
-    versionName = "1.2.35"
+    versionCode = 50
+    versionName = "1.2.36"
   }
 
   signingConfigs {

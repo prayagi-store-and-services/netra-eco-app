@@ -11,7 +11,6 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Calendar
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -63,7 +62,7 @@ class TimeSpeaker private constructor(private val appContext: Context) {
     private var tts: TextToSpeech? = null
     @Volatile private var ready = false
     @Volatile private var hindi = false
-    private val pendingFocus = ConcurrentHashMap<String, Any?>()
+    private val focusRegistry = SpeechFocusRegistry()
 
     /** One line waiting for the voice engine to finish starting; the newest request wins. */
     private class PendingLine(val text: String, val onFinished: (() -> Unit)?)
@@ -155,8 +154,8 @@ class TimeSpeaker private constructor(private val appContext: Context) {
         val params = android.os.Bundle()
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, id)
         val focus = requestSpeechFocus()
-        pendingFocus[id] = focus
-        if (onFinished != null) finishedCallbacks[id] = onFinished
+        // A refused focus is null; the registry stores it safely (ConcurrentHashMap rejects nulls).
+        focusRegistry.register(id, focus, onFinished)
         // Watchdog: focus is released and the finisher runs even if the speech callbacks never arrive.
         Handler(Looper.getMainLooper()).postDelayed({ releaseFocusFor(id) }, 60_000L)
         try {
@@ -165,8 +164,6 @@ class TimeSpeaker private constructor(private val appContext: Context) {
             releaseFocusFor(id)
         }
     }
-
-    private val finishedCallbacks = ConcurrentHashMap<String, () -> Unit>()
 
     private fun requestSpeechFocus(): Any? {
         val am = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return null
@@ -189,8 +186,9 @@ class TimeSpeaker private constructor(private val appContext: Context) {
     }
 
     private fun releaseFocusFor(id: String) {
-        val cb = finishedCallbacks.remove(id)
-        val handle = pendingFocus.remove(id)
+        val released = focusRegistry.release(id)
+        val cb = released?.onFinished
+        val handle = released?.handle
         if (handle != null) {
             val am = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
             try {
