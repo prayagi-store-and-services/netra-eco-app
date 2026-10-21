@@ -1,5 +1,9 @@
 # Security notes - Netra Ecosystem
 
+## Download count for in-app downloads (v1.2.38)
+
+When you have switched the anonymous usage count ON in Settings (it is OFF by default), a finished and checksum-verified download adds +1 to the app's public download counter on the Ecosystem site (abacus.jasoncameron.dev, key dl-<app code>). The request carries no device id, install id, account, location or app data, only the counter name. If it fails, nothing changes for the download. With the setting OFF nothing is sent. No new permission, library or server. Not a vulnerability fix.
+
 ## App icon and verified web links (v1.2.37)
 
 The launcher icon now matches the Netra Ecosystem website icon (the green eye on a dark background), as an adaptive icon with a themed (monochrome) layer; it works on every supported Android version (minimum 8.0). The app also declares a verified web link for its own page, https://prayagi-store-and-services.github.io/netra-eco/app/eco, so that link can open the installed app. Android opens it in the app only when the website's assetlinks.json confirms this app's signing certificate; otherwise it stays in the browser. The link carries no data into the app and no new screen reads it, so nothing is stored or sent. No new permission, library or server.
