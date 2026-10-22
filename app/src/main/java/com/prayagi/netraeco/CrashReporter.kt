@@ -19,7 +19,7 @@ object CrashReporter {
     private const val FILE = "pending_crash_report.txt"
     private const val LAST_FILE = "last_crash_report.txt"
     private const val ENDPOINT = "https://formsubmit.co/ajax/prayagideepak@gmail.com"
-    private const val MAX_TRACE = 3000
+    private const val MAX_TRACE = 6000
     private const val HEADER_PREFIX = "netraeco-crash-v1|"
     @Volatile private var installed = false
 
@@ -50,14 +50,16 @@ object CrashReporter {
 
     /** Exception class names and code locations only. */
     fun sanitize(t: Throwable): String {
-        val sb = StringBuilder()
+        // Wrapper exceptions come first and used to eat the size limit, so the root cause was cut off.
+        // Outer levels keep a few frames, the root cause keeps more.
+        val chain = ArrayList<Throwable>()
         var cur: Throwable? = t
-        var depth = 0
-        while (cur != null && depth < 5) {
-            sb.append(if (depth == 0) "" else "Caused by: ").append(cur.javaClass.name).append('\n')
-            for (frame in cur.stackTrace.take(25)) sb.append("  at ").append(frame.toString()).append('\n')
-            cur = cur.cause
-            depth++
+        while (cur != null && chain.size < 6 && chain.none { it === cur }) { chain.add(cur); cur = cur.cause }
+        val sb = StringBuilder()
+        chain.forEachIndexed { i, e ->
+            val isRoot = i == chain.size - 1
+            sb.append(if (i == 0) "" else "Caused by: ").append(e.javaClass.name).append('\n')
+            for (frame in e.stackTrace.take(if (isRoot) 25 else 6)) sb.append("  at ").append(frame.toString()).append('\n')
         }
         return sb.toString().take(MAX_TRACE)
     }

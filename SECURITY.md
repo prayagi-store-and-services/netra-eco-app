@@ -1,5 +1,9 @@
 # Security notes - Netra Ecosystem
 
+## Fuller crash reports (v1.2.39)
+
+Automatic crash reports used to be cut off before the root cause when an exception was wrapped in others (a crash in KBC showed only the wrappers). The report now keeps a few frames of each wrapper and more frames of the root cause, within a larger size limit (6000 characters). It still holds only class names and code locations, never exception messages. No new permission, library or server. Not a vulnerability fix.
+
 ## Download count for in-app downloads (v1.2.38)
 
 When you have switched the anonymous usage count ON in Settings (it is OFF by default), a finished and checksum-verified download adds +1 to the app's public download counter on the Ecosystem site (abacus.jasoncameron.dev, key dl-<app code>). The request carries no device id, install id, account, location or app data, only the counter name. If it fails, nothing changes for the download. With the setting OFF nothing is sent. No new permission, library or server. Not a vulnerability fix.
