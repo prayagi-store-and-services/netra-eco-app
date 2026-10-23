@@ -7,12 +7,12 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Automatic crash reports. When the app crashes, a short report is saved on the device. The next time the app opens,
- * it is sent by itself (no button, no question) and then deleted; if the send fails it is kept and retried next start.
- * The report holds ONLY: app name, phone model, Android version, the app version and time AT THE MOMENT OF THE CRASH,
- * and the crash stack trace (exception class names and code locations; exception messages are dropped).
- * No name, email, location, files or device IDs. Crash-time facts are saved with the trace so an old crash
- * is never shown or sent under a newer app's version label.
+ * Crash reports, opt-in only. When the app crashes, a short report is saved on the device. Nothing is sent
+ * automatically: the report leaves the phone only when the user opens the Crash report card, reads the exact
+ * text and taps Send. The report holds ONLY: app name, phone model, Android version, the app version and time
+ * AT THE MOMENT OF THE CRASH, and the crash stack trace (exception class names and code locations; exception
+ * messages are dropped). No name, email, location, files or device IDs. Crash-time facts are saved with the
+ * trace so an old crash is never shown or sent under a newer app's version label.
  */
 object CrashReporter {
     private const val APP_NAME = "NetraEco"
@@ -73,40 +73,11 @@ object CrashReporter {
             runCatching { val packed = pack(app, sanitize(throwable)); File(app.filesDir, FILE).writeText(packed); File(app.filesDir, LAST_FILE).writeText(packed) }
             previous?.uncaughtException(thread, throwable)
         }
-        Thread { sendPending(app) }.start()
     }
 
     /** Compile-time version constant: readable even mid-crash, when PackageManager can be unavailable. */
     private fun appVersion(c: Context): String =
         com.prayagi.netraeco.BuildConfig.VERSION_NAME.ifBlank { "unknown" }
-
-    fun sendPending(context: Context): Boolean {
-        val file = File(context.filesDir, FILE)
-        if (!file.exists()) return false
-        val raw = runCatching { file.readText() }.getOrDefault("")
-        if (raw.isBlank()) { runCatching { file.delete() }; return false }
-        val saved = unpack(raw)
-        return try {
-            val json = org.json.JSONObject()
-            json.put("_subject", "[Netra] Automatic crash report: $APP_NAME")
-            json.put("_captcha", "false")
-            json.put("_template", "table")
-            json.put("app", APP_NAME)
-            json.put("device", Build.MODEL ?: "Unknown")
-            json.put("android_version", Build.VERSION.RELEASE ?: "Unknown")
-            json.put("app_version", saved.version ?: LEGACY_VERSION_LABEL)
-            if (saved.crashedAt != null) json.put("crash_time", formatCrashTime(saved.crashedAt))
-            json.put("stack_trace", saved.trace)
-            val c = URL(ENDPOINT).openConnection() as HttpURLConnection
-            c.requestMethod = "POST"; c.connectTimeout = 10000; c.readTimeout = 15000; c.doOutput = true
-            c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "application/json"); c.setRequestProperty("Origin", "https://prayagi-store-and-services.github.io"); c.setRequestProperty("Referer", "https://prayagi-store-and-services.github.io/")
-            c.outputStream.use { it.write(json.toString().toByteArray(Charsets.UTF_8)) }
-            val ok = c.responseCode in 200..299 && accepted(c.inputStream.bufferedReader().use { it.readText() })
-            c.disconnect()
-            if (ok) runCatching { file.delete() }
-            ok
-        } catch (_: Exception) { false }
-    }
 
     /** FormSubmit answers {"success":"true"} only when it really queued the email; an HTTP 200 alone is not enough. */
     fun accepted(body: String): Boolean = Regex("\"success\"\\s*:\\s*\"?true\"?", RegexOption.IGNORE_CASE).containsMatchIn(body)
