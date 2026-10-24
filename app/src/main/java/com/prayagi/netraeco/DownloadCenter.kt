@@ -60,13 +60,14 @@ object DownloadCenter {
 
     /** Remembers a finished, verified file (for example one fetched in the background) so the list keeps it until it is installed. */
     fun register(c: Context, app: CatalogApp, release: LatestRelease) {
+        HumanSafetyHold.requireAllowed(app.repo, app.packageName)
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
     }
 
     /** True when the verified file for this release is already saved (a verified download is exactly the expected size). */
     fun hasFile(c: Context, app: CatalogApp, release: LatestRelease): Boolean =
-        File(dir(c), keyFor(app, release)).let { it.exists() && it.length() == release.size }
+        !HumanSafetyHold.matches(app.repo, app.packageName) && File(dir(c), keyFor(app, release)).let { it.exists() && it.length() == release.size }
     private fun dir(c: Context) = File(c.cacheDir, "updates").apply { mkdirs() }
     private fun put(i: Item) { items.value = items.value + (i.key to i) }
 
@@ -80,6 +81,11 @@ object DownloadCenter {
     }
 
     fun start(context: Context, app: CatalogApp, release: LatestRelease) {
+        if (HumanSafetyHold.matches(app.repo, app.packageName)) {
+            put(Item(keyFor(app, release), app.id, app.name, release.versionName, release.versionCode,
+                app.packageName, 0L, release.size, null, FAILED, HumanSafetyHold.MESSAGE))
+            return
+        }
         val c = context.applicationContext
         val key = keyFor(app, release)
         synchronized(this) {
@@ -148,6 +154,10 @@ private fun mb(b: Long) = String.format(java.util.Locale.US, "%.1f MB", b / 1048
 /** The button on one app card: download (several can run at once), then Install from the finished file. */
 @Composable
 fun AppDownloadButton(row: AppRow, status: Status) {
+    if (HumanSafetyHold.matches(row.app.repo, row.app.packageName)) {
+        Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
+        return
+    }
     val context = LocalContext.current
     val latest = row.latest ?: return
     val key = DownloadCenter.keyFor(row.app, latest)
@@ -211,7 +221,7 @@ fun DownloadManagerCard(rows: List<AppRow>) {
     val all by DownloadCenter.items.collectAsState()
     LaunchedEffect(Unit) { DownloadCenter.refresh(context) }
     val updatable = rows.filter {
-        it.latest != null && statusForRelease(it.installed?.first, it.installed?.second, it.latest) == Status.UpdateAvailable &&
+        !HumanSafetyHold.matches(it.app.repo, it.app.packageName) && it.latest != null && statusForRelease(it.installed?.first, it.installed?.second, it.latest) == Status.UpdateAvailable &&
             all[DownloadCenter.keyFor(it.app, it.latest)]?.state.let { s -> s != DownloadCenter.DOWNLOADING && s != DownloadCenter.DONE }
     }
     if (all.isEmpty() && updatable.isEmpty()) return
@@ -231,7 +241,9 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                         DownloadCenter.DONE -> {
                             Text("Downloaded, " + mb(i.total) + ". Deleted automatically after it is installed.", style = MaterialTheme.typography.bodySmall)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
+                                if (HumanSafetyHold.matches(packageName = i.packageName) || HumanSafetyHold.installerName(i.key)) {
+                                    Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
+                                } else Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             }
                         }
