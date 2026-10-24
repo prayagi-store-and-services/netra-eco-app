@@ -239,7 +239,9 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                     when (i.state) {
                         DownloadCenter.DOWNLOADING -> ProgressBlock(i)
                         DownloadCenter.DONE -> {
-                            Text("Downloaded, " + mb(i.total) + ". Deleted automatically after it is installed.", style = MaterialTheme.typography.bodySmall)
+                            Text(if (HumanSafetyHold.matches(packageName = i.packageName) || HumanSafetyHold.installerName(i.key))
+                                "Saved installer quarantined. Installation is blocked; you can delete this file."
+                            else "Downloaded, " + mb(i.total) + ". Deleted automatically after it is installed.", style = MaterialTheme.typography.bodySmall)
                             if (HumanSafetyHold.matches(packageName = i.packageName) || HumanSafetyHold.installerName(i.key)) {
                                 // Stack the long advisory and Delete; a Row pushes Delete outside narrow/large-font viewports.
                                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
