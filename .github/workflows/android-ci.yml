@@ -53,4 +53,5 @@ jobs:
             app/build/test-results/testDebugUnitTest/*.xml
             app/build/ci-diagnostics/android-build.log
             app/build/outputs/ecosystem-header.png
+            app/build/outputs/human-safety-hold.png
           if-no-files-found: warn
