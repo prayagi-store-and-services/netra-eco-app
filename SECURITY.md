@@ -1,5 +1,11 @@
 # Security notes - Netra Ecosystem
 
+## Human Safety download quarantine (v1.2.42)
+
+- Human Safety downloads, updates and installer handoff are paused locally in this Eco build. The approved advisory warns about reported heat and battery drain, asks users not to install or use Human Safety, and advises uninstalling it until a checked fix is verified. A newer version alone does not lift this hold.
+- Canonical repository/package checks cover catalog lookup, direct download, background/bulk jobs and cached installer reuse. The installer checks the actual APK package, including a renamed Human Safety APK. An unreadable installer fails with a verification error. Other apps retain their install controls. Existing saved files are not removed by the quarantine itself; the user can delete them.
+- This does not fix Human Safety heat or battery drain, revoke external APKs, or change previously installed Eco clients. No new telemetry, permission, library or account setting. This is a quarantine/stability change, not a security patch. Phone heat and physical installer behavior remain unverified.
+
 # Crash report consent: destination shown before Send (v1.2.41)
 
 - The Crash report card and the preview dialog now name the destination before anything is sent: developer email prayagideepak@gmail.com through the FormSubmit service (formsubmit.co). The exact report text is still shown first, and sending still happens only when you tap Send. Text-only change; no new permission, library or server. Not a vulnerability fix.
