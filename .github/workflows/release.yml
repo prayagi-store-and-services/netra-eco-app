@@ -40,6 +40,12 @@ jobs:
           keytool -genkeypair -keystore debug.keystore -storepass android
           -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048
           -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
+      - name: Download public APK archive regression fixtures
+        run: |
+          mkdir -p app/build/apk-fixtures
+          curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.0/app-release.apk -o app/build/apk-fixtures/renamed-hub.apk
+          curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/KBC/releases/download/v1.1.37/app-release.apk -o app/build/apk-fixtures/other-app.apk
+          printf '%s\n' '72fc7113fe293145691d0a4a4866191bdfe0296ca9721b8f6f5fce6e4fb8944e  app/build/apk-fixtures/renamed-hub.apk' 'e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16  app/build/apk-fixtures/other-app.apk' | sha256sum --check --strict
       - name: Run unit tests
         run: gradle --no-daemon :app:testDebugUnitTest --stacktrace
       - name: Restore signing key

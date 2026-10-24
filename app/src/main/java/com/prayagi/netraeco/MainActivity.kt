@@ -214,7 +214,11 @@ fun NetraTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun EcoScreen(resumeKey: Int) {
+fun EcoScreen(
+    resumeKey: Int,
+    catalogLoader: suspend (Context) -> List<AppRow>? = { loadRows(it) },
+    textLoader: (String) -> String? = { Net.fetchText(it) }
+) {
     val context = LocalContext.current
     var rows by remember { mutableStateOf<List<AppRow>?>(null) }
     var failed by remember { mutableStateOf(false) }
@@ -226,10 +230,10 @@ fun EcoScreen(resumeKey: Int) {
     var cat by remember { mutableStateOf<AppCategory?>(null) }
 
     LaunchedEffect(resumeKey, reload) {
-        upcoming = withContext(Dispatchers.IO) { Net.fetchText(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
-        roadmap = withContext(Dispatchers.IO) { Net.fetchText(Roadmap.URL)?.let { Roadmap.parse(it) } }
+        upcoming = withContext(Dispatchers.IO) { textLoader(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
+        roadmap = withContext(Dispatchers.IO) { textLoader(Roadmap.URL)?.let { Roadmap.parse(it) } }
         loading = true
-        val result = loadRows(context)
+        val result = catalogLoader(context)
         if (result == null) failed = true else { rows = result; failed = false }
         loading = false
     }
@@ -242,6 +246,11 @@ fun EcoScreen(resumeKey: Int) {
         LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         EcoHeader(ecoName, ownVersion, clockNow)
+        // Remains visible even if the catalog cannot load or a stale catalog drops the Hub row.
+        Text("Human Safety download and update paused. " + HumanSafetyHold.MESSAGE,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
         TickerStrip(pendingRoadmap)
@@ -388,6 +397,12 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
+            if (HumanSafetyHold.matches(row.app.repo, row.app.packageName)) {
+                Text("Human Safety downloads paused", style = MaterialTheme.typography.titleMedium)
+                Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
+                Button(enabled = false, onClick = {}) { Text("Download and update paused") }
+                return@Column
+            }
             PreviewBlock(row.app.id, previewActive, previewVisible)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
