@@ -36,14 +36,24 @@ jobs:
           keytool -genkeypair -keystore debug.keystore -storepass android
           -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048
           -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
+      - name: Download public APK archive regression fixtures
+        run: |
+          mkdir -p app/build/apk-fixtures
+          curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.0/app-release.apk -o app/build/apk-fixtures/renamed-hub.apk
+          curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/KBC/releases/download/v1.1.37/app-release.apk -o app/build/apk-fixtures/other-app.apk
       - name: Build debug APK and run unit tests
         shell: bash
         run: |
           set -o pipefail
           mkdir -p app/build/ci-diagnostics
           gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest --stacktrace 2>&1 | tee app/build/ci-diagnostics/android-build.log
+      - name: Preserve full suite results before filtered screenshot rerun
+        if: always()
+        run: |
+          mkdir -p app/build/full-suite-results
+          cp app/build/test-results/testDebugUnitTest/*.xml app/build/full-suite-results/ || true
       - name: Render production brand header for visual review
-        run: gradle --no-daemon :app:testDebugUnitTest --tests com.prayagi.netraeco.BrandScreenshotTest -Droborazzi.test.record=true --stacktrace
+        run: gradle --no-daemon :app:testDebugUnitTest --tests com.prayagi.netraeco.BrandScreenshotTest --tests com.prayagi.netraeco.HumanSafetyHoldScreenTest -Droborazzi.test.record=true --stacktrace
       - name: Upload build log and test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -51,7 +61,8 @@ jobs:
           name: build-diagnostics
           path: |
             app/build/test-results/testDebugUnitTest/*.xml
+            app/build/full-suite-results/*.xml
             app/build/ci-diagnostics/android-build.log
             app/build/outputs/ecosystem-header.png
-            app/build/outputs/human-safety-hold.png
+            app/build/outputs/human-safety-hold*.png
           if-no-files-found: warn
