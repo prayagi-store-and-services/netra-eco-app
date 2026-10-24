@@ -61,4 +61,18 @@ class HumanSafetyHoldScreenTest {
         rule.onAllNodesWithText("Open").assertCountEquals(0)
         shot("saved-320-large")
     }
+    @Test fun otherSavedAppStillHasInstallAndDeleteControls() {
+        val context = rule.activity
+        val key = "kbc-v1.1.37.apk"
+        File(File(context.cacheDir, "updates").apply { mkdirs() }, key).writeBytes(byteArrayOf(0))
+        context.getSharedPreferences("netra_eco_downloads", 0).edit().clear()
+            .putString(key, "com.aistudio.reasoningquiz.tark|1.1.37|46|1|KBC|kbc").commit()
+        DownloadCenter.items.value = emptyMap()
+        DownloadCenter.refresh(context)
+        rule.setContent { MaterialTheme { DownloadManagerCard(emptyList()) } }
+        rule.onNodeWithText("Install").assertIsDisplayed()
+        rule.onNodeWithText("Delete").assertIsDisplayed()
+        rule.onAllNodesWithText(HumanSafetyHold.MESSAGE).assertCountEquals(0)
+        shot("otherapp-control-320")
+    }
 }
