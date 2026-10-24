@@ -214,7 +214,11 @@ fun NetraTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun EcoScreen(resumeKey: Int) {
+fun EcoScreen(
+    resumeKey: Int,
+    catalogLoader: suspend (Context) -> List<AppRow>? = { loadRows(it) },
+    textLoader: (String) -> String? = { Net.fetchText(it) }
+) {
     val context = LocalContext.current
     var rows by remember { mutableStateOf<List<AppRow>?>(null) }
     var failed by remember { mutableStateOf(false) }
@@ -226,10 +230,10 @@ fun EcoScreen(resumeKey: Int) {
     var cat by remember { mutableStateOf<AppCategory?>(null) }
 
     LaunchedEffect(resumeKey, reload) {
-        upcoming = withContext(Dispatchers.IO) { Net.fetchText(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
-        roadmap = withContext(Dispatchers.IO) { Net.fetchText(Roadmap.URL)?.let { Roadmap.parse(it) } }
+        upcoming = withContext(Dispatchers.IO) { textLoader(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
+        roadmap = withContext(Dispatchers.IO) { textLoader(Roadmap.URL)?.let { Roadmap.parse(it) } }
         loading = true
-        val result = loadRows(context)
+        val result = catalogLoader(context)
         if (result == null) failed = true else { rows = result; failed = false }
         loading = false
     }
