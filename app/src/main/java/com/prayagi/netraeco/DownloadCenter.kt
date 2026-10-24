@@ -240,10 +240,12 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                         DownloadCenter.DOWNLOADING -> ProgressBlock(i)
                         DownloadCenter.DONE -> {
                             Text("Downloaded, " + mb(i.total) + ". Deleted automatically after it is installed.", style = MaterialTheme.typography.bodySmall)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (HumanSafetyHold.matches(packageName = i.packageName) || HumanSafetyHold.installerName(i.key)) {
-                                    Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
-                                } else Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
+                            if (HumanSafetyHold.matches(packageName = i.packageName) || HumanSafetyHold.installerName(i.key)) {
+                                // Stack the long advisory and Delete; a Row pushes Delete outside narrow/large-font viewports.
+                                Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
+                                OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
+                            } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             }
                         }
