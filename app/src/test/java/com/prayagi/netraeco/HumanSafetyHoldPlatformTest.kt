@@ -42,4 +42,23 @@ class HumanSafetyHoldPlatformTest {
         try { Net.install(context, file); fail("invalid archive") }
         catch (e: IllegalStateException) { assertTrue(e.message!!.contains("could not be verified")) }
     }
+    @Test fun realRenamedHubArchiveIsIdentifiedAndBlocked() {
+        val apk = File("build/apk-fixtures/renamed-hub.apk")
+        assertTrue("CI must download public Hub fixture", apk.exists())
+        val pkg = context.packageManager.getPackageArchiveInfo(apk.absolutePath, 0)?.packageName
+        assertEquals(HumanSafetyHold.PACKAGE, pkg)
+        try { Net.install(context, apk); fail("Hub archive must be quarantined") }
+        catch (e: IllegalStateException) { assertEquals(HumanSafetyHold.MESSAGE, e.message) }
+    }
+    @Test fun validOtherAppArchivePassesQuarantine() {
+        val apk = File("build/apk-fixtures/other-app.apk")
+        assertTrue("CI must download public KBC fixture", apk.exists())
+        val pkg = context.packageManager.getPackageArchiveInfo(apk.absolutePath, 0)?.packageName
+        assertNotNull(pkg)
+        assertFalse(HumanSafetyHold.matches(packageName = pkg!!))
+        HumanSafetyHold.requireAllowed(packageName = pkg)
+        // Robolectric denies unknown-source install by default; reaching that check proves hold did not block KBC.
+        try { Net.install(context, apk) }
+        catch (e: IllegalStateException) { assertEquals("Allow installs from Netra Ecosystem, then tap the button again.", e.message) }
+    }
 }
