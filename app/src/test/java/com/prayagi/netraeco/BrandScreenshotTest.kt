@@ -37,4 +37,25 @@ class BrandScreenshotTest {
             bitmap.recycle()
         }
     }
+    @Test fun humanSafetyPausedCardFitsNarrowPhone() {
+        val app = CatalogApp("netra-hub", "Netra Human Safety", "Safety", "", HumanSafetyHold.REPO,
+            HumanSafetyHold.PACKAGE, "", "")
+        rule.setContent {
+            MaterialTheme {
+                AppCard(AppRow(app, null, null), null, false, false) {}
+            }
+        }
+        rule.onNodeWithText("Human Safety downloads paused").assertIsDisplayed()
+        rule.onNodeWithText(HumanSafetyHold.MESSAGE).assertIsDisplayed()
+        rule.onNodeWithText("Download and update paused").assertIsDisplayed()
+        rule.waitForIdle()
+        rule.runOnIdle {
+            val view = rule.activity.window.decorView
+            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            view.draw(Canvas(bitmap))
+            val file = File("build/outputs/human-safety-hold.png").apply { parentFile.mkdirs() }
+            file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+            bitmap.recycle()
+        }
+    }
 }
