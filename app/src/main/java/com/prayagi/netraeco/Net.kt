@@ -47,6 +47,7 @@ object Net {
      * A release without a latest.json file (Battery Sentinel) is built from the API's size and SHA-256, with no version code.
      */
     fun fetchLatest(app: CatalogApp): LatestRelease? {
+        if (HumanSafetyHold.matches(app.repo, app.packageName)) return null
         val fromApi = try {
             val body = fetchText("https://api.github.com/repos/${app.repo}/releases/latest?_=${System.currentTimeMillis()}", fresh = true)
             if (body == null) null else {
@@ -165,6 +166,8 @@ object Net {
 
     /** Downloads the APK and checks size and SHA-256. The file is deleted and an error thrown if anything is off. */
     fun download(context: Context, app: CatalogApp, release: LatestRelease, onProgress: ((Long, Long, Long?) -> Unit)? = null): File {
+        HumanSafetyHold.requireAllowed(app.repo, app.packageName)
+        check(!release.apkUrl.startsWith("https://github.com/" + HumanSafetyHold.REPO + "/")) { HumanSafetyHold.MESSAGE }
         activeDownloads.incrementAndGet()
         try {
             return downloadInternal(context, app, release, onProgress)
@@ -217,6 +220,11 @@ object Net {
 
     /** Opens the system installer. Android installs only if the app is signed with the same key as the installed one. */
     fun install(context: Context, file: File) {
+        // Inspect the APK itself as well as the legacy cache filename. Metadata/catalog removal cannot bypass this.
+        val packageName = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)?.packageName
+            ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
+        check(!HumanSafetyHold.installerName(file.name)) { HumanSafetyHold.MESSAGE }
+        HumanSafetyHold.requireAllowed(packageName = packageName)
         if (!context.packageManager.canRequestPackageInstalls()) {
             context.startActivity(
                 Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
