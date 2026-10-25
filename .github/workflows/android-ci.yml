@@ -107,8 +107,7 @@ jobs:
         run: |
           mkdir -p app/build/apk-fixtures
           curl --fail --location --retry 2 https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk -o app/build/apk-fixtures/charge.apk
-          printf '%s
-' '1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/build/apk-fixtures/charge.apk' | sha256sum --check --strict
+          echo "1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/build/apk-fixtures/charge.apk" | sha256sum --check --strict
       - name: Run Charge instrumented tests on an emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
