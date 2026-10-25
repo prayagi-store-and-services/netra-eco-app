@@ -30,11 +30,22 @@ object Net {
     fun fetchText(url: String, fresh: Boolean = false): String? = try {
         val c = open(url, fresh)
         if (c.responseCode != 200) null else {
-            val bytes = c.inputStream.use { it.readBytes() }
+            val bytes = c.inputStream.use { readBounded(it, 1024 * 1024) }
             if (bytes.size > 1024 * 1024) null else String(bytes, Charsets.UTF_8)
         }
     } catch (e: Exception) {
         null
+    }
+
+    internal fun readBounded(input: java.io.InputStream, limit: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        while (true) {
+            val n = input.read(buffer, 0, minOf(buffer.size, limit - out.size() + 1))
+            if (n < 0) return out.toByteArray()
+            if (out.size() + n > limit) throw java.io.IOException("Response exceeds limit")
+            out.write(buffer, 0, n)
+        }
     }
 
     /** "sha256:abc..." from the GitHub API to a plain lowercase hash, or null when it is not a SHA-256. */
@@ -89,7 +100,7 @@ object Net {
             val o = arr.getJSONObject(i)
             val repo = o.optString("repo")
             val pkg = o.optString("package")
-            if (!isTrustedRepo(repo) || pkg.isBlank()) null else CatalogApp(
+            if (!isTrustedRepo(repo) || !(UpdateArtifactPolicy.catalogMatches(o.optString("id"), pkg, repo) || (o.optString("id") == "netra-hub" && HumanSafetyHold.matches(repo, pkg)))) null else CatalogApp(
                 id = o.getString("id"),
                 name = o.getString("name"),
                 type = o.optString("type"),
@@ -132,7 +143,7 @@ object Net {
         null
     }
 
-    /** Netra Ecosystem itself, so the manual "Check for update" button can use the same download and install flow. */
+    /** Netra Eco itself, so the manual "Check for update" button can use the same download and install flow. */
     const val SELF_REPO = "prayagi-store-and-services/netra-eco-app"
 
     fun selfApp(context: Context) = CatalogApp(
@@ -145,7 +156,6 @@ object Net {
     /** Number of downloads running right now; installer files are only cleaned when it is 0. */
     private val activeDownloads = java.util.concurrent.atomic.AtomicInteger(0)
 
-    /** True while any download (from a screen or from the update notification) is running. */
     fun downloadsRunning(): Boolean = activeDownloads.get() != 0
 
     /** Deletes every file in the folder and returns how many were removed. */
@@ -167,7 +177,6 @@ object Net {
     /** Downloads the APK and checks size and SHA-256. The file is deleted and an error thrown if anything is off. */
     fun download(context: Context, app: CatalogApp, release: LatestRelease, onProgress: ((Long, Long, Long?) -> Unit)? = null): File {
         HumanSafetyHold.requireAllowed(app.repo, app.packageName)
-        check(!release.apkUrl.startsWith("https://github.com/" + HumanSafetyHold.REPO + "/")) { HumanSafetyHold.MESSAGE }
         activeDownloads.incrementAndGet()
         try {
             return downloadInternal(context, app, release, onProgress)
@@ -177,29 +186,19 @@ object Net {
     }
 
     private fun downloadInternal(context: Context, app: CatalogApp, release: LatestRelease, onProgress: ((Long, Long, Long?) -> Unit)?): File {
+        check(UpdateArtifactPolicy.catalogMatches(app.id, app.packageName, app.repo)) { "Update catalog identity did not match." }
+        check(UpdateArtifactPolicy.expectedSigner(app.packageName) != null) { "This app is unknown or on safety hold. No update was downloaded." }
+        check(Regex("^[A-Za-z0-9._-]+$").matches(app.id) && isValidTag(release.tag)) { "Invalid update identity." }
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
-        // Only this app's older files go; other apps' downloads (running or finished) stay.
-        dir.listFiles()?.filter { it.name.startsWith(app.id + "-") }?.forEach { it.delete() }
         val file = File(dir, "${app.id}-${release.tag}.apk")
+        val partial = File.createTempFile("pending-", ".part", dir)
         val c = open(release.apkUrl)
-        if (c.responseCode != 200) throw IllegalStateException("Download failed (server answered ${c.responseCode}).")
-        val md = MessageDigest.getInstance("SHA-256")
-        var total = 0L
-        val tracker = SpeedTracker()
-        var lastReport = 0L
-        c.inputStream.use { input ->
-            file.outputStream().use { out ->
-                val buf = ByteArray(16384)
-                while (true) {
-                    val n = input.read(buf)
-                    if (n < 0) break
-                    total += n
-                    if (total > release.size) {
-                        file.delete()
-                        throw IllegalStateException("Downloaded file is larger than expected.")
-                    }
-                    md.update(buf, 0, n)
-                    out.write(buf, 0, n)
+        try {
+            if (c.responseCode != 200) throw IllegalStateException("Download failed (server answered ${c.responseCode}).")
+            val tracker = SpeedTracker()
+            var lastReport = 0L
+            c.inputStream.use { input ->
+                ApkIntegrity.copyVerified(input, partial, release.size, release.sha256) { total ->
                     val now = System.currentTimeMillis()
                     tracker.add(now, total)
                     if (onProgress != null && now - lastReport >= 300L) {
@@ -208,29 +207,74 @@ object Net {
                     }
                 }
             }
+            java.nio.file.Files.move(partial.toPath(), file.toPath(),
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            try {
+                verifyArchive(context, file, app.packageName, release)
+                // Only verified metadata is persisted. Old/unregistered cached APKs must be downloaded again.
+                check(context.getSharedPreferences("verified_update_artifacts", Context.MODE_PRIVATE).edit()
+                    .putString(file.name, JSONObject().put("package", app.packageName).put("size", release.size).put("sha256", release.sha256)
+                        .put("code", release.versionCode).put("version", release.versionName).toString()).commit())
+            } catch (e: Exception) { file.delete(); throw e }
+            DownloadCount.countFinishedDownload(context, app.repo)
+            return file
+        } finally {
+            c.disconnect()
+            partial.delete()
         }
-        val actual = md.digest().joinToString("") { "%02x".format(it) }
-        if (total != release.size || actual != release.sha256) {
-            file.delete()
-            throw IllegalStateException("The downloaded file did not match its checksum, so it was not installed.")
-        }
-        DownloadCount.countFinishedDownload(context, app.repo)
-        return file
     }
 
-    /** Opens the system installer. Android installs only if the app is signed with the same key as the installed one. */
+    @Suppress("DEPRECATION")
+    private fun signerDigests(info: android.content.pm.PackageInfo): Set<String> {
+        val signatures = if (android.os.Build.VERSION.SDK_INT >= 28) info.signingInfo?.apkContentsSigners else info.signatures
+        return signatures?.map { signature ->
+            java.security.MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
+                .joinToString("") { "%02x".format(it) }
+        }?.toSet().orEmpty()
+    }
+
+    @Suppress("DEPRECATION")
+    internal fun verifyArchive(context: Context, file: File, expectedPackage: String, release: LatestRelease) {
+        check(ApkIntegrity.matches(file, release.size, release.sha256)) { "Update checksum changed. Download the update again." }
+        val flags = if (android.os.Build.VERSION.SDK_INT >= 28) android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES else android.content.pm.PackageManager.GET_SIGNATURES
+        val pm = context.packageManager
+        val archive = pm.getPackageArchiveInfo(file.absolutePath, flags)
+            ?: throw IllegalStateException("Update package could not be read.")
+        val current = try { pm.getPackageInfo(expectedPackage, flags) } catch (_: android.content.pm.PackageManager.NameNotFoundException) { null }
+        val installedCode = current?.let { if (android.os.Build.VERSION.SDK_INT >= 28) it.longVersionCode else it.versionCode.toLong() }
+        val code = if (android.os.Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
+        check(UpdateArtifactPolicy.identityMatches(expectedPackage, archive.packageName, installedCode, code,
+            release.versionCode, release.versionName, archive.versionName, current?.let { signerDigests(it) }, signerDigests(archive))) {
+            "Update package, version or signing identity did not match the expected app. Nothing was installed."
+        }
+    }
+
+    /** Re-check the exact downloaded self-update before asking Android for its ordinary install UI. */
     fun install(context: Context, file: File) {
-        // Inspect the APK itself as well as the legacy cache filename. Metadata/catalog removal cannot bypass this.
-        val packageName = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)?.packageName
-            ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
+        val archivePackage = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)?.packageName
+            ?: throw IllegalStateException("The installer package could not be verified.")
         check(!HumanSafetyHold.installerName(file.name)) { HumanSafetyHold.MESSAGE }
-        HumanSafetyHold.requireAllowed(packageName = packageName)
+        HumanSafetyHold.requireAllowed(packageName = archivePackage)
+        val root = File(context.cacheDir, "updates").canonicalFile
+        check(file.canonicalFile.parentFile == root) { "Unknown update file." }
+        try {
+            val raw = context.getSharedPreferences("verified_update_artifacts", Context.MODE_PRIVATE).getString(file.name, null)
+                ?: throw IllegalStateException("This cached update needs fresh verification. Delete it and download again.")
+            val pin = JSONObject(raw)
+            val release = LatestRelease("", pin.getString("version"), pin.getLong("code"), "", "", pin.getString("sha256"), pin.getLong("size"))
+            HumanSafetyHold.requireAllowed(packageName = pin.getString("package"))
+            verifyArchive(context, file, pin.getString("package"), release)
+        } catch (e: Exception) {
+            file.delete()
+            context.getSharedPreferences("verified_update_artifacts", Context.MODE_PRIVATE).edit().remove(file.name).apply()
+            throw e
+        }
         if (!context.packageManager.canRequestPackageInstalls()) {
-            context.startActivity(
-                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-            throw IllegalStateException("Allow installs from Netra Ecosystem, then tap the button again.")
+            // This is Android's per-source installer permission, not a Play Protect override.
+            // It is reached only after an explicit Install tap and strict file verification.
+            context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            throw IllegalStateException("Android needs your choice for this install source. No install was started. Keep Play Protect enabled; do not bypass a security warning.")
         }
         val uri = FileProvider.getUriForFile(context, context.packageName + ".updates", file)
         context.startActivity(
