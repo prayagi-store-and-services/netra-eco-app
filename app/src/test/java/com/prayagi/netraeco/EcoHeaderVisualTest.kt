@@ -35,6 +35,9 @@ class EcoHeaderVisualTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private fun renderOfflineLargeFont() {
+        // The offline screen hosts an infinite marquee transition; with autoAdvance on, waitForIdle
+        // (and captureToImage, which waits for idle) never settles and throws ComposeTimeoutException.
+        rule.mainClock.autoAdvance = false
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
                 MaterialTheme { EcoScreen(0, catalogLoader = { null }, textLoader = { null }) }
