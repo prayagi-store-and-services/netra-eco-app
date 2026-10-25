@@ -138,7 +138,11 @@ object DownloadCenter {
             if (jobs[f.name]?.isActive == true) return@forEach
             val p = prefs.getString(f.name, null)?.split("|")
             val size = p?.getOrNull(3)?.toLongOrNull()
-            if (p == null || p.size < 8 || size == null || f.length() != size) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
+            // Pre-upgrade records carry only the first six fields (no SHA-256/tag). They stay valid for ordinary
+            // repo apps, whose install path never needed them; a short record for an allowlisted direct app can
+            // never establish protected trust, so that file is removed like any other unverifiable one.
+            val legacyRepoRecord = p != null && p.size == 6 && !DIRECT_APPS.containsKey(p[5])
+            if (p == null || size == null || f.length() != size || (p.size < 8 && !legacyRepoRecord)) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
             if (map[f.name]?.state != DONE) {
                 map[f.name] = Item(f.name, p[5], p[4], p[1], p[2].toLongOrNull() ?: 0L, p[0], size, size, null, DONE)
             }
