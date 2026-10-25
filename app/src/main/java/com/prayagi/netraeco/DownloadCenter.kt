@@ -202,9 +202,12 @@ fun SelfDownloadButton(release: LatestRelease) {
     val self = remember { Net.selfApp(context) }
     val k = DownloadCenter.keyFor(self, release)
     val item = all[k]
+    var note by remember { mutableStateOf<String?>(null) }
+    Column {
     Button(enabled = item?.state != DownloadCenter.DOWNLOADING, onClick = {
         if (item?.state == DownloadCenter.DONE) {
-            try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) {}
+            note = null
+            try { Net.install(context, DownloadCenter.file(context, k)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") }
         } else DownloadCenter.start(context, self, release)
     }) {
         Text(when (item?.state) {
@@ -213,6 +216,8 @@ fun SelfDownloadButton(release: LatestRelease) {
             else -> "Update to " + release.versionName
         })
     }
+    note?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+    }
 }
 
 /** Downloads screen section: running downloads with progress, finished files with Install and Delete, and Update all. */
@@ -220,6 +225,7 @@ fun SelfDownloadButton(release: LatestRelease) {
 fun DownloadManagerCard(rows: List<AppRow>) {
     val context = LocalContext.current
     val all by DownloadCenter.items.collectAsState()
+    var installNote by remember { mutableStateOf<Pair<String, String>?>(null) }
     LaunchedEffect(Unit) { DownloadCenter.refresh(context) }
     val updatable = rows.filter {
         !HumanSafetyHold.matches(it.app.repo, it.app.packageName) && it.latest != null && statusForRelease(it.installed?.first, it.installed?.second, it.latest) == Status.UpdateAvailable &&
@@ -247,9 +253,12 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                                 // Stack the long advisory and Delete; a Row pushes Delete outside narrow/large-font viewports.
                                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
-                            } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
-                                OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
+                            } else {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (e: Exception) { installNote = i.key to plainFailure(e, "Install failed.") } }) { Text("Install") }
+                                    OutlinedButton(onClick = { DownloadCenter.delete(context, i.key); installNote = null }) { Text("Delete") }
+                                }
+                                installNote?.let { n -> if (n.first == i.key) Text(n.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                             }
                         }
                         else -> {
