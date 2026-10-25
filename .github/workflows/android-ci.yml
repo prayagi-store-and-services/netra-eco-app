@@ -105,9 +105,11 @@ jobs:
           -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
       - name: Download pinned public Charge fixture
         run: |
-          mkdir -p app/build/apk-fixtures
+          mkdir -p app/build/apk-fixtures app/src/androidTest/assets
           curl --fail --location --retry 2 https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk -o app/build/apk-fixtures/charge.apk
           echo "1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/build/apk-fixtures/charge.apk" | sha256sum --check --strict
+          cp app/build/apk-fixtures/charge.apk app/src/androidTest/assets/eco-fixture-charge.apk
+          echo "1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/src/androidTest/assets/eco-fixture-charge.apk" | sha256sum --check --strict
       - name: Enable KVM for the emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -124,8 +126,9 @@ jobs:
           arch: x86_64
           script: |
             adb devices -l
-            adb shell mkdir -p /sdcard/Download
-            adb push app/build/apk-fixtures/charge.apk /sdcard/Download/eco-fixture-charge.apk
+            adb push app/build/apk-fixtures/charge.apk /data/local/tmp/eco-fixture-charge.apk
+            adb shell "sha256sum /data/local/tmp/eco-fixture-charge.apk | grep -q ^1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae"
+            adb shell "stat -c %s /data/local/tmp/eco-fixture-charge.apk | grep -q ^656862$"
             gradle --no-daemon :app:connectedDebugAndroidTest --stacktrace
       - name: Upload instrumented results
         if: always()
