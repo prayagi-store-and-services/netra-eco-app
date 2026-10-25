@@ -493,7 +493,10 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
 }
 
 @Composable
-private fun SelfUpdateButton(onRefresh: () -> Unit) {
+// internal (not private) so the contrast regression test can render the real production
+// button in isolation: the full offline screen hosts never-idle delay loops, which make
+// compose pixel capture time out.
+internal fun SelfUpdateButton(onRefresh: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
