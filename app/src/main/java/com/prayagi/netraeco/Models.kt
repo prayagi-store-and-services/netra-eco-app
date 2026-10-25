@@ -49,23 +49,24 @@ fun isValidSha256(sha: String): Boolean = Regex("^[0-9a-f]{64}$").matches(sha)
 /** Only these two places may serve an APK or a catalog: this site and GitHub releases of this organization. */
 const val ORG = "prayagi-store-and-services"
 
-/** Base of the public Eco site; a direct APK or metadata URL must start with exactly this. */
-const val SITE_BASE = "https://prayagi-store-and-services.github.io/netra-eco/"
-
-fun isTrustedSiteUrl(url: String): Boolean =
-    url.startsWith(SITE_BASE) && url.length > SITE_BASE.length && url.none { it.isWhitespace() }
-
 /**
  * Repo-less apps that may ship through the Eco site directly: private source, public signed APK.
- * A catalog entry with no repo is accepted only when its id and package match this list exactly,
- * and its download and metadata URLs sit under SITE_BASE. Keyed by catalog id.
+ * A catalog entry with no repo is accepted only when its id, package, download URL and metadata URL
+ * all match this list exactly - a different path on the same site is not enough. Keyed by catalog id.
  */
-data class DirectApp(val packageName: String, val signerCertSha256: String)
+data class DirectApp(
+    val packageName: String,
+    val signerCertSha256: String,
+    val downloadUrl: String,
+    val latestJsonUrl: String
+)
 
 val DIRECT_APPS: Map<String, DirectApp> = mapOf(
     "netra-charge" to DirectApp(
         packageName = "com.netracharge.app",
-        signerCertSha256 = "814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9"
+        signerCertSha256 = "814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9",
+        downloadUrl = "https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk",
+        latestJsonUrl = "https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/latest.json"
     )
 )
 
