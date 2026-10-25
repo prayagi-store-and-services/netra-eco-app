@@ -32,7 +32,7 @@ class LifecycleTickerTest {
             observed = tick
         }
         rule.waitForIdle()
-        assertEquals("no tick before the first period elapses", 0L, observed)
+        assertTrue("visible entry refreshes before the first period", observed > 0L)
 
         rule.mainClock.advanceTimeBy(350)
         rule.waitForIdle()
@@ -47,6 +47,7 @@ class LifecycleTickerTest {
 
         rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
         rule.waitForIdle()
+        assertTrue("resume refreshes without advancing the clock", observed > stoppedAt)
         val resumedAt = observed
         rule.mainClock.advanceTimeBy(350)
         rule.waitForIdle()
