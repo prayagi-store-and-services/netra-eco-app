@@ -24,7 +24,6 @@ import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -42,10 +41,10 @@ private fun left(from: Instant, to: Instant): String {
 
 /** Always-visible, continuously scrolling panchang bar. Place: Prayagraj (owner's choice). Everything is calculated live on the phone. */
 @Composable fun TrikaalTicker(place: com.prayagi.trikaal.PanchangPlace = PRAYAGRAJ) {
-    var now by remember { mutableStateOf(Instant.now()) }
+    val tick by rememberVisibleTicker()
+    val now = remember(tick) { Instant.now() }
     var day by remember { mutableStateOf<Computation<VedicDay>?>(null) }
     var sky by remember { mutableStateOf<Computation<List<Position>>?>(null) }
-    LaunchedEffect(Unit) { while (true) { now = Instant.now(); delay(1000) } }
     val d = (day as? Computation.Available)?.value
     LaunchedEffect(place) { day = null }
     val stale = d == null || now >= d.nextSunrise || now >= d.tithis.last().start
