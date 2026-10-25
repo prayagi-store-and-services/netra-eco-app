@@ -41,10 +41,15 @@ class InstallFailureSurfaceTest {
     @Test fun failedSavedInstallSurfacesPlainFailure() {
         val context = rule.activity
         val key = "kbc-v1.1.37.apk"
-        File(File(context.cacheDir, "updates").apply { mkdirs() }, key).writeBytes(byteArrayOf(1, 2, 3))
+        val payload = byteArrayOf(1, 2, 3)
+        File(File(context.cacheDir, "updates").apply { mkdirs() }, key).writeBytes(payload)
+        // refresh() deletes any cached installer whose bytes fail the registry size/hash check (strict
+        // updates), so the registry must declare the payload's real SHA-256 for the entry to survive.
+        // Install still fails later - the payload is not a parseable APK - which is the failure surfaced.
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(payload).joinToString("") { "%02x".format(it) }
         context.getSharedPreferences("netra_eco_downloads", 0).edit().clear()
             .putString(key, listOf("com.aistudio.reasoningquiz.tark", "1.1.37", "37", "3", "KBC", "kbc",
-                "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d").joinToString("|")).commit()
+                sha).joinToString("|")).commit()
         DownloadCenter.refresh(context)
         rule.setContent { MaterialTheme { DownloadManagerCard(emptyList()) } }
         rule.onNodeWithText("Install").performClick()
