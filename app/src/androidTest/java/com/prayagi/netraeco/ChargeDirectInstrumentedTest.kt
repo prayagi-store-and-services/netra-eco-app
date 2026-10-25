@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.security.MessageDigest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -16,11 +17,23 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * On-device proof for the repo-less Charge path. The REAL signed public v0.1.0 APK is pushed to
- * /sdcard/Download/eco-fixture-charge.apk by CI (SHA-256 pinned there, and apksigner/aapt identity is
- * checked in a separate CI step). These tests run the PRODUCTION Net.verifyDirectFile and Net.install
- * against the real PackageManager, real archive parsing, real signing certificates and the real
- * FileProvider - no shadowed signing info. JVM tests keep parser/dispatch/refusal coverage.
+ * On-device proof for the repo-less Charge path. The REAL signed public v0.1.0 APK reaches the
+ * device two sealed ways, both pinned to the same SHA-256/size:
+ *  - CI bundles it as a GENERATED androidTest asset before the test APK build; each test copies it
+ *    from instrumentation assets into the TARGET app's cacheDir/updates and re-verifies hash+size
+ *    (the verifyDirectFile cases; Android 34 scoped storage never touches this path);
+ *  - CI pushes a second copy to /data/local/tmp/eco-fixture-charge.apk solely for the shell-side
+ *    `pm install` in installedSameOrNewerRejected, guarded by sha256sum/stat; the target app never
+ *    reads that path.
+ * apksigner/aapt identity is checked in a separate CI step. These tests run the PRODUCTION
+ * Net.verifyDirectFile and Net.install against the real PackageManager, real archive parsing, real
+ * signing certificates and the real FileProvider - no shadowed signing info. JVM tests keep
+ * parser/dispatch/refusal coverage.
+ *
+ * Coverage limit: verifiedInstallFiresRealProviderInstallerIntent intercepts startActivity, so it
+ * proves the real content:// URI, MIME type and FLAG_GRANT_READ_URI_PERMISSION that production
+ * hands to the system - it does NOT prove the external system-installer process actually opens the
+ * stream. That external read-grant stays untested even when all tests here pass.
  */
 @RunWith(AndroidJUnit4::class)
 class ChargeDirectInstrumentedTest {
@@ -29,14 +42,29 @@ class ChargeDirectInstrumentedTest {
     private val sha = "1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae"
     private val size = 656862L
     private val code = 1L
-    private val fixturePath = "/sdcard/Download/eco-fixture-charge.apk"
+    private val assetName = "eco-fixture-charge.apk"
+    private val localTmpFixture = "/data/local/tmp/eco-fixture-charge.apk"
+
+    private fun sha256(f: File): String {
+        val md = MessageDigest.getInstance("SHA-256")
+        f.inputStream().use { inp ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = inp.read(buf)
+                if (n < 0) break
+                md.update(buf, 0, n)
+            }
+        }
+        return md.digest().joinToString("") { "%02x".format(it) }
+    }
 
     private fun fixture(name: String = "netra-charge-v0.1.0.apk"): File {
-        val src = File(fixturePath)
-        assertTrue("CI must push the pinned Charge fixture", src.exists())
-        assertEquals("pinned fixture size", size, src.length())
         val dst = File(File(context.cacheDir, "updates").apply { mkdirs() }, name)
-        src.copyTo(dst, overwrite = true)
+        InstrumentationRegistry.getInstrumentation().context.assets.open(assetName).use { inp ->
+            dst.outputStream().use { inp.copyTo(it) }
+        }
+        assertEquals("pinned fixture size", size, dst.length())
+        assertEquals("pinned fixture sha-256", sha, sha256(dst))
         return dst
     }
 
@@ -79,7 +107,12 @@ class ChargeDirectInstrumentedTest {
     @Test fun installedSameOrNewerRejected() {
         val ui = InstrumentationRegistry.getInstrumentation().uiAutomation
         ui.executeShellCommand("pm uninstall com.netracharge.app").close()
-        val out = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("pm install -r $fixturePath")).bufferedReader().readText()
+        // The shell-side copy is a separate pinned artifact; the target app never reads /data/local/tmp.
+        val shellSha = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("sha256sum $localTmpFixture")).bufferedReader().readText()
+        assertTrue("local-tmp fixture sha-256 must match the pin: $shellSha", shellSha.startsWith(sha))
+        val shellSize = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("stat -c %s $localTmpFixture")).bufferedReader().readText().trim()
+        assertEquals("pinned fixture size", size.toString(), shellSize)
+        val out = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("pm install -r $localTmpFixture")).bufferedReader().readText()
         assertTrue("fixture must install on the emulator: $out", out.contains("Success"))
         try {
             val file = fixture()
