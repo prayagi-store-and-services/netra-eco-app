@@ -318,24 +318,29 @@ object Net {
             ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
         check(!HumanSafetyHold.installerName(file.name)) { HumanSafetyHold.MESSAGE }
         HumanSafetyHold.requireAllowed(packageName = packageName)
-        // Direct-app routing is chosen ONLY from trusted state, before the untrusted archive package above is
-        // given any weight: the saved verified record for this file key must exist, its app id must be an
-        // allowlisted direct app whose package the record repeats, and the file must sit at the one canonical
-        // cache path for that record. Every failure refuses - there is no generic fallback for these apps.
+        // Protected namespace: ANY of three signals - the cache key starts with an allowlisted app's id, a saved
+        // verified record names an allowlisted app, or the archive is an allowlisted app's package - puts this
+        // file on the protected route, and then EVERY binding must agree: same allowlisted id from all present
+        // signals, a saved record repeating the allowlisted package, the canonical file name for that record,
+        // and the canonical cache location. Any disagreement or missing piece refuses; there is no generic
+        // fallback, so a swapped-in different-package APK under a Charge key can never sail through.
         val rec = DownloadCenter.savedRecord(context, file.name)
-        val direct = rec?.let { DIRECT_APPS[it.appId] }
-        if (direct != null && rec != null) {
-            val bound = rec.packageName == direct.packageName &&
+        val recordApp = rec?.appId?.takeIf { DIRECT_APPS.containsKey(it) }
+        val keyApp = DIRECT_APPS.keys.firstOrNull { file.name.startsWith("$it-") && file.name.endsWith(".apk") }
+        val pkgApp = DIRECT_APPS.entries.firstOrNull { it.value.packageName == packageName }?.key
+        val signals = setOfNotNull(recordApp, keyApp, pkgApp)
+        if (signals.isNotEmpty()) {
+            val id = signals.singleOrNull()
+            val direct = id?.let { DIRECT_APPS[it] }
+            val bound = id != null && direct != null && rec != null &&
+                rec.appId == id && rec.packageName == direct.packageName &&
                 file.name == DownloadCenter.canonicalKey(rec) &&
                 runCatching { file.canonicalFile.parentFile == DownloadCenter.canonicalDir(context).canonicalFile }.getOrDefault(false)
-            if (!bound) {
+            if (!bound || rec == null || direct == null) {
                 file.delete()
                 throw IllegalStateException("The installer could not be matched to a verified download. Download it again from its app card.")
             }
             verifyDirectFile(context, file, direct, rec.size, rec.sha256, rec.versionCode)
-        } else if (DIRECT_APPS.values.any { it.packageName == packageName }) {
-            file.delete()
-            throw IllegalStateException("The installer could not be matched to a verified download. Download it again from its app card.")
         }
         if (!context.packageManager.canRequestPackageInstalls()) {
             context.startActivity(
