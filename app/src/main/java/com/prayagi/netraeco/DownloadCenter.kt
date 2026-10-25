@@ -62,12 +62,12 @@ object DownloadCenter {
     fun register(c: Context, app: CatalogApp, release: LatestRelease) {
         HumanSafetyHold.requireAllowed(app.repo, app.packageName)
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id, release.sha256).joinToString("|")).apply()
     }
 
     /** True when the verified file for this release is already saved (a verified download is exactly the expected size). */
     fun hasFile(c: Context, app: CatalogApp, release: LatestRelease): Boolean =
-        !HumanSafetyHold.matches(app.repo, app.packageName) && File(dir(c), keyFor(app, release)).let { it.exists() && it.length() == release.size }
+        !HumanSafetyHold.matches(app.repo, app.packageName) && File(dir(c), keyFor(app, release)).let { ApkIntegrity.matches(it, release.size, release.sha256) }
     private fun dir(c: Context) = File(c.cacheDir, "updates").apply { mkdirs() }
     private fun put(i: Item) { items.value = items.value + (i.key to i) }
 
@@ -91,7 +91,7 @@ object DownloadCenter {
         synchronized(this) {
             if (jobs[key]?.isActive == true) return
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(key, listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+                .putString(key, listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id, release.sha256).joinToString("|")).apply()
             lastEta.remove(key)
             put(Item(key, app.id, app.name, release.versionName, release.versionCode, app.packageName, 0L, release.size, null, DOWNLOADING))
             jobs[key] = scope.launch {
@@ -114,9 +114,10 @@ object DownloadCenter {
         val map = items.value.toMutableMap()
         dir(c).listFiles()?.forEach { f ->
             if (jobs[f.name]?.isActive == true) return@forEach
+            if (f.name.endsWith(".part") && Net.downloadsRunning()) return@forEach
             val p = prefs.getString(f.name, null)?.split("|")
             val size = p?.getOrNull(3)?.toLongOrNull()
-            if (p == null || p.size < 6 || size == null || f.length() != size) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
+            if (p == null || p.size < 7 || size == null || !ApkIntegrity.matches(f, size, p[6])) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
             if (map[f.name]?.state != DONE) {
                 map[f.name] = Item(f.name, p[5], p[4], p[1], p[2].toLongOrNull() ?: 0L, p[0], size, size, null, DONE)
             }
