@@ -160,6 +160,26 @@ class ChargeDirectPlatformTest {
         expectFail(file, "verified download") { Net.install(context, file) }
     }
 
+    @Test fun noRecordChargeKeyDifferentPackageRefused() {
+        // Root review combo 1: no saved record at all, Charge cache key, different app's APK inside.
+        val kbc = File("build/apk-fixtures/other-app.apk")
+        assertTrue("CI must download public KBC fixture", kbc.exists())
+        val file = File(File(context.cacheDir, "updates").apply { mkdirs() }, "netra-charge-v0.1.0.apk")
+        kbc.copyTo(file, overwrite = true)
+        expectFail(file, "verified download") { Net.install(context, file) }
+    }
+
+    @Test fun foreignRecordChargeKeyDifferentPackageRefused() {
+        // Root review combo 2: record under the Charge key names a foreign app id; a different
+        // app's APK sits at that key. Conflicting signals must refuse, never fall back.
+        putRawRecord("netra-charge-v0.1.0.apk", rawRecord(appId = "some-other-app", pkg = "com.example.other"))
+        val kbc = File("build/apk-fixtures/other-app.apk")
+        assertTrue("CI must download public KBC fixture", kbc.exists())
+        val file = File(File(context.cacheDir, "updates").apply { mkdirs() }, "netra-charge-v0.1.0.apk")
+        kbc.copyTo(file, overwrite = true)
+        expectFail(file, "verified download") { Net.install(context, file) }
+    }
+
     @Test fun repoAppInstallPathUnchanged() {
         val apk = File("build/apk-fixtures/other-app.apk")
         assertTrue("CI must download public KBC fixture", apk.exists())
