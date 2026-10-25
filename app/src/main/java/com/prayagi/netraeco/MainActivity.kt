@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -51,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -86,7 +88,7 @@ sealed interface EcoEntry {
 private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): List<EcoEntry> =
     AppSort.sorted(rows.map { EcoEntry.Live(it) } + upcoming.map { EcoEntry.Soon(it) }) { it.displayName }
 
-class MainActivity : ComponentActivity() {
+open class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -514,9 +516,9 @@ private fun SelfUpdateButton(onRefresh: () -> Unit) {
             if (status == Status.UpdateAvailable) release = latest
             busy = false
         }
-    }) { Text(if (busy) "Checking..." else "Check for update", color = Color.White) }
-    message?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
-    progress?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
+    }) { Text(if (busy) "Checking..." else "Check for update") }
+    message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+    progress?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
     release?.let { r ->
         SelfDownloadButton(r)
     }
@@ -545,16 +547,21 @@ fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
             Modifier.fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Teal, TealDark)))
                 .statusBarsPadding()
-                .height(56.dp)
+                // 56 dp at normal font; grows instead of clipping the version line at large font scale.
+                .heightIn(min = 56.dp)
+                .testTag("eco-header")
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                    Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1, modifier = Modifier.testTag("eco-header-version"))
                 }
                 Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
             }
         }
 }
+
+/** Private notification entry; exported launcher intents cannot trigger update downloads. */
+class UpdateEntryActivity : MainActivity()

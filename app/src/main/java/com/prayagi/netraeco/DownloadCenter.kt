@@ -62,12 +62,12 @@ object DownloadCenter {
     fun register(c: Context, app: CatalogApp, release: LatestRelease) {
         HumanSafetyHold.requireAllowed(app.repo, app.packageName)
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id, release.sha256).joinToString("|")).apply()
     }
 
     /** True when the verified file for this release is already saved (a verified download is exactly the expected size). */
     fun hasFile(c: Context, app: CatalogApp, release: LatestRelease): Boolean =
-        !HumanSafetyHold.matches(app.repo, app.packageName) && File(dir(c), keyFor(app, release)).let { it.exists() && it.length() == release.size }
+        !HumanSafetyHold.matches(app.repo, app.packageName) && File(dir(c), keyFor(app, release)).let { ApkIntegrity.matches(it, release.size, release.sha256) }
     private fun dir(c: Context) = File(c.cacheDir, "updates").apply { mkdirs() }
     private fun put(i: Item) { items.value = items.value + (i.key to i) }
 
@@ -91,7 +91,7 @@ object DownloadCenter {
         synchronized(this) {
             if (jobs[key]?.isActive == true) return
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(key, listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+                .putString(key, listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id, release.sha256).joinToString("|")).apply()
             lastEta.remove(key)
             put(Item(key, app.id, app.name, release.versionName, release.versionCode, app.packageName, 0L, release.size, null, DOWNLOADING))
             jobs[key] = scope.launch {
@@ -114,9 +114,10 @@ object DownloadCenter {
         val map = items.value.toMutableMap()
         dir(c).listFiles()?.forEach { f ->
             if (jobs[f.name]?.isActive == true) return@forEach
+            if (f.name.endsWith(".part") && Net.downloadsRunning()) return@forEach
             val p = prefs.getString(f.name, null)?.split("|")
             val size = p?.getOrNull(3)?.toLongOrNull()
-            if (p == null || p.size < 6 || size == null || f.length() != size) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
+            if (p == null || p.size < 7 || size == null || !ApkIntegrity.matches(f, size, p[6])) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
             if (map[f.name]?.state != DONE) {
                 map[f.name] = Item(f.name, p[5], p[4], p[1], p[2].toLongOrNull() ?: 0L, p[0], size, size, null, DONE)
             }
@@ -172,7 +173,7 @@ fun AppDownloadButton(row: AppRow, status: Status) {
                 ProgressBlock(item)
             }
             DownloadCenter.DONE -> Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = {
-                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") }
+                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = installFailureNote(e) }
             }) { Text("Downloaded - tap to install") }
             else -> {
                 Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = { DownloadCenter.start(context, row.app, latest) }) {
@@ -201,9 +202,12 @@ fun SelfDownloadButton(release: LatestRelease) {
     val self = remember { Net.selfApp(context) }
     val k = DownloadCenter.keyFor(self, release)
     val item = all[k]
+    var note by remember { mutableStateOf<String?>(null) }
+    Column {
     Button(enabled = item?.state != DownloadCenter.DOWNLOADING, onClick = {
         if (item?.state == DownloadCenter.DONE) {
-            try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) {}
+            note = null
+            try { Net.install(context, DownloadCenter.file(context, k)) } catch (e: Exception) { note = installFailureNote(e) }
         } else DownloadCenter.start(context, self, release)
     }) {
         Text(when (item?.state) {
@@ -212,6 +216,8 @@ fun SelfDownloadButton(release: LatestRelease) {
             else -> "Update to " + release.versionName
         })
     }
+    note?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+    }
 }
 
 /** Downloads screen section: running downloads with progress, finished files with Install and Delete, and Update all. */
@@ -219,6 +225,7 @@ fun SelfDownloadButton(release: LatestRelease) {
 fun DownloadManagerCard(rows: List<AppRow>) {
     val context = LocalContext.current
     val all by DownloadCenter.items.collectAsState()
+    var installNote by remember { mutableStateOf<Pair<String, String>?>(null) }
     LaunchedEffect(Unit) { DownloadCenter.refresh(context) }
     val updatable = rows.filter {
         !HumanSafetyHold.matches(it.app.repo, it.app.packageName) && it.latest != null && statusForRelease(it.installed?.first, it.installed?.second, it.latest) == Status.UpdateAvailable &&
@@ -246,9 +253,12 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                                 // Stack the long advisory and Delete; a Row pushes Delete outside narrow/large-font viewports.
                                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
-                            } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
-                                OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
+                            } else {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (e: Exception) { installNote = i.key to installFailureNote(e) } }) { Text("Install") }
+                                    OutlinedButton(onClick = { DownloadCenter.delete(context, i.key); installNote = null }) { Text("Delete") }
+                                }
+                                installNote?.let { n -> if (n.first == i.key) Text(n.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                             }
                         }
                         else -> {
@@ -261,3 +271,6 @@ fun DownloadManagerCard(rows: List<AppRow>) {
         }
     }
 }
+
+/** Install failures always carry the action context first, then the factual reason, so a rejected install never reads as inert. */
+private fun installFailureNote(e: Exception): String = "Install failed. " + plainFailure(e, "Try again.")

@@ -50,15 +50,18 @@ class HumanSafetyHoldPlatformTest {
         try { Net.install(context, apk); fail("Hub archive must be quarantined") }
         catch (e: IllegalStateException) { assertEquals(HumanSafetyHold.MESSAGE, e.message) }
     }
-    @Test fun validOtherAppArchivePassesQuarantine() {
-        val apk = File("build/apk-fixtures/other-app.apk")
-        assertTrue("CI must download public KBC fixture", apk.exists())
-        val pkg = context.packageManager.getPackageArchiveInfo(apk.absolutePath, 0)?.packageName
+    @Test fun validOtherAppArchiveStillNeedsVerifiedRegistration() {
+        val fixture = File("build/apk-fixtures/other-app.apk")
+        assertTrue("CI must download public KBC fixture", fixture.exists())
+        val pkg = context.packageManager.getPackageArchiveInfo(fixture.absolutePath, 0)?.packageName
         assertNotNull(pkg)
         assertFalse(HumanSafetyHold.matches(packageName = pkg!!))
         HumanSafetyHold.requireAllowed(packageName = pkg)
-        // Robolectric denies unknown-source install by default; reaching that check proves hold did not block KBC.
-        try { Net.install(context, apk) }
-        catch (e: IllegalStateException) { assertEquals("Allow installs from Netra Ecosystem, then tap the button again.", e.message) }
+        // A genuine, quarantine-clean archive that this app never downloaded and verified must not reach
+        // the installer: only files registered after a full hash/package/signer check may be installed.
+        val staged = File(File(context.cacheDir, "updates").apply { mkdirs() }, "kbc-v9.9.9.apk")
+        fixture.copyTo(staged, overwrite = true)
+        try { Net.install(context, staged); fail("unregistered cached file must be rejected") }
+        catch (e: IllegalStateException) { assertTrue(e.message!!.contains("fresh verification")) }
     }
 }
