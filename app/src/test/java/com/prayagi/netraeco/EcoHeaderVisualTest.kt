@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.*
@@ -25,8 +24,10 @@ import org.robolectric.annotation.GraphicsMode
  * the header must grow instead of clipping the version line, and the "Check for update"
  * label must render with readable contrast (it was hard-coded white on a pale outlined button).
  * The version line is matched by its testTag: the app name also contains "Netra Ecosystem",
- * so a plain substring text query is ambiguous. Pixels come from captureToImage, the supported
- * Robolectric/NATIVE path; decorView.draw can produce a blank bitmap for Compose content.
+ * so a plain substring text query is ambiguous. Pixels come from the proven decorView.draw
+ * path used by the reviewed CI fixtures; captureToImage hangs in this Robolectric environment,
+ * and decorView pixels are window-relative while compose boundsInRoot are content-view-relative,
+ * so the scan area is offset by the content view's on-screen origin.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -35,9 +36,6 @@ class EcoHeaderVisualTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private fun renderOfflineLargeFont() {
-        // The offline screen hosts an infinite marquee transition; with autoAdvance on, waitForIdle
-        // (and captureToImage, which waits for idle) never settles and throws ComposeTimeoutException.
-        rule.mainClock.autoAdvance = false
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
                 MaterialTheme { EcoScreen(0, catalogLoader = { null }, textLoader = { null }) }
@@ -67,29 +65,27 @@ class EcoHeaderVisualTest {
     }
 
     @Test fun updateButtonLabelHasReadableContrast() {
-        // Render the real production button, not the full screen: the offline screen's
-        // never-idle one-second delay loops (ticker, header clock) make waitForIdle and
-        // captureToImage time out (ComposeTimeoutException). Same theme, same font scale.
-        rule.mainClock.autoAdvance = false
-        rule.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
-                MaterialTheme { SelfUpdateButton {} }
-            }
-        }
+        renderOfflineLargeFont()
         val bounds = rule.onNodeWithText("Check for update").fetchSemanticsNode().boundsInRoot
-        val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
+        val view = rule.activity.window.decorView
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        view.draw(Canvas(bitmap))
+        // decorView pixels are window-relative (they include the status bar); compose
+        // boundsInRoot are relative to the content view. Offset by the content view origin.
+        val origin = IntArray(2)
+        view.findViewById<android.view.View>(android.R.id.content).getLocationOnScreen(origin)
         var dark = 0
-        val left = bounds.left.toInt().coerceIn(0, bitmap.width - 1)
-        val right = bounds.right.toInt().coerceIn(left + 1, bitmap.width)
-        val top = bounds.top.toInt().coerceIn(0, bitmap.height - 1)
-        val bottom = bounds.bottom.toInt().coerceIn(top + 1, bitmap.height)
+        val left = (bounds.left + origin[0]).toInt().coerceIn(0, bitmap.width - 1)
+        val right = (bounds.right + origin[0]).toInt().coerceIn(left + 1, bitmap.width)
+        val top = (bounds.top + origin[1]).toInt().coerceIn(0, bitmap.height - 1)
+        val bottom = (bounds.bottom + origin[1]).toInt().coerceIn(top + 1, bitmap.height)
         for (y in top until bottom) for (x in left until right) {
             val p = bitmap.getPixel(x, y)
             // Glyph ink must be meaningfully darker than the pale outlined-button background.
             if (android.graphics.Color.red(p) + android.graphics.Color.green(p) + android.graphics.Color.blue(p) < 240) dark++
         }
+        bitmap.recycle()
         assertTrue("button label is unreadable (white-on-pale) - found only $dark dark pixels", dark > 50)
-        val file = File("build/outputs/eco-header-button-contrast-320-large.png").apply { parentFile?.mkdirs() }
-        file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+        shot("button-contrast-320-large")
     }
 }
