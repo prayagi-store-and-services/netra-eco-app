@@ -32,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,7 +50,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.time.OffsetDateTime
 
@@ -235,8 +233,8 @@ object Ticker {
 /** One black strip at the top, one line, scrolling right to left (text enters at the right edge and leaves at the left) at a calm reading pace. Touch and hold to pause. */
 @Composable
 fun TickerStrip(items: List<RoadmapItem>?) {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
+    val tick by rememberVisibleTicker()
+    val now = remember(tick) { System.currentTimeMillis() }
     val list = if (items == null) emptyList() else Ticker.upcoming(items)
     var pressed by remember { mutableStateOf(false) }
     var showList by remember { mutableStateOf(false) }
