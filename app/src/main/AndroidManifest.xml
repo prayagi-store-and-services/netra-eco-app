@@ -71,6 +71,7 @@
                 android:resource="@xml/eco_widget_info" />
         </receiver>
 
+        <activity android:name=".UpdateEntryActivity" android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.updates"
