@@ -173,6 +173,13 @@ object DownloadCenter {
     }
 
     fun file(c: Context, key: String) = File(dir(c), key)
+
+    /** Drops a finished download whose file is already gone (for example a refused install), so the app card offers a fresh Download instead of a dead Install button. */
+    fun expunge(c: Context, key: String) {
+        File(dir(c), key).delete()
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(key).apply()
+        items.value = items.value - key
+    }
 }
 
 private fun mb(b: Long) = String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0)
@@ -198,7 +205,12 @@ fun AppDownloadButton(row: AppRow, status: Status) {
                 ProgressBlock(item)
             }
             DownloadCenter.DONE -> Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = {
-                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") }
+                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) {
+                    note = plainFailure(e, "Install failed.")
+                    // A verification refusal deletes the file; clear the stale DONE state so the button offers a fresh download.
+                    // The system-permission gate keeps the file on purpose ("tap the button again"), so it is not expunged.
+                    if (!DownloadCenter.file(context, key).exists()) DownloadCenter.expunge(context, key)
+                }
             }) { Text("Downloaded - tap to install") }
             else -> {
                 Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = { DownloadCenter.start(context, row.app, latest) }) {
@@ -229,7 +241,7 @@ fun SelfDownloadButton(release: LatestRelease) {
     val item = all[k]
     Button(enabled = item?.state != DownloadCenter.DOWNLOADING, onClick = {
         if (item?.state == DownloadCenter.DONE) {
-            try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) {}
+            try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) { if (!DownloadCenter.file(context, k).exists()) DownloadCenter.expunge(context, k) }
         } else DownloadCenter.start(context, self, release)
     }) {
         Text(when (item?.state) {
@@ -273,7 +285,7 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
+                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) { if (!DownloadCenter.file(context, i.key).exists()) DownloadCenter.expunge(context, i.key) } }) { Text("Install") }
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             }
                         }
