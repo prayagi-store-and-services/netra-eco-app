@@ -95,7 +95,8 @@ class ChargeScreenshotTest {
         rule.setContent { MaterialTheme { AppCard(AppRow(chargeApp(), null, release()), null, false, false) {} } }
         rule.onNodeWithText("Netra Charge").assertIsDisplayed()
         shot("charge-card-available-360")
-        rule.onNodeWithText("Not installed").assertIsDisplayed()
+        // The status pill and the Installed column both read "Not installed" for this state.
+        rule.onAllNodesWithText("Not installed").assertCountEquals(2)
         rule.onNodeWithText("Download").assertIsDisplayed()
     }
 
