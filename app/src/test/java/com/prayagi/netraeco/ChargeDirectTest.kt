@@ -4,8 +4,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
-/** Repo-less catalog support: only the exact allowlisted id, package and URLs. */
+/**
+ * Repo-less catalog support: only the exact allowlisted id, package and URLs.
+ * Runs under Robolectric because Net.parseCatalog/parseLatest use org.json, which plain JVM unit tests stub out.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = android.app.Application::class)
 class ChargeDirectTest {
 
     private val apk = "https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk"
