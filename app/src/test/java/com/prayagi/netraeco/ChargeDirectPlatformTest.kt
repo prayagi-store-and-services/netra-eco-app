@@ -2,7 +2,6 @@ package com.prayagi.netraeco
 
 import android.app.Application
 import android.content.Context
-import android.content.pm.PackageInfo
 import androidx.test.core.app.ApplicationProvider
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -12,12 +11,14 @@ import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
  * Archive-level checks for the repo-less Charge path, against the real public v0.1.0 APK
  * (CI downloads it as build/apk-fixtures/charge.apk with a pinned SHA-256).
+ * Signing-certificate parsing of a real archived APK crashes Robolectric 4.16.1's native resource loader
+ * (IllegalAccessError in MemoryMappedFileDataSource), so every check that needs the real signing info runs
+ * on a real device in ChargeDirectInstrumentedTest instead; these JVM tests cover parsing, dispatch and refusal.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
@@ -70,21 +71,7 @@ class ChargeDirectPlatformTest {
         assertFalse("legacy direct record must not keep its file", f.exists())
     }
 
-    @Test fun realChargeArchiveMatchesAllowlistFacts() {
-        val apk = File("build/apk-fixtures/charge.apk")
-        assertTrue("CI must download the public Charge fixture", apk.exists())
-        assertEquals(size, apk.length())
-        val pm = context.packageManager
-        val info = pm.getPackageArchiveInfo(apk.absolutePath, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES)!!
-        assertEquals("com.netracharge.app", info.packageName)
-        assertEquals(code, androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(info))
-    }
 
-    @Test fun validChargeFilePassesFullVerification() {
-        val file = freshFixture()
-        Net.verifyDirectFile(context, file, direct, size, sha, code)
-        assertTrue(file.exists())
-    }
 
     @Test fun wrongSizeRejected() {
         val file = freshFixture()
@@ -104,21 +91,7 @@ class ChargeDirectPlatformTest {
         expectFail(file, "file changed") { Net.verifyDirectFile(context, file, direct, size, sha, code) }
     }
 
-    @Test fun wrongVersionCodeRejected() {
-        val file = freshFixture()
-        expectFail(file, "version did not match") { Net.verifyDirectFile(context, file, direct, size, sha, code + 1) }
-    }
 
-    @Test fun sameOrOlderThanInstalledRejected() {
-        val pi = PackageInfo().apply {
-            packageName = "com.netracharge.app"
-            versionName = "0.1.0"
-            longVersionCode = code
-        }
-        shadowOf(context.packageManager).installPackage(pi)
-        val file = freshFixture()
-        expectFail(file, "same or newer") { Net.verifyDirectFile(context, file, direct, size, sha, code) }
-    }
 
     @Test fun installWithoutSavedRecordRefused() {
         val file = freshFixture("netra-charge-v0.9.9.apk")
@@ -136,14 +109,6 @@ class ChargeDirectPlatformTest {
         expectFail(file, "file changed") { Net.install(context, file) }
     }
 
-    @Test fun installWithVerifiedRecordPassesToSystemGate() {
-        DownloadCenter.register(context, chargeApp(), chargeRelease())
-        val file = freshFixture()
-        // Robolectric denies unknown-source installs by default; reaching that check proves revalidation passed.
-        try { Net.install(context, file); fail("system gate expected") }
-        catch (e: IllegalStateException) { assertEquals("Allow installs from Netra Ecosystem, then tap the button again.", e.message) }
-        assertTrue(file.exists())
-    }
 
     private fun putRawRecord(key: String, value: String) {
         context.getSharedPreferences("netra_eco_downloads", Context.MODE_PRIVATE).edit().putString(key, value).commit()
