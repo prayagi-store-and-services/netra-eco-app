@@ -29,13 +29,18 @@ class ChargeDirectPlatformTest {
     private val size = 656862L
     private val code = 1L
 
-    private fun freshFixture(): File {
+    private fun freshFixture(name: String = "netra-charge-v0.1.0.apk"): File {
         val src = File("build/apk-fixtures/charge.apk")
         assertTrue("CI must download the public Charge fixture", src.exists())
-        val dst = File(File(context.cacheDir, "updates").apply { mkdirs() }, "netra-charge-v0.1.0.apk")
+        val dst = File(File(context.cacheDir, "updates").apply { mkdirs() }, name)
         src.copyTo(dst, overwrite = true)
         return dst
     }
+
+    private fun chargeApp() = CatalogApp("netra-charge", "Netra Charge", "", "", "", "com.netracharge.app",
+        direct.latestJsonUrl, "", emptyList(), direct.downloadUrl, "charge")
+
+    private fun chargeRelease() = LatestRelease("v0.1.0", "0.1.0", code, "", direct.downloadUrl, sha, size)
 
     private fun expectFail(file: File, part: String, block: () -> Unit) {
         try { block(); fail("must refuse: $part") }
@@ -94,20 +99,65 @@ class ChargeDirectPlatformTest {
     }
 
     @Test fun installWithoutSavedRecordRefused() {
-        val file = freshFixture()
+        val file = freshFixture("netra-charge-v0.9.9.apk")
         expectFail(file, "verified download") { Net.install(context, file) }
     }
 
+    @Test fun swappedRepoApkUnderChargeKeyRejected() {
+        // A different app's APK placed under the Charge key must hit full validation and fail,
+        // never sail through the repo install path. Dispatch follows the trusted record, not the archive.
+        DownloadCenter.register(context, chargeApp(), chargeRelease())
+        val kbc = File("build/apk-fixtures/other-app.apk")
+        assertTrue("CI must download public KBC fixture", kbc.exists())
+        val file = File(File(context.cacheDir, "updates").apply { mkdirs() }, "netra-charge-v0.1.0.apk")
+        kbc.copyTo(file, overwrite = true)
+        expectFail(file, "file changed") { Net.install(context, file) }
+    }
+
     @Test fun installWithVerifiedRecordPassesToSystemGate() {
-        val app = CatalogApp("netra-charge", "Netra Charge", "", "", "", "com.netracharge.app",
-            direct.latestJsonUrl, "", emptyList(), direct.downloadUrl, "charge")
-        val release = LatestRelease("v0.1.0", "0.1.0", code, "", direct.downloadUrl, sha, size)
-        DownloadCenter.register(context, app, release)
+        DownloadCenter.register(context, chargeApp(), chargeRelease())
         val file = freshFixture()
         // Robolectric denies unknown-source installs by default; reaching that check proves revalidation passed.
         try { Net.install(context, file); fail("system gate expected") }
         catch (e: IllegalStateException) { assertEquals("Allow installs from Netra Ecosystem, then tap the button again.", e.message) }
         assertTrue(file.exists())
+    }
+
+    private fun putRawRecord(key: String, value: String) {
+        context.getSharedPreferences("netra_eco_downloads", Context.MODE_PRIVATE).edit().putString(key, value).commit()
+    }
+
+    private fun rawRecord(appId: String = "netra-charge", pkg: String = "com.netracharge.app", tag: String = "v0.1.0") =
+        listOf(pkg, "0.1.0", code.toString(), size.toString(), "Netra Charge", appId, sha, tag).joinToString("|")
+
+    @Test fun mismatchedRecordPackageRefused() {
+        // Record claims the Charge key but names a different package: refuse, no generic fallback.
+        putRawRecord("netra-charge-v0.1.0.apk", rawRecord(pkg = "com.example.other"))
+        val file = freshFixture()
+        expectFail(file, "verified download") { Net.install(context, file) }
+    }
+
+    @Test fun mismatchedRecordAppIdRefused() {
+        // Record names an app id outside the allowlist: treated as no direct record; the Charge
+        // package in the archive then forces a refusal rather than a generic grant.
+        putRawRecord("netra-charge-v0.1.0.apk", rawRecord(appId = "some-other-app"))
+        val file = freshFixture()
+        expectFail(file, "verified download") { Net.install(context, file) }
+    }
+
+    @Test fun recordKeyTagMismatchRefused() {
+        // File key says v0.9.9 while the record inside says v0.1.0: not the canonical name for this record.
+        putRawRecord("netra-charge-v0.9.9.apk", rawRecord())
+        val file = freshFixture("netra-charge-v0.9.9.apk")
+        expectFail(file, "verified download") { Net.install(context, file) }
+    }
+
+    @Test fun fileOutsideCanonicalDirRefused() {
+        // Same record and same file name, but the file sits outside the updates cache dir.
+        putRawRecord("netra-charge-v0.1.0.apk", rawRecord())
+        val file = File(context.cacheDir, "netra-charge-v0.1.0.apk")
+        File("build/apk-fixtures/charge.apk").copyTo(file, overwrite = true)
+        expectFail(file, "verified download") { Net.install(context, file) }
     }
 
     @Test fun repoAppInstallPathUnchanged() {
