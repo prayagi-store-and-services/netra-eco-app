@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -34,6 +35,10 @@ import org.junit.runner.RunWith
  * proves the real content:// URI, MIME type and FLAG_GRANT_READ_URI_PERMISSION that production
  * hands to the system - it does NOT prove the external system-installer process actually opens the
  * stream. That external read-grant stays untested even when all tests here pass.
+ *
+ * Isolation discipline: every shell command runs through shell(), which reads the command output
+ * to EOF (blocking until it finishes), and package presence is read back through the same
+ * Net.installed PackageManager query production uses - no fire-and-forget shell effects.
  */
 @RunWith(AndroidJUnit4::class)
 class ChargeDirectInstrumentedTest {
@@ -44,6 +49,24 @@ class ChargeDirectInstrumentedTest {
     private val code = 1L
     private val assetName = "eco-fixture-charge.apk"
     private val localTmpFixture = "/data/local/tmp/eco-fixture-charge.apk"
+    private val pkg = "com.netracharge.app"
+
+    /** Runs a shell command and blocks until it finishes by reading its output to EOF. */
+    private fun shell(cmd: String): String {
+        val ui = InstrumentationRegistry.getInstrumentation().uiAutomation
+        return ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand(cmd)).use {
+            it.bufferedReader().readText()
+        }
+    }
+
+    /** Production's own presence check, so readback sees exactly what verifyDirectFile sees. */
+    private fun installedVersion(): Long? = Net.installed(context, pkg)?.first
+
+    @Before fun ensureChargeAbsent() {
+        val out = shell("pm uninstall $pkg")
+        assertTrue("Charge must start absent; pm uninstall said: ${out.trim()}",
+            installedVersion() == null)
+    }
 
     private fun sha256(f: File): String {
         val md = MessageDigest.getInstance("SHA-256")
@@ -105,15 +128,14 @@ class ChargeDirectInstrumentedTest {
     }
 
     @Test fun installedSameOrNewerRejected() {
-        val ui = InstrumentationRegistry.getInstrumentation().uiAutomation
-        ui.executeShellCommand("pm uninstall com.netracharge.app").close()
         // The shell-side copy is a separate pinned artifact; the target app never reads /data/local/tmp.
-        val shellSha = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("sha256sum $localTmpFixture")).bufferedReader().readText()
+        val shellSha = shell("sha256sum $localTmpFixture")
         assertTrue("local-tmp fixture sha-256 must match the pin: $shellSha", shellSha.startsWith(sha))
-        val shellSize = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("stat -c %s $localTmpFixture")).bufferedReader().readText().trim()
+        val shellSize = shell("stat -c %s $localTmpFixture").trim()
         assertEquals("pinned fixture size", size.toString(), shellSize)
-        val out = ParcelFileDescriptor.AutoCloseInputStream(ui.executeShellCommand("pm install -r $localTmpFixture")).bufferedReader().readText()
+        val out = shell("pm install -r $localTmpFixture")
         assertTrue("fixture must install on the emulator: $out", out.contains("Success"))
+        assertEquals("fixture must be present at the pinned version", code, installedVersion())
         try {
             val file = fixture()
             try {
@@ -124,15 +146,21 @@ class ChargeDirectInstrumentedTest {
             }
             assertFalse(file.exists())
         } finally {
-            ui.executeShellCommand("pm uninstall com.netracharge.app").close()
+            val un = shell("pm uninstall $pkg")
+            assertTrue("Charge must be removed again; pm uninstall said: ${un.trim()}",
+                installedVersion() == null)
         }
     }
 
     @Test fun verifiedInstallFiresRealProviderInstallerIntent() {
-        // CI grants unknown-sources for this app first; the real FileProvider must build the system installer intent.
-        InstrumentationRegistry.getInstrumentation().uiAutomation
-            .executeShellCommand("appops set ${context.packageName} REQUEST_INSTALL_PACKAGES allow").close()
-        assertTrue(context.packageManager.canRequestPackageInstalls())
+        // Unknown-sources grant for this app first; the real FileProvider must build the system installer intent.
+        val setOut = shell("appops set ${context.packageName} REQUEST_INSTALL_PACKAGES allow")
+        val getOut = shell("appops get ${context.packageName} REQUEST_INSTALL_PACKAGES")
+        val can = context.packageManager.canRequestPackageInstalls()
+        assertTrue(
+            "install-permission grant must hold; appops set='${setOut.trim()}' get='${getOut.trim()}' canRequestPackageInstalls=$can",
+            getOut.contains("allow", ignoreCase = true) && can
+        )
         registerRecord()
         val file = fixture()
         val intents = mutableListOf<Intent>()
