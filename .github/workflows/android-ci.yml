@@ -36,6 +36,8 @@ jobs:
           keytool -genkeypair -keystore debug.keystore -storepass android
           -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048
           -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
+      - name: Install build-tools for fixture identity
+        run: yes | sdkmanager "build-tools;34.0.0" > /dev/null
       - name: Download public APK archive regression fixtures
         run: |
           mkdir -p app/build/apk-fixtures
@@ -44,6 +46,11 @@ jobs:
           # Charge v0.1.0 direct-site fixture (the direct URL always serves the latest release, so this pin must move with each Charge release).
           curl --fail --location --retry 2 https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk -o app/build/apk-fixtures/charge.apk
           printf '%s\n' '72fc7113fe293145691d0a4a4866191bdfe0296ca9721b8f6f5fce6e4fb8944e  app/build/apk-fixtures/renamed-hub.apk' 'e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16  app/build/apk-fixtures/other-app.apk' '1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/build/apk-fixtures/charge.apk' | sha256sum --check --strict
+      - name: Verify Charge fixture identity independently (apksigner + aapt)
+        run: |
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          "$BT/apksigner" verify --print-certs app/build/apk-fixtures/charge.apk | grep -F "SHA-256 digest: 814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9"
+          "$BT/aapt" dump badging app/build/apk-fixtures/charge.apk | grep -F "package: name='com.netracharge.app' versionCode='1' versionName='0.1.0'"
       - name: Build debug APK and run unit tests
         shell: bash
         run: |
@@ -69,4 +76,55 @@ jobs:
             app/build/outputs/ecosystem-header.png
             app/build/outputs/human-safety-hold*.png
             app/build/outputs/charge-*.png
+          if-no-files-found: warn
+
+  instrumented-charge-direct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Set up Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: 9.3.1
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+      - name: Generate CI-only debug signing key
+        run: >-
+          keytool -genkeypair -keystore debug.keystore -storepass android
+          -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048
+          -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
+      - name: Download pinned public Charge fixture
+        run: |
+          mkdir -p app/build/apk-fixtures
+          curl --fail --location --retry 2 https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk -o app/build/apk-fixtures/charge.apk
+          printf '%s
+' '1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/build/apk-fixtures/charge.apk' | sha256sum --check --strict
+      - name: Run Charge instrumented tests on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb push app/build/apk-fixtures/charge.apk /sdcard/Download/eco-fixture-charge.apk
+            gradle --no-daemon :app:connectedDebugAndroidTest --stacktrace
+      - name: Upload instrumented results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: charge-instrumented-results
+          path: |
+            app/build/outputs/androidTest-results/**
+            app/build/reports/androidTests/**
           if-no-files-found: warn
