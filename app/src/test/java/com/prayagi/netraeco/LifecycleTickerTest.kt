@@ -31,6 +31,9 @@ class LifecycleTickerTest {
             val tick by rememberVisibleTicker(100L)
             observed = tick
         }
+        // With autoAdvance off, state changes need one frame to reach composition.
+        // One frame is shorter than the 100 ms ticker period and cannot hide a delayed first tick.
+        rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
         assertTrue("visible entry refreshes before the first period", observed > 0L)
 
@@ -46,8 +49,9 @@ class LifecycleTickerTest {
         assertEquals("ticker is cancelled while the screen is stopped", stoppedAt, observed)
 
         rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
-        assertTrue("resume refreshes without advancing the clock", observed > stoppedAt)
+        assertTrue("resume refreshes within one frame, before the next period", observed > stoppedAt)
         val resumedAt = observed
         rule.mainClock.advanceTimeBy(350)
         rule.waitForIdle()
