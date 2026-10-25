@@ -13,6 +13,7 @@ android {
     targetSdk = 36
     versionCode = 56
     versionName = "1.2.42"
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
   signingConfigs {
@@ -57,6 +58,8 @@ dependencies {
   implementation(libs.androidx.work.runtime.ktx)
   testImplementation(libs.junit)
   testImplementation("org.robolectric:robolectric:4.16.1")
+  androidTestImplementation("androidx.test.ext:junit:1.2.1")
+  androidTestImplementation("androidx.test:runner:1.6.2")
   testImplementation("io.github.takahirom.roborazzi:roborazzi:1.59.0")
   testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.59.0")
   testImplementation("androidx.compose.ui:ui-test-junit4")
