@@ -10,7 +10,11 @@ data class CatalogApp(
     val packageName: String,
     val latestJsonUrl: String,
     val siteUrl: String,
-    val categories: List<String> = emptyList()
+    val categories: List<String> = emptyList(),
+    /** Exact APK URL for an allowlisted repo-less app (private source, signed APK served from the Eco site). Empty for repo apps. */
+    val directApkUrl: String = "",
+    /** Website download-counter code for a repo-less app (same dl-<code> counter its app page uses). Empty for repo apps. */
+    val counterCode: String = ""
 )
 
 /** The newest release of an app, from its latest.json. */
@@ -44,6 +48,26 @@ fun isValidSha256(sha: String): Boolean = Regex("^[0-9a-f]{64}$").matches(sha)
 
 /** Only these two places may serve an APK or a catalog: this site and GitHub releases of this organization. */
 const val ORG = "prayagi-store-and-services"
+
+/** Base of the public Eco site; a direct APK or metadata URL must start with exactly this. */
+const val SITE_BASE = "https://prayagi-store-and-services.github.io/netra-eco/"
+
+fun isTrustedSiteUrl(url: String): Boolean =
+    url.startsWith(SITE_BASE) && url.length > SITE_BASE.length && url.none { it.isWhitespace() }
+
+/**
+ * Repo-less apps that may ship through the Eco site directly: private source, public signed APK.
+ * A catalog entry with no repo is accepted only when its id and package match this list exactly,
+ * and its download and metadata URLs sit under SITE_BASE. Keyed by catalog id.
+ */
+data class DirectApp(val packageName: String, val signerCertSha256: String)
+
+val DIRECT_APPS: Map<String, DirectApp> = mapOf(
+    "netra-charge" to DirectApp(
+        packageName = "com.netracharge.app",
+        signerCertSha256 = "814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9"
+    )
+)
 
 fun isTrustedRepo(repo: String): Boolean = Regex("^" + Regex.escape(ORG) + "/[A-Za-z0-9._-]+$").matches(repo)
 
