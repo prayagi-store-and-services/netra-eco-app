@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.statusBarsPadding
 import kotlinx.coroutines.awaitAll
@@ -242,8 +241,8 @@ fun EcoScreen(
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Standard header (all Netra apps): 56 dp content height, only app name, version and date/time. Nothing else lives here.
-        var clockNow by remember { mutableStateOf(java.util.Date()) }
-        LaunchedEffect(Unit) { while (true) { clockNow = java.util.Date(); delay(30_000) } }
+        val clockTick by rememberVisibleTicker(30_000)
+        val clockNow = remember(clockTick) { java.util.Date() }
         var ecoName by remember { mutableStateOf(NameGate.displayName(context)) }
         LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
