@@ -24,6 +24,8 @@ fun rememberVisibleTicker(periodMillis: Long = 1000L): State<Long> {
     val ticks = remember { mutableLongStateOf(0L) }
     LaunchedEffect(lifecycleOwner, periodMillis) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            // Re-read wall time immediately on first visibility and every resume.
+            ticks.longValue++
             while (true) { delay(periodMillis); ticks.longValue++ }
         }
     }
