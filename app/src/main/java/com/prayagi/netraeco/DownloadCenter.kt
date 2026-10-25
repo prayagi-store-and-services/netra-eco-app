@@ -62,8 +62,30 @@ object DownloadCenter {
     fun register(c: Context, app: CatalogApp, release: LatestRelease) {
         HumanSafetyHold.requireAllowed(app.repo, app.packageName)
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+            .putString(keyFor(app, release), recordValue(app, release)).apply()
     }
+
+    private fun recordValue(app: CatalogApp, release: LatestRelease) =
+        listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id, release.sha256, release.tag).joinToString("|")
+
+    /** Verified metadata saved when a download finished: package, version name, version code, size, app name, app id, SHA-256, tag. */
+    data class SavedRecord(val packageName: String, val versionName: String, val versionCode: Long, val size: Long, val name: String, val appId: String, val sha256: String, val tag: String)
+
+    /** The record saved for this file key, or null when missing or malformed. Install re-checks a repo-less file against it. */
+    fun savedRecord(c: Context, key: String): SavedRecord? {
+        val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(key, null)?.split("|") ?: return null
+        if (p.size < 8) return null
+        val code = p[2].toLongOrNull() ?: return null
+        val size = p[3].toLongOrNull() ?: return null
+        if (!isValidSha256(p[6]) || !isValidTag(p[7])) return null
+        return SavedRecord(p[0], p[1], code, size, p[4], p[5], p[6], p[7])
+    }
+
+    /** The one canonical cache folder finished downloads live in. */
+    fun canonicalDir(c: Context): File = dir(c)
+
+    /** The one file name a finished download of this record must have. */
+    fun canonicalKey(rec: SavedRecord): String = "${rec.appId}-${rec.tag}.apk" 
 
     /** True when the verified file for this release is already saved (a verified download is exactly the expected size). */
     fun hasFile(c: Context, app: CatalogApp, release: LatestRelease): Boolean =
@@ -91,7 +113,7 @@ object DownloadCenter {
         synchronized(this) {
             if (jobs[key]?.isActive == true) return
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(key, listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+                .putString(key, recordValue(app, release)).apply()
             lastEta.remove(key)
             put(Item(key, app.id, app.name, release.versionName, release.versionCode, app.packageName, 0L, release.size, null, DOWNLOADING))
             jobs[key] = scope.launch {
@@ -116,7 +138,11 @@ object DownloadCenter {
             if (jobs[f.name]?.isActive == true) return@forEach
             val p = prefs.getString(f.name, null)?.split("|")
             val size = p?.getOrNull(3)?.toLongOrNull()
-            if (p == null || p.size < 6 || size == null || f.length() != size) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
+            // Pre-upgrade records carry only the first six fields (no SHA-256/tag). They stay valid for ordinary
+            // repo apps, whose install path never needed them; a short record for an allowlisted direct app can
+            // never establish protected trust, so that file is removed like any other unverifiable one.
+            val legacyRepoRecord = p != null && p.size == 6 && !DIRECT_APPS.containsKey(p[5])
+            if (p == null || size == null || f.length() != size || (p.size < 8 && !legacyRepoRecord)) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
             if (map[f.name]?.state != DONE) {
                 map[f.name] = Item(f.name, p[5], p[4], p[1], p[2].toLongOrNull() ?: 0L, p[0], size, size, null, DONE)
             }
@@ -147,6 +173,13 @@ object DownloadCenter {
     }
 
     fun file(c: Context, key: String) = File(dir(c), key)
+
+    /** Drops a finished download whose file is already gone (for example a refused install), so the app card offers a fresh Download instead of a dead Install button. */
+    fun expunge(c: Context, key: String) {
+        File(dir(c), key).delete()
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(key).apply()
+        items.value = items.value - key
+    }
 }
 
 private fun mb(b: Long) = String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0)
@@ -172,7 +205,12 @@ fun AppDownloadButton(row: AppRow, status: Status) {
                 ProgressBlock(item)
             }
             DownloadCenter.DONE -> Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = {
-                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") }
+                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) {
+                    note = plainFailure(e, "Install failed.")
+                    // A verification refusal deletes the file; clear the stale DONE state so the button offers a fresh download.
+                    // The system-permission gate keeps the file on purpose ("tap the button again"), so it is not expunged.
+                    if (!DownloadCenter.file(context, key).exists()) DownloadCenter.expunge(context, key)
+                }
             }) { Text("Downloaded - tap to install") }
             else -> {
                 Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = { DownloadCenter.start(context, row.app, latest) }) {
@@ -203,7 +241,7 @@ fun SelfDownloadButton(release: LatestRelease) {
     val item = all[k]
     Button(enabled = item?.state != DownloadCenter.DOWNLOADING, onClick = {
         if (item?.state == DownloadCenter.DONE) {
-            try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) {}
+            try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) { if (!DownloadCenter.file(context, k).exists()) DownloadCenter.expunge(context, k) }
         } else DownloadCenter.start(context, self, release)
     }) {
         Text(when (item?.state) {
@@ -247,7 +285,7 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) {} }) { Text("Install") }
+                                Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (_: Exception) { if (!DownloadCenter.file(context, i.key).exists()) DownloadCenter.expunge(context, i.key) } }) { Text("Install") }
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             }
                         }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
@@ -16,19 +17,21 @@ import java.security.MessageDigest
 object Net {
     const val CATALOG_URL = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
 
-    private fun open(url: String, fresh: Boolean = false): HttpURLConnection {
+    private fun open(url: String, fresh: Boolean = false, allowRedirects: Boolean = true): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
         if (fresh) { c.useCaches = false; c.setRequestProperty("Cache-Control", "no-cache") }
         c.connectTimeout = 10000
         c.readTimeout = 20000
-        c.instanceFollowRedirects = true
+        // GitHub release downloads redirect to their CDN, so repo apps keep redirects. A repo-less app's
+        // metadata and APK must answer directly from the pinned Eco-site URL; any redirect is a failure.
+        c.instanceFollowRedirects = allowRedirects
         c.setRequestProperty("User-Agent", "netra-eco-app")
         return c
     }
 
     /** Small text download (catalog or latest.json). Returns null when offline or the server says no. */
-    fun fetchText(url: String, fresh: Boolean = false): String? = try {
-        val c = open(url, fresh)
+    fun fetchText(url: String, fresh: Boolean = false, allowRedirects: Boolean = true): String? = try {
+        val c = open(url, fresh, allowRedirects)
         if (c.responseCode != 200) null else {
             val bytes = c.inputStream.use { it.readBytes() }
             if (bytes.size > 1024 * 1024) null else String(bytes, Charsets.UTF_8)
@@ -48,6 +51,14 @@ object Net {
      */
     fun fetchLatest(app: CatalogApp): LatestRelease? {
         if (HumanSafetyHold.matches(app.repo, app.packageName)) return null
+        if (app.repo.isBlank()) {
+            // Repo-less app (private source, public signed APK on the Eco site): only its allowlisted latest.json, never the GitHub API.
+            val direct = DIRECT_APPS[app.id]
+            if (direct == null || app.packageName != direct.packageName ||
+                app.directApkUrl != direct.downloadUrl || app.latestJsonUrl != direct.latestJsonUrl
+            ) return null
+            return fetchText(app.latestJsonUrl, fresh = true, allowRedirects = false)?.let { parseLatest(it, app.repo, app.directApkUrl) }
+        }
         val fromApi = try {
             val body = fetchText("https://api.github.com/repos/${app.repo}/releases/latest?_=${System.currentTimeMillis()}", fresh = true)
             if (body == null) null else {
@@ -87,10 +98,31 @@ object Net {
         val arr = JSONObject(json).getJSONArray("projects")
         (0 until arr.length()).mapNotNull { i ->
             val o = arr.getJSONObject(i)
+            val id = o.getString("id")
             val repo = o.optString("repo")
             val pkg = o.optString("package")
-            if (!isTrustedRepo(repo) || pkg.isBlank()) null else CatalogApp(
-                id = o.getString("id"),
+            val direct = DIRECT_APPS[id]
+            if (repo.isBlank()) {
+                // No repo: only the exact allowlisted id, package and URLs. Anything else is dropped.
+                val download = o.optString("download")
+                val latestJson = o.optString("latestJson")
+                if (direct == null || pkg != direct.packageName ||
+                    download != direct.downloadUrl || latestJson != direct.latestJsonUrl
+                ) null else CatalogApp(
+                    id = id,
+                    name = o.getString("name"),
+                    type = o.optString("type"),
+                    summary = o.optString("summary"),
+                    repo = "",
+                    packageName = pkg,
+                    latestJsonUrl = latestJson,
+                    siteUrl = o.optString("site"),
+                    categories = o.optJSONArray("categories")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
+                    directApkUrl = download,
+                    counterCode = o.optString("code")
+                )
+            } else if (!isTrustedRepo(repo) || pkg.isBlank()) null else CatalogApp(
+                id = id,
                 name = o.getString("name"),
                 type = o.optString("type"),
                 summary = o.optString("summary"),
@@ -105,18 +137,19 @@ object Net {
         emptyList()
     }
 
-    fun parseLatest(json: String, repo: String): LatestRelease? = try {
+    fun parseLatest(json: String, repo: String, directApkUrl: String = ""): LatestRelease? = try {
         val o = JSONObject(json)
         val tag = o.getString("tag")
         val sha = o.getString("sha256").lowercase()
         val size = o.getLong("size")
         val code = o.getLong("versionCode")
+        val apkUrl = directApkUrl.ifBlank { "https://github.com/$repo/releases/download/$tag/app-release.apk" }
         if (!isValidTag(tag) || !isValidSha256(sha) || size <= 0L || code <= 0L) null else LatestRelease(
             tag = tag,
             versionName = o.optString("versionName", tag.removePrefix("v")),
             versionCode = code,
             notes = o.optString("notes", "").trim(),
-            apkUrl = "https://github.com/$repo/releases/download/$tag/app-release.apk",
+            apkUrl = apkUrl,
             sha256 = sha,
             size = size
         )
@@ -181,7 +214,12 @@ object Net {
         // Only this app's older files go; other apps' downloads (running or finished) stay.
         dir.listFiles()?.filter { it.name.startsWith(app.id + "-") }?.forEach { it.delete() }
         val file = File(dir, "${app.id}-${release.tag}.apk")
-        val c = open(release.apkUrl)
+        val direct = DIRECT_APPS[app.id]
+        if (direct != null && release.apkUrl != direct.downloadUrl) {
+            file.delete()
+            throw IllegalStateException("Unexpected download address for this app.")
+        }
+        val c = open(release.apkUrl, allowRedirects = direct == null)
         if (c.responseCode != 200) throw IllegalStateException("Download failed (server answered ${c.responseCode}).")
         val md = MessageDigest.getInstance("SHA-256")
         var total = 0L
@@ -214,8 +252,63 @@ object Net {
             file.delete()
             throw IllegalStateException("The downloaded file did not match its checksum, so it was not installed.")
         }
-        DownloadCount.countFinishedDownload(context, app.repo)
+        direct?.let { verifyDirectFile(context, file, it, release.size, release.sha256, release.versionCode) }
+        DownloadCount.countFinishedDownload(context, app.repo, app.counterCode)
         return file
+    }
+
+    /**
+     * Repo-less apps are verified against the expected metadata: size, SHA-256, package name, version code,
+     * exactly one signer matching the pinned certificate, and newer than the installed copy. Runs right after
+     * the download and again before every install grant, so a replaced cache file is caught. The file is
+     * deleted and an error thrown on any mismatch, exactly like a checksum failure.
+     */
+    internal fun verifyDirectFile(context: Context, file: File, direct: DirectApp, expectedSize: Long, expectedSha256: String, expectedCode: Long) {
+        fun fail(message: String): Nothing {
+            file.delete()
+            throw IllegalStateException(message)
+        }
+        if (!file.exists() || file.length() != expectedSize) {
+            fail("The downloaded file changed, so it was not installed. Download it again from its app card.")
+        }
+        val md = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buf = ByteArray(16384)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                md.update(buf, 0, n)
+            }
+        }
+        val actual = md.digest().joinToString("") { "%02x".format(it) }
+        if (actual != expectedSha256) {
+            fail("The downloaded file changed, so it was not installed. Download it again from its app card.")
+        }
+        val pm = context.packageManager
+        val info = (if (Build.VERSION.SDK_INT >= 28)
+            pm.getPackageArchiveInfo(file.absolutePath, PackageManager.GET_SIGNING_CERTIFICATES)
+        else
+            @Suppress("DEPRECATION") pm.getPackageArchiveInfo(file.absolutePath, PackageManager.GET_SIGNATURES)
+        ) ?: fail("The installer package could not be verified. Download it again from its app card.")
+        if (info.packageName != direct.packageName) {
+            fail("The downloaded file is not the expected app, so it was not installed.")
+        }
+        if (PackageInfoCompat.getLongVersionCode(info) != expectedCode) {
+            fail("The downloaded file's version did not match its release info, so it was not installed.")
+        }
+        val installedCode = installed(context, direct.packageName)?.first
+        if (installedCode != null && expectedCode <= installedCode) {
+            fail("The installed version is the same or newer, so this file was not installed.")
+        }
+        val signers: List<ByteArray> = if (Build.VERSION.SDK_INT >= 28)
+            info.signingInfo?.apkContentsSigners?.map { it.toByteArray() } ?: emptyList()
+        else
+            @Suppress("DEPRECATION") info.signatures?.map { it.toByteArray() } ?: emptyList()
+        val signerOk = signers.size == 1 &&
+            MessageDigest.getInstance("SHA-256").digest(signers[0]).joinToString("") { "%02x".format(it) } == direct.signerCertSha256
+        if (!signerOk) {
+            fail("The downloaded file's signing key did not match, so it was not installed.")
+        }
     }
 
     /** Opens the system installer. Android installs only if the app is signed with the same key as the installed one. */
@@ -225,6 +318,30 @@ object Net {
             ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
         check(!HumanSafetyHold.installerName(file.name)) { HumanSafetyHold.MESSAGE }
         HumanSafetyHold.requireAllowed(packageName = packageName)
+        // Protected namespace: ANY of three signals - the cache key starts with an allowlisted app's id, a saved
+        // verified record names an allowlisted app, or the archive is an allowlisted app's package - puts this
+        // file on the protected route, and then EVERY binding must agree: same allowlisted id from all present
+        // signals, a saved record repeating the allowlisted package, the canonical file name for that record,
+        // and the canonical cache location. Any disagreement or missing piece refuses; there is no generic
+        // fallback, so a swapped-in different-package APK under a Charge key can never sail through.
+        val rec = DownloadCenter.savedRecord(context, file.name)
+        val recordApp = rec?.appId?.takeIf { DIRECT_APPS.containsKey(it) }
+        val keyApp = DIRECT_APPS.keys.firstOrNull { file.name.startsWith("$it-") && file.name.endsWith(".apk") }
+        val pkgApp = DIRECT_APPS.entries.firstOrNull { it.value.packageName == packageName }?.key
+        val signals = setOfNotNull(recordApp, keyApp, pkgApp)
+        if (signals.isNotEmpty()) {
+            val id = signals.singleOrNull()
+            val direct = id?.let { DIRECT_APPS[it] }
+            val bound = id != null && direct != null && rec != null &&
+                rec.appId == id && rec.packageName == direct.packageName &&
+                file.name == DownloadCenter.canonicalKey(rec) &&
+                runCatching { file.canonicalFile.parentFile == DownloadCenter.canonicalDir(context).canonicalFile }.getOrDefault(false)
+            if (!bound || rec == null || direct == null) {
+                file.delete()
+                throw IllegalStateException("The installer could not be matched to a verified download. Download it again from its app card.")
+            }
+            verifyDirectFile(context, file, direct, rec.size, rec.sha256, rec.versionCode)
+        }
         if (!context.packageManager.canRequestPackageInstalls()) {
             context.startActivity(
                 Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
