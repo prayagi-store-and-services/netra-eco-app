@@ -41,7 +41,9 @@ jobs:
           mkdir -p app/build/apk-fixtures
           curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.0/app-release.apk -o app/build/apk-fixtures/renamed-hub.apk
           curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/KBC/releases/download/v1.1.37/app-release.apk -o app/build/apk-fixtures/other-app.apk
-          printf '%s\n' '72fc7113fe293145691d0a4a4866191bdfe0296ca9721b8f6f5fce6e4fb8944e  app/build/apk-fixtures/renamed-hub.apk' 'e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16  app/build/apk-fixtures/other-app.apk' | sha256sum --check --strict
+          # Charge v0.1.0 direct-site fixture (the direct URL always serves the latest release, so this pin must move with each Charge release).
+          curl --fail --location --retry 2 https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk -o app/build/apk-fixtures/charge.apk
+          printf '%s\n' '72fc7113fe293145691d0a4a4866191bdfe0296ca9721b8f6f5fce6e4fb8944e  app/build/apk-fixtures/renamed-hub.apk' 'e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16  app/build/apk-fixtures/other-app.apk' '1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae  app/build/apk-fixtures/charge.apk' | sha256sum --check --strict
       - name: Build debug APK and run unit tests
         shell: bash
         run: |
