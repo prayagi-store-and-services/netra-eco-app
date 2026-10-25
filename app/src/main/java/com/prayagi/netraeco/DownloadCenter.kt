@@ -173,7 +173,7 @@ fun AppDownloadButton(row: AppRow, status: Status) {
                 ProgressBlock(item)
             }
             DownloadCenter.DONE -> Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = {
-                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") }
+                try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = installFailureNote(e) }
             }) { Text("Downloaded - tap to install") }
             else -> {
                 Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = { DownloadCenter.start(context, row.app, latest) }) {
@@ -207,7 +207,7 @@ fun SelfDownloadButton(release: LatestRelease) {
     Button(enabled = item?.state != DownloadCenter.DOWNLOADING, onClick = {
         if (item?.state == DownloadCenter.DONE) {
             note = null
-            try { Net.install(context, DownloadCenter.file(context, k)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") }
+            try { Net.install(context, DownloadCenter.file(context, k)) } catch (e: Exception) { note = installFailureNote(e) }
         } else DownloadCenter.start(context, self, release)
     }) {
         Text(when (item?.state) {
@@ -255,7 +255,7 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             } else {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (e: Exception) { installNote = i.key to plainFailure(e, "Install failed.") } }) { Text("Install") }
+                                    Button(onClick = { try { Net.install(context, DownloadCenter.file(context, i.key)) } catch (e: Exception) { installNote = i.key to installFailureNote(e) } }) { Text("Install") }
                                     OutlinedButton(onClick = { DownloadCenter.delete(context, i.key); installNote = null }) { Text("Delete") }
                                 }
                                 installNote?.let { n -> if (n.first == i.key) Text(n.second, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
@@ -271,3 +271,6 @@ fun DownloadManagerCard(rows: List<AppRow>) {
         }
     }
 }
+
+/** Install failures always carry the action context first, then the factual reason, so a rejected install never reads as inert. */
+private fun installFailureNote(e: Exception): String = "Install failed. " + plainFailure(e, "Try again.")
