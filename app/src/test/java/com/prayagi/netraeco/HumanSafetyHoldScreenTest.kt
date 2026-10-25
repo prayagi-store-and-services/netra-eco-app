@@ -48,7 +48,7 @@ class HumanSafetyHoldScreenTest {
         val key = "netra-hub-v1.5.0.apk"
         File(dir, key).writeBytes(byteArrayOf(0))
         context.getSharedPreferences("netra_eco_downloads", 0).edit().clear()
-            .putString(key, listOf(HumanSafetyHold.PACKAGE, "1.5.0", "76", "1", "Human Safety", "netra-hub").joinToString("|")).commit()
+            .putString(key, listOf(HumanSafetyHold.PACKAGE, "1.5.0", "76", "1", "Human Safety", "netra-hub", "0".repeat(64), "v1.5.0").joinToString("|")).commit()
         DownloadCenter.refresh(context)
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
@@ -66,7 +66,7 @@ class HumanSafetyHoldScreenTest {
         val key = "kbc-v1.1.37.apk"
         File(File(context.cacheDir, "updates").apply { mkdirs() }, key).writeBytes(byteArrayOf(0))
         context.getSharedPreferences("netra_eco_downloads", 0).edit().clear()
-            .putString(key, "com.aistudio.reasoningquiz.tark|1.1.37|46|1|KBC|kbc").commit()
+            .putString(key, "com.aistudio.reasoningquiz.tark|1.1.37|46|1|KBC|kbc|" + "0".repeat(64) + "|v1.1.37").commit()
         DownloadCenter.items.value = emptyMap()
         DownloadCenter.refresh(context)
         rule.setContent { MaterialTheme { DownloadManagerCard(emptyList()) } }
