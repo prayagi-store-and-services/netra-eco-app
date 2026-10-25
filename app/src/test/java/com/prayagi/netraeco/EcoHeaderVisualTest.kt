@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.*
@@ -21,8 +22,11 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Visual regression at w320dp with 1.5x font scale (Robolectric fixture, not a live device):
- * the header must grow instead of clipping the version line, and the offline "Check for update"
+ * the header must grow instead of clipping the version line, and the "Check for update"
  * label must render with readable contrast (it was hard-coded white on a pale outlined button).
+ * The version line is matched by its testTag: the app name also contains "Netra Ecosystem",
+ * so a plain substring text query is ambiguous. Pixels come from captureToImage, the supported
+ * Robolectric/NATIVE path; decorView.draw can produce a blank bitmap for Compose content.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -42,7 +46,7 @@ class EcoHeaderVisualTest {
         val view = rule.activity.window.decorView
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         view.draw(Canvas(bitmap))
-        val file = File("build/outputs/eco-header-$name.png").apply { parentFile.mkdirs() }
+        val file = File("build/outputs/eco-header-$name.png").apply { parentFile?.mkdirs() }
         file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         bitmap.recycle()
     }
@@ -50,8 +54,7 @@ class EcoHeaderVisualTest {
     @Test fun largeFontVersionLineStaysInsideHeader() {
         renderOfflineLargeFont()
         val header = rule.onNodeWithTag("eco-header").fetchSemanticsNode().boundsInRoot
-        val version = rule.onNodeWithText("Netra Ecosystem", substring = true)
-            .fetchSemanticsNode().boundsInRoot
+        val version = rule.onNodeWithTag("eco-header-version").fetchSemanticsNode().boundsInRoot
         assertTrue(
             "version line clipped: bottom ${version.bottom} beyond header bottom ${header.bottom}",
             version.bottom <= header.bottom + 0.5f
@@ -63,9 +66,7 @@ class EcoHeaderVisualTest {
     @Test fun updateButtonLabelHasReadableContrast() {
         renderOfflineLargeFont()
         val bounds = rule.onNodeWithText("Check for update").fetchSemanticsNode().boundsInRoot
-        val view = rule.activity.window.decorView
-        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        view.draw(Canvas(bitmap))
+        val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
         var dark = 0
         val left = bounds.left.toInt().coerceIn(0, bitmap.width - 1)
         val right = bounds.right.toInt().coerceIn(left + 1, bitmap.width)
@@ -76,7 +77,6 @@ class EcoHeaderVisualTest {
             // Glyph ink must be meaningfully darker than the pale outlined-button background.
             if (android.graphics.Color.red(p) + android.graphics.Color.green(p) + android.graphics.Color.blue(p) < 240) dark++
         }
-        bitmap.recycle()
         assertTrue("button label is unreadable (white-on-pale) - found only $dark dark pixels", dark > 50)
         shot("button-contrast-320-large")
     }
