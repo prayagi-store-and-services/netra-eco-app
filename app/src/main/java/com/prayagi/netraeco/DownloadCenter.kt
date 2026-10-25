@@ -62,7 +62,23 @@ object DownloadCenter {
     fun register(c: Context, app: CatalogApp, release: LatestRelease) {
         HumanSafetyHold.requireAllowed(app.repo, app.packageName)
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+            .putString(keyFor(app, release), recordValue(app, release)).apply()
+    }
+
+    private fun recordValue(app: CatalogApp, release: LatestRelease) =
+        listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id, release.sha256).joinToString("|")
+
+    /** Verified metadata saved when a download finished: package, version name, version code, size, app name, app id, SHA-256. */
+    data class SavedRecord(val packageName: String, val versionName: String, val versionCode: Long, val size: Long, val name: String, val appId: String, val sha256: String)
+
+    /** The record saved for this file key, or null when missing or malformed. Install re-checks a repo-less file against it. */
+    fun savedRecord(c: Context, key: String): SavedRecord? {
+        val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(key, null)?.split("|") ?: return null
+        if (p.size < 7) return null
+        val code = p[2].toLongOrNull() ?: return null
+        val size = p[3].toLongOrNull() ?: return null
+        if (!isValidSha256(p[6])) return null
+        return SavedRecord(p[0], p[1], code, size, p[4], p[5], p[6])
     }
 
     /** True when the verified file for this release is already saved (a verified download is exactly the expected size). */
@@ -91,7 +107,7 @@ object DownloadCenter {
         synchronized(this) {
             if (jobs[key]?.isActive == true) return
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(key, listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
+                .putString(key, recordValue(app, release)).apply()
             lastEta.remove(key)
             put(Item(key, app.id, app.name, release.versionName, release.versionCode, app.packageName, 0L, release.size, null, DOWNLOADING))
             jobs[key] = scope.launch {
@@ -116,7 +132,7 @@ object DownloadCenter {
             if (jobs[f.name]?.isActive == true) return@forEach
             val p = prefs.getString(f.name, null)?.split("|")
             val size = p?.getOrNull(3)?.toLongOrNull()
-            if (p == null || p.size < 6 || size == null || f.length() != size) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
+            if (p == null || p.size < 7 || size == null || f.length() != size) { f.delete(); prefs.edit().remove(f.name).apply(); map.remove(f.name); return@forEach }
             if (map[f.name]?.state != DONE) {
                 map[f.name] = Item(f.name, p[5], p[4], p[1], p[2].toLongOrNull() ?: 0L, p[0], size, size, null, DONE)
             }
