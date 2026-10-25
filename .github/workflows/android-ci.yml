@@ -116,6 +116,7 @@ jobs:
           arch: x86_64
           script: |
             adb devices -l
+            adb shell mkdir -p /sdcard/Download
             adb push app/build/apk-fixtures/charge.apk /sdcard/Download/eco-fixture-charge.apk
             gradle --no-daemon :app:connectedDebugAndroidTest --stacktrace
       - name: Upload instrumented results
