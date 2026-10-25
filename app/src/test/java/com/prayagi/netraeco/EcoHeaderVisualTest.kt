@@ -1,0 +1,83 @@
+package com.prayagi.netraeco
+
+import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.activity.ComponentActivity
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import java.io.File
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/**
+ * Visual regression at w320dp with 1.5x font scale (Robolectric fixture, not a live device):
+ * the header must grow instead of clipping the version line, and the offline "Check for update"
+ * label must render with readable contrast (it was hard-coded white on a pale outlined button).
+ */
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(qualifiers = "w320dp-h1000dp-xxhdpi", sdk = [34], application = Application::class)
+class EcoHeaderVisualTest {
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+
+    private fun renderOfflineLargeFont() {
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
+                MaterialTheme { EcoScreen(0, catalogLoader = { null }, textLoader = { null }) }
+            }
+        }
+    }
+
+    private fun shot(name: String) = rule.runOnIdle {
+        val view = rule.activity.window.decorView
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        view.draw(Canvas(bitmap))
+        val file = File("build/outputs/eco-header-$name.png").apply { parentFile.mkdirs() }
+        file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+        bitmap.recycle()
+    }
+
+    @Test fun largeFontVersionLineStaysInsideHeader() {
+        renderOfflineLargeFont()
+        val header = rule.onNodeWithTag("eco-header").fetchSemanticsNode().boundsInRoot
+        val version = rule.onNodeWithText("Netra Ecosystem", substring = true)
+            .fetchSemanticsNode().boundsInRoot
+        assertTrue(
+            "version line clipped: bottom ${version.bottom} beyond header bottom ${header.bottom}",
+            version.bottom <= header.bottom + 0.5f
+        )
+        assertTrue("version line must have real height", version.height > 0f)
+        shot("version-visible-320-large")
+    }
+
+    @Test fun updateButtonLabelHasReadableContrast() {
+        renderOfflineLargeFont()
+        val bounds = rule.onNodeWithText("Check for update").fetchSemanticsNode().boundsInRoot
+        val view = rule.activity.window.decorView
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        view.draw(Canvas(bitmap))
+        var dark = 0
+        val left = bounds.left.toInt().coerceIn(0, bitmap.width - 1)
+        val right = bounds.right.toInt().coerceIn(left + 1, bitmap.width)
+        val top = bounds.top.toInt().coerceIn(0, bitmap.height - 1)
+        val bottom = bounds.bottom.toInt().coerceIn(top + 1, bitmap.height)
+        for (y in top until bottom) for (x in left until right) {
+            val p = bitmap.getPixel(x, y)
+            // Glyph ink must be meaningfully darker than the pale outlined-button background.
+            if (android.graphics.Color.red(p) + android.graphics.Color.green(p) + android.graphics.Color.blue(p) < 240) dark++
+        }
+        bitmap.recycle()
+        assertTrue("button label is unreadable (white-on-pale) - found only $dark dark pixels", dark > 50)
+        shot("button-contrast-320-large")
+    }
+}
