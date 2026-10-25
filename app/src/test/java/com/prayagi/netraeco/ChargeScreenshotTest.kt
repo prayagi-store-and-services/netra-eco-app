@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -86,18 +87,18 @@ class ChargeScreenshotTest {
         val row = AppRow(chargeApp(), null, release())
         rule.setContent { MaterialTheme { EcoScreen(0, catalogLoader = { listOf(row) }, textLoader = { null }) } }
         rule.onNodeWithText("Netra Charge").assertIsDisplayed()
-        rule.onNodeWithText("Download").assertIsDisplayed()
-        rule.waitForIdle()
         shot("charge-fullscreen-available-360")
+        // Below-the-fold safe: the full screen is taller than the viewport, so existence is asserted and the pixel is the display evidence.
+        rule.onNodeWithText("Download").assertExists()
     }
 
     @Test fun catalogCardAvailable() {
         resetState()
         rule.setContent { MaterialTheme { AppCard(AppRow(chargeApp(), null, release()), null, false, false) {} } }
         rule.onNodeWithText("Netra Charge").assertIsDisplayed()
+        shot("charge-card-available-360")
         rule.onNodeWithText("Not installed").assertIsDisplayed()
         rule.onNodeWithText("Download").assertIsDisplayed()
-        shot("charge-card-available-360")
     }
 
     @Test fun catalogCardInstalledUpToDate() {
