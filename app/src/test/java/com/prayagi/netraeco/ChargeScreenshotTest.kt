@@ -36,7 +36,6 @@ class ChargeScreenshotTest {
     private val direct get() = DIRECT_APPS.getValue("netra-charge")
     private val sha = "1119987250ea79e3d2d0c6b8895dd77d25c7078ec9dfd449b0028ee7400204ae"
     private val size = 656862L
-    private val foreignSha = "e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16"
     private val key = "netra-charge-v0.1.0.apk"
 
     private fun chargeApp() = CatalogApp(
@@ -140,19 +139,27 @@ class ChargeScreenshotTest {
         rule.waitForIdle()
         rule.onNodeWithText("The installer could not be matched to a verified download. Download it again from its app card.").assertIsDisplayed()
         assertFalse("refused file must be deleted", file.exists())
+        // The refusal clears the stale DONE state: the card offers a fresh download, not a dead Install button.
+        rule.onAllNodesWithText("Downloaded - tap to install").assertCountEquals(0)
+        rule.onNodeWithText("Download").assertExists()
         shot("charge-protected-rejection-no-record-360")
     }
 
     @Test fun protectedRejectionSwappedPackageShowsRefusal() {
+        // A foreign-package APK sitting at the canonical Charge key under a valid Charge record.
+        // The size/SHA mismatch refuses before any signing parse (which JVM Robolectric cannot do), so this
+        // stays a truthful JVM test; the package/signer mismatches are covered on device in ChargeDirectInstrumentedTest.
         resetState()
         val file = placeFixture("other-app.apk")
-        saveRecord(file.length(), foreignSha)
+        saveRecord(size, sha)
         doneItem()
         rule.setContent { MaterialTheme { AppCard(AppRow(chargeApp(), null, release()), null, false, false) {} } }
         rule.onNodeWithText("Downloaded - tap to install").performClick()
         rule.waitForIdle()
-        rule.onNodeWithText("The downloaded file is not the expected app, so it was not installed.").assertIsDisplayed()
+        rule.onNodeWithText("The downloaded file changed, so it was not installed. Download it again from its app card.").assertIsDisplayed()
         assertFalse("refused file must be deleted", file.exists())
+        rule.onAllNodesWithText("Downloaded - tap to install").assertCountEquals(0)
+        rule.onNodeWithText("Download").assertExists()
         shot("charge-protected-rejection-swapped-360")
     }
 
