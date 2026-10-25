@@ -67,7 +67,15 @@ class EcoHeaderVisualTest {
     }
 
     @Test fun updateButtonLabelHasReadableContrast() {
-        renderOfflineLargeFont()
+        // Render the real production button, not the full screen: the offline screen's
+        // never-idle one-second delay loops (ticker, header clock) make waitForIdle and
+        // captureToImage time out (ComposeTimeoutException). Same theme, same font scale.
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
+                MaterialTheme { SelfUpdateButton {} }
+            }
+        }
         val bounds = rule.onNodeWithText("Check for update").fetchSemanticsNode().boundsInRoot
         val bitmap = rule.onRoot().captureToImage().asAndroidBitmap()
         var dark = 0
@@ -81,6 +89,7 @@ class EcoHeaderVisualTest {
             if (android.graphics.Color.red(p) + android.graphics.Color.green(p) + android.graphics.Color.blue(p) < 240) dark++
         }
         assertTrue("button label is unreadable (white-on-pale) - found only $dark dark pixels", dark > 50)
-        shot("button-contrast-320-large")
+        val file = File("build/outputs/eco-header-button-contrast-320-large.png").apply { parentFile?.mkdirs() }
+        file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
     }
 }
