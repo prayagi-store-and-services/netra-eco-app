@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -51,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -514,9 +516,9 @@ private fun SelfUpdateButton(onRefresh: () -> Unit) {
             if (status == Status.UpdateAvailable) release = latest
             busy = false
         }
-    }) { Text(if (busy) "Checking..." else "Check for update", color = Color.White) }
-    message?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
-    progress?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
+    }) { Text(if (busy) "Checking..." else "Check for update") }
+    message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+    progress?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
     release?.let { r ->
         SelfDownloadButton(r)
     }
@@ -545,7 +547,9 @@ fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
             Modifier.fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Teal, TealDark)))
                 .statusBarsPadding()
-                .height(56.dp)
+                // 56 dp at normal font; grows instead of clipping the version line at large font scale.
+                .heightIn(min = 56.dp)
+                .testTag("eco-header")
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
