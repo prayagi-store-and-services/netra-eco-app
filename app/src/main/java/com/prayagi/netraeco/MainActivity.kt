@@ -86,7 +86,7 @@ sealed interface EcoEntry {
 private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): List<EcoEntry> =
     AppSort.sorted(rows.map { EcoEntry.Live(it) } + upcoming.map { EcoEntry.Soon(it) }) { it.displayName }
 
-class MainActivity : ComponentActivity() {
+open class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -558,3 +558,6 @@ fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
             }
         }
 }
+
+/** Private notification entry; exported launcher intents cannot trigger update downloads. */
+class UpdateEntryActivity : MainActivity()
