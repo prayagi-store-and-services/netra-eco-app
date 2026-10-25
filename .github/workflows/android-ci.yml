@@ -114,8 +114,8 @@ jobs:
           api-level: 34
           target: default
           arch: x86_64
-          profile: pixel_6
           script: |
+            adb devices -l
             adb push app/build/apk-fixtures/charge.apk /sdcard/Download/eco-fixture-charge.apk
             gradle --no-daemon :app:connectedDebugAndroidTest --stacktrace
       - name: Upload instrumented results
