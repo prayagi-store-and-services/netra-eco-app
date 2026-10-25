@@ -48,6 +48,28 @@ class ChargeDirectPlatformTest {
         assertFalse("failed file must be deleted", file.exists())
     }
 
+    @Test fun legacySixFieldRecordSurvivesRefresh() {
+        // Pre-upgrade cache: six fields, no SHA-256/tag. Ordinary repo apps keep their saved installer.
+        val dir = File(context.cacheDir, "updates").apply { mkdirs() }
+        val f = File(dir, "kbc-v1.1.37.apk").apply { writeBytes(byteArrayOf(0)) }
+        context.getSharedPreferences("netra_eco_downloads", 0).edit()
+            .putString("kbc-v1.1.37.apk", "com.aistudio.reasoningquiz.tark|1.1.37|46|1|KBC|kbc").commit()
+        DownloadCenter.items.value = emptyMap()
+        DownloadCenter.refresh(context)
+        assertTrue("legacy repo record keeps its file", f.exists())
+        assertEquals(DownloadCenter.DONE, DownloadCenter.items.value["kbc-v1.1.37.apk"]?.state)
+    }
+
+    @Test fun legacySixFieldRecordForDirectAppIsDropped() {
+        // A short record under a protected id can never establish trust; the file is removed.
+        val f = freshFixture()
+        context.getSharedPreferences("netra_eco_downloads", 0).edit()
+            .putString("netra-charge-v0.1.0.apk", "com.netracharge.app|0.1.0|1|$size|Netra Charge|netra-charge").commit()
+        DownloadCenter.items.value = emptyMap()
+        DownloadCenter.refresh(context)
+        assertFalse("legacy direct record must not keep its file", f.exists())
+    }
+
     @Test fun realChargeArchiveMatchesAllowlistFacts() {
         val apk = File("build/apk-fixtures/charge.apk")
         assertTrue("CI must download the public Charge fixture", apk.exists())
