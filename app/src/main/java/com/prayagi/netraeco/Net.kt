@@ -27,14 +27,18 @@ object Net {
     }
 
     /** Small text download (catalog or latest.json). Returns null when offline or the server says no. */
-    fun fetchText(url: String, fresh: Boolean = false): String? = try {
-        val c = open(url, fresh)
-        if (c.responseCode != 200) null else {
-            val bytes = c.inputStream.use { readBounded(it, 1024 * 1024) }
-            if (bytes.size > 1024 * 1024) null else String(bytes, Charsets.UTF_8)
+    fun fetchText(url: String, fresh: Boolean = false): String? {
+        val c = try { open(url, fresh) } catch (e: Exception) { return null }
+        return try {
+            if (c.responseCode != 200) null else {
+                val bytes = c.inputStream.use { readBounded(it, 1024 * 1024) }
+                if (bytes.size > 1024 * 1024) null else String(bytes, Charsets.UTF_8)
+            }
+        } catch (e: Exception) {
+            null
+        } finally {
+            c.disconnect()
         }
-    } catch (e: Exception) {
-        null
     }
 
     internal fun readBounded(input: java.io.InputStream, limit: Int): ByteArray {
