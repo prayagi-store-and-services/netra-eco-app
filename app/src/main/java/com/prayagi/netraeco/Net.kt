@@ -318,15 +318,24 @@ object Net {
             ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
         check(!HumanSafetyHold.installerName(file.name)) { HumanSafetyHold.MESSAGE }
         HumanSafetyHold.requireAllowed(packageName = packageName)
-        DIRECT_APPS.entries.firstOrNull { it.value.packageName == packageName }?.let { (_, direct) ->
-            // A repo-less installer is granted only against its saved verified record, re-checked on disk now:
-            // fresh size and SHA-256, package, version code and pinned signer. A replaced cache file stops here.
-            val rec = DownloadCenter.savedRecord(context, file.name)
-                ?: run {
-                    file.delete()
-                    throw IllegalStateException("The installer could not be matched to a verified download. Download it again from its app card.")
-                }
+        // Direct-app routing is chosen ONLY from trusted state, before the untrusted archive package above is
+        // given any weight: the saved verified record for this file key must exist, its app id must be an
+        // allowlisted direct app whose package the record repeats, and the file must sit at the one canonical
+        // cache path for that record. Every failure refuses - there is no generic fallback for these apps.
+        val rec = DownloadCenter.savedRecord(context, file.name)
+        val direct = rec?.let { DIRECT_APPS[it.appId] }
+        if (direct != null && rec != null) {
+            val bound = rec.packageName == direct.packageName &&
+                file.name == DownloadCenter.canonicalKey(rec) &&
+                runCatching { file.canonicalFile.parentFile == DownloadCenter.canonicalDir(context).canonicalFile }.getOrDefault(false)
+            if (!bound) {
+                file.delete()
+                throw IllegalStateException("The installer could not be matched to a verified download. Download it again from its app card.")
+            }
             verifyDirectFile(context, file, direct, rec.size, rec.sha256, rec.versionCode)
+        } else if (DIRECT_APPS.values.any { it.packageName == packageName }) {
+            file.delete()
+            throw IllegalStateException("The installer could not be matched to a verified download. Download it again from its app card.")
         }
         if (!context.packageManager.canRequestPackageInstalls()) {
             context.startActivity(
