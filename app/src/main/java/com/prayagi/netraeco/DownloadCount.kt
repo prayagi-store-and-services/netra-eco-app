@@ -30,9 +30,10 @@ object DownloadCount {
 
     fun urlFor(repo: String): String? = codeFor(repo)?.let { BASE + it }
 
-    fun countFinishedDownload(context: Context, repo: String) {
+    fun countFinishedDownload(context: Context, repo: String, code: String = "") {
         if (!UsagePing.isEnabled(context)) return
-        val url = urlFor(repo) ?: return
+        // A repo-less app counts under the exact website code from the catalog (dl-<code>, same counter as its app page).
+        val url = code.takeIf { Regex("^[a-z0-9-]+$").matches(it) }?.let { BASE + it } ?: urlFor(repo) ?: return
         Thread {
             try {
                 val c = URL(url).openConnection() as HttpURLConnection
