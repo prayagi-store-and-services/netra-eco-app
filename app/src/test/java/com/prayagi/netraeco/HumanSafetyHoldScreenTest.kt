@@ -32,13 +32,13 @@ class HumanSafetyHoldScreenTest {
         file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         bitmap.recycle()
     }
-    @Test fun offlineCatalogMissingFullScreenLargeFontHasWarning() {
+    @Test fun offlineCatalogMissingFullScreenLargeFontHasNoGlobalNotice() {
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
                 MaterialTheme { EcoScreen(0, catalogLoader = { null }, textLoader = { null }) }
             }
         }
-        rule.onNodeWithText(HumanSafetyHold.ADVISORY).assertIsDisplayed()
+        rule.onAllNodesWithText(HumanSafetyHold.ADVISORY).assertCountEquals(0)
         rule.onAllNodesWithText("Open", useUnmergedTree = true).assertCountEquals(0)
         shot("offline-full-320-large")
     }
