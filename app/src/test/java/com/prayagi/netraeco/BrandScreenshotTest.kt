@@ -45,7 +45,7 @@ class BrandScreenshotTest {
                 AppCard(AppRow(app, null, null), null, false, false) {}
             }
         }
-        rule.onNodeWithText("Human Safety downloads paused").assertIsDisplayed()
+        rule.onNodeWithText("Human Safety release unavailable").assertIsDisplayed()
         rule.onNodeWithText(HumanSafetyHold.MESSAGE).assertIsDisplayed()
         rule.onNodeWithText("Download and update paused").assertIsDisplayed()
         rule.waitForIdle()

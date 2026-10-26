@@ -106,7 +106,7 @@ object UpdateAlert {
         val app = activity.applicationContext
         Toast.makeText(app, "Preparing the update...", Toast.LENGTH_SHORT).show()
         Thread {
-            try {
+            kotlinx.coroutines.runBlocking { try {
                 val self = Net.selfApp(app)
                 val installed = Net.installed(app, self.packageName)
                 val latest = Net.fetchLatest(self)
@@ -114,21 +114,19 @@ object UpdateAlert {
                     // A file saved in the background is used as it is: one tap, no waiting.
                     val file = if (DownloadCenter.hasFile(app, self, latest)) DownloadCenter.file(app, DownloadCenter.keyFor(self, latest))
                     else Net.download(app, self, latest)
-                    activity.runOnUiThread {
-                        try { Net.install(app, file) } catch (e: Exception) {
-                            Toast.makeText(app, e.message ?: "Update failed.", Toast.LENGTH_LONG).show()
-                        }
+                    try { Net.install(app, file) } catch (e: Exception) {
+                        activity.runOnUiThread { Toast.makeText(app, e.message ?: "Update failed.", Toast.LENGTH_LONG).show() }
                     }
                 } else {
                     activity.runOnUiThread { Toast.makeText(app, "No newer version found.", Toast.LENGTH_LONG).show() }
                 }
             } catch (e: Exception) {
                 activity.runOnUiThread { Toast.makeText(app, e.message ?: "Update failed.", Toast.LENGTH_LONG).show() }
-            }
+            } }
         }.start()
     }
 
-    internal fun checkAndNotify(c: Context) {
+    internal suspend fun checkAndNotify(c: Context) {
         val self = Net.selfApp(c)
         val latest = Net.fetchLatest(self) ?: return
         val installed = Net.installed(c, self.packageName)

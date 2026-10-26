@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -247,9 +249,9 @@ fun EcoScreen(
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         EcoHeader(ecoName, ownVersion, clockNow)
         // Remains visible even if the catalog cannot load or a stale catalog drops the Hub row.
-        Text("Human Safety download and update paused. " + HumanSafetyHold.MESSAGE,
+        Text(HumanSafetyHold.ADVISORY,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.error,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
@@ -397,8 +399,8 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
-            if (HumanSafetyHold.matches(row.app.repo, row.app.packageName)) {
-                Text("Human Safety downloads paused", style = MaterialTheme.typography.titleMedium)
+            if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) {
+                Text("Human Safety release unavailable", style = MaterialTheme.typography.titleMedium)
                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                 Button(enabled = false, onClick = {}) { Text("Download and update paused") }
                 return@Column
@@ -545,16 +547,28 @@ fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
             Modifier.fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Teal, TealDark)))
                 .statusBarsPadding()
-                .height(56.dp)
-                .padding(horizontal = 16.dp),
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stacked = maxWidth < 340.dp || androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.1f
+                val date = java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow)
+                if (stacked) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8))
+                        Text(date, fontSize = 12.sp, color = Color(0xFFD0ECE8))
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                        }
+                        Text(date, fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                    }
                 }
-                Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
             }
         }
 }
