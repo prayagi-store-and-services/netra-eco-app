@@ -247,9 +247,9 @@ fun EcoScreen(
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         EcoHeader(ecoName, ownVersion, clockNow)
         // Remains visible even if the catalog cannot load or a stale catalog drops the Hub row.
-        Text("Human Safety download and update paused. " + HumanSafetyHold.MESSAGE,
+        Text(HumanSafetyHold.ADVISORY,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.error,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
@@ -397,8 +397,8 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
-            if (HumanSafetyHold.matches(row.app.repo, row.app.packageName)) {
-                Text("Human Safety downloads paused", style = MaterialTheme.typography.titleMedium)
+            if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) {
+                Text("Human Safety release unavailable", style = MaterialTheme.typography.titleMedium)
                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                 Button(enabled = false, onClick = {}) { Text("Download and update paused") }
                 return@Column
