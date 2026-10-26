@@ -6,6 +6,9 @@ on:
       tag:
         description: Release tag (must equal v plus versionName in app/build.gradle.kts, for example v1.0.1)
         required: true
+      expected_head:
+        description: Exact reviewed main commit SHA (required)
+        required: true
       notes:
         description: What changed (shown in the in-app update prompt)
         required: true
@@ -21,6 +24,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Require reviewed exact main head before signing
+        env:
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_SHA" = "$EXPECTED_HEAD"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
@@ -46,12 +56,15 @@ jobs:
           curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.0/app-release.apk -o app/build/apk-fixtures/renamed-hub.apk
           curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/KBC/releases/download/v1.1.37/app-release.apk -o app/build/apk-fixtures/other-app.apk
           printf '%s\n' '72fc7113fe293145691d0a4a4866191bdfe0296ca9721b8f6f5fce6e4fb8944e  app/build/apk-fixtures/renamed-hub.apk' 'e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16  app/build/apk-fixtures/other-app.apk' | sha256sum --check --strict
+          curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.2/app-release.apk -o app/build/apk-fixtures/checked-hub.apk
+          printf '%s\n' '0f07aa1681888893b4e27ad194783d0ab41afc0d05787de14cd0f189e85f4245  app/build/apk-fixtures/checked-hub.apk' | sha256sum --check --strict
       - name: Run unit tests
         run: gradle --no-daemon :app:testDebugUnitTest --stacktrace
       - name: Restore signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
+          umask 077
           test -n "$KEYSTORE_BASE64"
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/netra-release.jks"
       - name: Build signed release APK
@@ -61,10 +74,15 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon :app:assembleRelease --stacktrace
-      - name: Verify the APK is signed
+      - name: Verify the APK production signer
         run: |
+          set -euo pipefail
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
-          "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk | tee "$RUNNER_TEMP/netra-cert.txt"
+          # Independently decoded from Eco v1.2.42, not inferred from another app.
+          test "$(grep -c 'certificate SHA-256 digest:' "$RUNNER_TEMP/netra-cert.txt")" = 1
+          CERT="$(sed -nE 's/^(Signer #1|V2 Signer:) certificate SHA-256 digest: ([0-9a-fA-F]{64})$/\2/p' "$RUNNER_TEMP/netra-cert.txt" | tr 'A-F' 'a-f')"
+          test "$CERT" = "543b46402206ae0022d352f65bea618386bd7aa681b4d5bcfb5ce02bac49c8c4"
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -85,3 +103,6 @@ jobs:
             '{tag:$tag,versionName:$vn,versionCode:$vc,sha256:$sha,size:$size,notes:$notes}' > "$D/latest.json"
           gh release create "$TAG" "$D/app-release.apk" "$NAMED" "$D/latest.json" \
             --title "$TAG" --notes "$NOTES" --target "$GITHUB_SHA"
+      - name: Delete restored signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/netra-release.jks"
