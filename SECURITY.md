@@ -1,3 +1,10 @@
+# Human Safety exact-release gate (v1.2.43)
+
+- Only audited Human Safety v1.5.2, version code 78, size 4439086 and SHA-256 0f07aa1681888893b4e27ad194783d0ab41afc0d05787de14cd0f189e85f4245 may pass. Lookup uses that exact published stable tag and uploaded named asset; no latest/history fallback. API failure remains unavailable.
+- Download, cache reuse, bulk paths and installer handoff retain the gate. Installer package/version and actual file bytes are checked, including renamed old APKs. Older or modified Hub files remain blocked. Other apps keep their controls.
+- Owner reported heat/battery resolved on the tested Hub build, not a measured guarantee. No phone/install/thermal test is claimed. No permission, library, telemetry, backend or encryption change. This is a guarded distribution change, not a new vulnerability patch.
+- Fleet file-E2EE rule is a future reviewed design requirement, not implemented by this release. Existing HTTPS/diagnostic flows are not claimed E2EE.
+
 # Security notes - Netra Ecosystem
 
 ## Human Safety download quarantine (v1.2.42)
