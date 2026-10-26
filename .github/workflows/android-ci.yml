@@ -42,6 +42,8 @@ jobs:
           curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.0/app-release.apk -o app/build/apk-fixtures/renamed-hub.apk
           curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/KBC/releases/download/v1.1.37/app-release.apk -o app/build/apk-fixtures/other-app.apk
           printf '%s\n' '72fc7113fe293145691d0a4a4866191bdfe0296ca9721b8f6f5fce6e4fb8944e  app/build/apk-fixtures/renamed-hub.apk' 'e1349cb3ad8688587b52d7c4125ee67c3472a55cd3fa85229a58734f24671c16  app/build/apk-fixtures/other-app.apk' | sha256sum --check --strict
+          curl --fail --location --retry 2 https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.2/app-release.apk -o app/build/apk-fixtures/checked-hub.apk
+          printf '%s\n' '0f07aa1681888893b4e27ad194783d0ab41afc0d05787de14cd0f189e85f4245  app/build/apk-fixtures/checked-hub.apk' | sha256sum --check --strict
       - name: Build debug APK and run unit tests
         shell: bash
         run: |
