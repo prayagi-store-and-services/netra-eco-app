@@ -12,6 +12,8 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object Net {
     const val CATALOG_URL = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
@@ -46,8 +48,12 @@ object Net {
      * published release shows within seconds), then that tag's latest.json, then the older cached latest.json file.
      * A release without a latest.json file (Battery Sentinel) is built from the API's size and SHA-256, with no version code.
      */
-    fun fetchLatest(app: CatalogApp): LatestRelease? {
-        if (HumanSafetyHold.matches(app.repo, app.packageName)) return null
+    fun fetchLatest(app: CatalogApp, textLoader: (String, Boolean) -> String? = ::fetchText): LatestRelease? {
+        if (HumanSafetyHold.matches(app.repo, app.packageName)) {
+            if (app.repo != HumanSafetyHold.REPO || app.packageName != HumanSafetyHold.PACKAGE) return null
+            return textLoader("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/${HumanSafetyHold.TAG}", true)
+                ?.let { HumanSafetyHold.parseRelease(it) }
+        }
         val fromApi = try {
             val body = fetchText("https://api.github.com/repos/${app.repo}/releases/latest?_=${System.currentTimeMillis()}", fresh = true)
             if (body == null) null else {
@@ -166,8 +172,9 @@ object Net {
 
     /** Downloads the APK and checks size and SHA-256. The file is deleted and an error thrown if anything is off. */
     fun download(context: Context, app: CatalogApp, release: LatestRelease, onProgress: ((Long, Long, Long?) -> Unit)? = null): File {
-        HumanSafetyHold.requireAllowed(app.repo, app.packageName)
-        check(!release.apkUrl.startsWith("https://github.com/" + HumanSafetyHold.REPO + "/")) { HumanSafetyHold.MESSAGE }
+        HumanSafetyHold.requireAllowed(app.repo, app.packageName, release)
+        check(!release.apkUrl.startsWith("https://github.com/" + HumanSafetyHold.REPO + "/") ||
+            (app.repo == HumanSafetyHold.REPO && app.packageName == HumanSafetyHold.PACKAGE && HumanSafetyHold.allowed(release))) { HumanSafetyHold.MESSAGE }
         activeDownloads.incrementAndGet()
         try {
             return downloadInternal(context, app, release, onProgress)
@@ -219,12 +226,14 @@ object Net {
     }
 
     /** Opens the system installer. Android installs only if the app is signed with the same key as the installed one. */
-    fun install(context: Context, file: File) {
+    suspend fun install(context: Context, file: File) {
+        withContext(Dispatchers.IO) {
         // Inspect the APK itself as well as the legacy cache filename. Metadata/catalog removal cannot bypass this.
-        val packageName = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)?.packageName
+        val archive = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
             ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
-        check(!HumanSafetyHold.installerName(file.name)) { HumanSafetyHold.MESSAGE }
-        HumanSafetyHold.requireAllowed(packageName = packageName)
+        HumanSafetyHold.requireInstaller(file, archive.packageName, archive.versionName, PackageInfoCompat.getLongVersionCode(archive))
+        }
+        withContext(Dispatchers.Main.immediate) {
         if (!context.packageManager.canRequestPackageInstalls()) {
             context.startActivity(
                 Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
@@ -238,5 +247,6 @@ object Net {
                 .setDataAndType(uri, "application/vnd.android.package-archive")
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         )
+        }
     }
 }
