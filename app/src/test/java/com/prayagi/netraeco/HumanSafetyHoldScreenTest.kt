@@ -38,7 +38,7 @@ class HumanSafetyHoldScreenTest {
                 MaterialTheme { EcoScreen(0, catalogLoader = { null }, textLoader = { null }) }
             }
         }
-        rule.onNodeWithText("Human Safety download and update paused. " + HumanSafetyHold.MESSAGE).assertIsDisplayed()
+        rule.onNodeWithText(HumanSafetyHold.ADVISORY).assertIsDisplayed()
         rule.onAllNodesWithText("Open", useUnmergedTree = true).assertCountEquals(0)
         shot("offline-full-320-large")
     }
@@ -60,6 +60,48 @@ class HumanSafetyHoldScreenTest {
         rule.onAllNodesWithText("Install").assertCountEquals(0)
         rule.onAllNodesWithText("Open").assertCountEquals(0)
         shot("saved-320-large")
+    }
+    @Test fun checkedReleaseShowsDownloadAt320() {
+        DownloadCenter.items.value = emptyMap()
+        val a = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO, HumanSafetyHold.PACKAGE, "", "")
+        val release = LatestRelease(HumanSafetyHold.TAG, HumanSafetyHold.VERSION, HumanSafetyHold.CODE, "Checked v1.5.2 only", HumanSafetyHold.URL, HumanSafetyHold.SHA, HumanSafetyHold.SIZE)
+        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null,false,false) {} } }
+        rule.onNodeWithText("Download").assertIsDisplayed()
+        rule.onAllNodesWithText(HumanSafetyHold.MESSAGE).assertCountEquals(0)
+        shot("checked-available-320")
+    }
+    @Test fun fullAppCardSameSizeTamperedDoneHasNoInstall() {
+        val context = rule.activity
+        val a = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO, HumanSafetyHold.PACKAGE, "", "")
+        val release = LatestRelease(HumanSafetyHold.TAG, HumanSafetyHold.VERSION, HumanSafetyHold.CODE, "", HumanSafetyHold.URL, HumanSafetyHold.SHA, HumanSafetyHold.SIZE)
+        val key = DownloadCenter.keyFor(a,release)
+        val cached = DownloadCenter.file(context,key)
+        File("build/apk-fixtures/checked-hub.apk").copyTo(cached,overwrite=true)
+        java.io.RandomAccessFile(cached,"rw").use { it.seek(1); val b=it.read(); it.seek(1); it.write(b xor 1) }
+        DownloadCenter.register(context,a,release)
+        DownloadCenter.items.value = emptyMap()
+        DownloadCenter.refresh(context)
+        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null,false,false) {} } }
+        rule.onAllNodesWithText("Downloaded - tap to install").assertCountEquals(0)
+        rule.waitUntil(timeoutMillis=10000) { rule.onAllNodesWithText("Unverified installer. Installation stays blocked.").fetchSemanticsNodes().size == 1 }
+        rule.onNodeWithText("Unverified installer. Installation stays blocked.").assertIsDisplayed()
+        rule.onAllNodesWithText("Downloaded - tap to install").assertCountEquals(0)
+        rule.onNodeWithText("Delete").assertIsDisplayed()
+        shot("tampered-done-card-320")
+    }
+    @Test fun verifiedDoneAppCardShowsInstallAfterVerification() {
+        val context = rule.activity
+        val a = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO, HumanSafetyHold.PACKAGE, "", "")
+        val release = LatestRelease(HumanSafetyHold.TAG, HumanSafetyHold.VERSION, HumanSafetyHold.CODE, "", HumanSafetyHold.URL, HumanSafetyHold.SHA, HumanSafetyHold.SIZE)
+        val key = DownloadCenter.keyFor(a,release)
+        File("build/apk-fixtures/checked-hub.apk").copyTo(DownloadCenter.file(context,key),overwrite=true)
+        DownloadCenter.register(context,a,release)
+        DownloadCenter.items.value = emptyMap()
+        DownloadCenter.refresh(context)
+        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null,false,false) {} } }
+        rule.waitUntil(timeoutMillis=10000) { rule.onAllNodesWithText("Downloaded - tap to install").fetchSemanticsNodes().size == 1 }
+        rule.onNodeWithText("Downloaded - tap to install").assertIsDisplayed().assertIsEnabled()
+        shot("verified-done-card-320")
     }
     @Test fun otherSavedAppStillHasInstallAndDeleteControls() {
         val context = rule.activity
