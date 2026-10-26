@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -545,16 +547,28 @@ fun EcoHeader(ecoName: String, ownVersion: String, clockNow: java.util.Date) {
             Modifier.fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Teal, TealDark)))
                 .statusBarsPadding()
-                .height(56.dp)
-                .padding(horizontal = 16.dp),
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stacked = maxWidth < 340.dp || androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.1f
+                val date = java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow)
+                if (stacked) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8))
+                        Text(date, fontSize = 12.sp, color = Color(0xFFD0ECE8))
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(ecoName, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text("v$ownVersion | Netra Ecosystem", fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                        }
+                        Text(date, fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
+                    }
                 }
-                Text(java.text.SimpleDateFormat("EEE d MMM, HH:mm", java.util.Locale.getDefault()).format(clockNow), fontSize = 12.sp, color = Color(0xFFD0ECE8), maxLines = 1)
             }
         }
 }
