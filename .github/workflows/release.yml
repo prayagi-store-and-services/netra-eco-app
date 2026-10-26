@@ -83,7 +83,18 @@ jobs:
           test "$(grep -c 'certificate SHA-256 digest:' "$RUNNER_TEMP/netra-cert.txt")" = 1
           CERT="$(sed -nE 's/^(Signer #1|V2 Signer:) certificate SHA-256 digest: ([0-9a-fA-F]{64})$/\2/p' "$RUNNER_TEMP/netra-cert.txt" | tr 'A-F' 'a-f')"
           test "$CERT" = "543b46402206ae0022d352f65bea618386bd7aa681b4d5bcfb5ce02bac49c8c4"
-      - name: Publish release
+      - name: Check signed APK identity before staging
+        run: |
+          set -euo pipefail
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)"
+          "$AAPT" dump badging app/build/outputs/apk/release/app-release.apk > "$RUNNER_TEMP/netra-badging.txt"
+          python3 - "$RUNNER_TEMP/netra-badging.txt" <<'PY'
+          import re, sys
+          text = open(sys.argv[1]).read()
+          match = re.search(r"^package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", text, re.M)
+          assert match and match.groups() == ('com.prayagi.netraeco', '57', '1.2.43'), 'Unexpected signed APK identity'
+          PY
+      - name: Stage draft release for independent audit
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
@@ -94,6 +105,12 @@ jobs:
           VNAME="$(sed -n 's/^ *versionName = "\(.*\)".*/\1/p' app/build.gradle.kts | head -1)"
           VCODE="$(sed -n 's/^ *versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)"
           test "$TAG" = "v$VNAME"
+          # Refuse an existing tag/draft rather than resuming an uncertain partial publication.
+          test -z "$(git ls-remote --tags origin "refs/tags/$TAG" "refs/tags/$TAG^{}")"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists; inspect it manually instead of retrying."
+            exit 1
+          fi
           # Named copy for people. app-release.apk stays because the in-app updater needs that exact name.
           NAMED="$D/NetraEco-$TAG.apk"
           cp "$D/app-release.apk" "$NAMED"
@@ -101,8 +118,16 @@ jobs:
           SIZE="$(stat -c %s "$D/app-release.apk")"
           jq -n --arg tag "$TAG" --arg vn "$VNAME" --argjson vc "$VCODE" --arg sha "$SHA" --argjson size "$SIZE" --arg notes "$NOTES" \
             '{tag:$tag,versionName:$vn,versionCode:$vc,sha256:$sha,size:$size,notes:$notes}' > "$D/latest.json"
-          gh release create "$TAG" "$D/app-release.apk" "$NAMED" "$D/latest.json" \
+          gh release create "$TAG" "$D/app-release.apk" "$NAMED" "$D/latest.json" --draft \
             --title "$TAG" --notes "$NOTES" --target "$GITHUB_SHA"
+      - name: Upload signed APK and manifest for independent audit
+        uses: actions/upload-artifact@v7
+        with:
+          name: signed-eco-audit
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/release/latest.json
+          if-no-files-found: error
       - name: Delete restored signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/netra-release.jks"
