@@ -248,11 +248,6 @@ fun EcoScreen(
         LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         EcoHeader(ecoName, ownVersion, clockNow)
-        // Remains visible even if the catalog cannot load or a stale catalog drops the Hub row.
-        Text(HumanSafetyHold.ADVISORY,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
         TickerStrip(pendingRoadmap)
