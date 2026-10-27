@@ -94,6 +94,16 @@ class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
     private val routeAppId = mutableStateOf<String?>(null)
 
+    internal val requestedAppForTest: String? get() = routeAppId.value
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("eco_requested_app", routeAppId.value)
+        super.onSaveInstanceState(outState)
+    }
+    private fun closeAppPage() {
+        routeAppId.value = null
+        intent?.data = null
+    }
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -103,7 +113,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        routeAppId.value = EcoAppRoute.appId(intent?.dataString)
+        routeAppId.value = if (savedInstanceState?.containsKey("eco_requested_app") == true) savedInstanceState.getString("eco_requested_app") else EcoAppRoute.appId(intent?.dataString)
         if (com.prayagi.netraeco.geo.GeoGuard.isBlocked(this)) {
             val pad = (24 * resources.displayMetrics.density).toInt()
             val box = android.widget.LinearLayout(this).apply {
@@ -133,7 +143,7 @@ class MainActivity : ComponentActivity() {
         if (TimeSpeakOut.isEnabled(this)) TimeSpeaker.get(this)
         CrashReporter.install(this)
         setContent {
-            NetraTheme { EcoScreen(resumeCount.intValue, requestedAppId = routeAppId.value, onCloseApp = { routeAppId.value = null }) }
+            NetraTheme { EcoScreen(resumeCount.intValue, requestedAppId = routeAppId.value, onCloseApp = { closeAppPage() }) }
         }
     }
 
@@ -285,7 +295,7 @@ fun EcoScreen(
                 Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(4.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (requestedAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!futureSelected) Button(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
                 else OutlinedButton(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
                 if (futureSelected) Button(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
