@@ -61,6 +61,7 @@ class EcoActionScreenTest {
         rule.onNodeWithText("Future").performClick()
         rule.onNodeWithText("Media").performClick()
         restorer.emulateSavedInstanceStateRestore()
+        rule.waitUntil(10000) { rule.onAllNodesWithText("Future Beta").fetchSemanticsNodes().size == 1 }
         rule.onNodeWithText("Future Beta").assertExists()
         rule.onAllNodesWithText("Future Alpha").assertCountEquals(0)
     }
