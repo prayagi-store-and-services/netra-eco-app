@@ -162,19 +162,22 @@ private fun mb(b: Long) = String.format(java.util.Locale.US, "%.1f MB", b / 1048
 
 /** The button on one app card: download (several can run at once), then Install from the finished file. */
 @Composable
-fun AppDownloadButton(row: AppRow, status: Status) {
+fun AppDownloadButton(row: AppRow, status: Status, actionScope: kotlinx.coroutines.CoroutineScope? = null, installActions: EcoInstallActions? = null) {
     if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) {
         Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
         return
     }
     val context = LocalContext.current
-    val installScope = rememberCoroutineScope()
+    val localInstallScope = rememberCoroutineScope()
+    val installScope = actionScope ?: localInstallScope
+    val localActions = remember { EcoInstallActions() }
+    val actions = installActions ?: localActions
     val latest = row.latest ?: return
     val key = DownloadCenter.keyFor(row.app, latest)
     val all by DownloadCenter.items.collectAsState()
     val item = all[key]
-    var note by remember { mutableStateOf<String?>(null) }
-    var installing by remember(key) { mutableStateOf(false) }
+    val installing = actions.state(key).busy
+    val note = actions.state(key).error
     val isHub = HumanSafetyHold.matches(row.app.repo, row.app.packageName)
     var cacheVerified by remember(key, item?.state) { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(key, item?.state, item?.done) {
@@ -192,8 +195,7 @@ fun AppDownloadButton(row: AppRow, status: Status) {
                 Text(if (cacheVerified == null) "Checking installer..." else "Unverified installer. Installation stays blocked.", color = MaterialTheme.colorScheme.error)
                 OutlinedButton(onClick = { DownloadCenter.delete(context,key) }) { Text("Delete") }
             } else Button(enabled = !installing, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = {
-                installing = true
-                installScope.launch { try { Net.install(context, DownloadCenter.file(context, key)) } catch (e: Exception) { note = plainFailure(e, "Install failed.") } finally { installing = false } }
+                actions.install(installScope, context, DownloadCenter.file(context, key))
             }) { Text(if (installing) "Checking installer..." else "Downloaded - tap to install") }
             else -> {
                 Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = { DownloadCenter.start(context, row.app, latest) }) {
@@ -216,18 +218,20 @@ private fun ProgressBlock(i: DownloadCenter.Item) {
 
 /** Self update: start the download here, the finished file then shows in Downloads with an Install button. */
 @Composable
-fun SelfDownloadButton(release: LatestRelease) {
+fun SelfDownloadButton(release: LatestRelease, actionScope: kotlinx.coroutines.CoroutineScope? = null, installActions: EcoInstallActions? = null) {
     val context = LocalContext.current
-    val installScope = rememberCoroutineScope()
+    val localInstallScope = rememberCoroutineScope()
+    val installScope = actionScope ?: localInstallScope
+    val localActions = remember { EcoInstallActions() }
+    val actions = installActions ?: localActions
     val all by DownloadCenter.items.collectAsState()
     val self = remember { Net.selfApp(context) }
     val k = DownloadCenter.keyFor(self, release)
     val item = all[k]
-    var installing by remember(k) { mutableStateOf(false) }
+    val installing = actions.state(k).busy
     Button(enabled = item?.state != DownloadCenter.DOWNLOADING && !installing, onClick = {
         if (item?.state == DownloadCenter.DONE) {
-            installing = true
-            installScope.launch { try { Net.install(context, DownloadCenter.file(context, k)) } catch (_: Exception) {} finally { installing = false } }
+            actions.install(installScope, context, DownloadCenter.file(context, k))
         } else DownloadCenter.start(context, self, release)
     }) {
         Text(if (installing) "Checking installer..." else when (item?.state) {
@@ -236,13 +240,17 @@ fun SelfDownloadButton(release: LatestRelease) {
             else -> "Update to " + release.versionName
         })
     }
+    actions.state(k).error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 }
 
 /** Downloads screen section: running downloads with progress, finished files with Install and Delete, and Update all. */
 @Composable
-fun DownloadManagerCard(rows: List<AppRow>) {
+fun DownloadManagerCard(rows: List<AppRow>, actionScope: kotlinx.coroutines.CoroutineScope? = null, installActions: EcoInstallActions? = null) {
     val context = LocalContext.current
-    val installScope = rememberCoroutineScope()
+    val localInstallScope = rememberCoroutineScope()
+    val installScope = actionScope ?: localInstallScope
+    val localActions = remember { EcoInstallActions() }
+    val actions = installActions ?: localActions
     val all by DownloadCenter.items.collectAsState()
     LaunchedEffect(Unit) { DownloadCenter.refresh(context) }
     val updatable = rows.filter {
@@ -268,8 +276,8 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                     }
                 }
                 val hubBlocked = isHub && !hubFileVerified
-                var installing by remember(i.key) { mutableStateOf(false) }
-                var installError by remember(i.key) { mutableStateOf<String?>(null) }
+                val installing = actions.state(i.key).busy
+                val installError = actions.state(i.key).error
                 Column {
                     Text(i.name + " " + i.versionName, style = MaterialTheme.typography.bodyMedium)
                     installError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -284,11 +292,7 @@ fun DownloadManagerCard(rows: List<AppRow>) {
                                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
                                 OutlinedButton(onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(enabled = !installing, onClick = { installing = true; installScope.launch {
-                                    try { Net.install(context, DownloadCenter.file(context, i.key)) }
-                                    catch (e: Exception) { installError = plainFailure(e, "Install failed.") }
-                                    finally { installing = false }
-                                } }) { Text(if (installing) "Checking installer..." else "Install") }
+                                Button(enabled = !installing, onClick = { actions.install(installScope, context, DownloadCenter.file(context, i.key)) }) { Text(if (installing) "Checking installer..." else "Install") }
                                 OutlinedButton(enabled = !installing, onClick = { DownloadCenter.delete(context, i.key) }) { Text("Delete") }
                             }
                         }

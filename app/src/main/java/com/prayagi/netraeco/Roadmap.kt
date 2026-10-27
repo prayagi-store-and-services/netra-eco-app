@@ -11,6 +11,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -18,7 +20,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import java.time.Instant
@@ -241,7 +242,7 @@ fun TickerStrip(items: List<RoadmapItem>?) {
     var pressed by remember { mutableStateOf(false) }
     var showList by remember { mutableStateOf(false) }
     var offsetPx by remember { mutableFloatStateOf(0f) }
-    Box(Modifier.fillMaxWidth().height(40.dp).background(Color.Black).clipToBounds().pointerInput(Unit) { detectTapGestures(onPress = { pressed = true; tryAwaitRelease(); pressed = false }, onTap = { showList = true }) }, contentAlignment = Alignment.CenterStart) {
+    Box(Modifier.fillMaxWidth().background(Color.Black).heightIn(min = 40.dp).padding(vertical = 8.dp).clipToBounds().pointerInput(Unit) { detectTapGestures(onPress = { pressed = true; tryAwaitRelease(); pressed = false }, onTap = { showList = true }) }, contentAlignment = Alignment.CenterStart) {
         if (list.isEmpty()) {
             Text("Roadmap Unavailable right now.", color = Ticker.color(Tone.GREY), fontSize = 14.sp, modifier = Modifier.offset(x = 16.dp))
             return@Box
