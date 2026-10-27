@@ -1,3 +1,7 @@
+# Per-app update handoff (v1.2.45)
+
+Strict allowlisted HTTPS app routes open only the selected catalog app card. Unknown hosts, encoded paths, credentials, custom ports, query and fragment actions are rejected. Opening a route never starts a download/install. Eco retains its existing installer checks and Human Safety exact-release gate. Other Netra apps will use metadata-only update notices and hand off to this Eco version or the per-app website, not download APKs themselves. This is navigation hardening, not a guarantee that Google Play Protect will never warn. No new permissions or telemetry.
+
 # Human Safety exact-release gate (v1.2.43)
 
 - Only audited Human Safety v1.5.2, version code 78, size 4439086 and SHA-256 0f07aa1681888893b4e27ad194783d0ab41afc0d05787de14cd0f189e85f4245 may pass. Lookup uses that exact published stable tag and uploaded named asset; no latest/history fallback. API failure remains unavailable.
