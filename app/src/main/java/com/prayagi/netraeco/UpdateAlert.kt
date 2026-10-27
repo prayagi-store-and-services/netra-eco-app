@@ -51,7 +51,7 @@ object UpdateAlert {
         synchronized(this) {
             val expected = prefs.getString(TOKEN_PREF, null) ?: return false
             if (!java.security.MessageDigest.isEqual(expected.toByteArray(Charsets.UTF_8), offered.toByteArray(Charsets.UTF_8))) return false
-            prefs.edit().remove(TOKEN_PREF).commit()
+            if (!prefs.edit().remove(TOKEN_PREF).commit()) return false
         }
         intent.removeExtra(EXTRA_AUTO_UPDATE)
         intent.removeExtra(EXTRA_TOKEN)
