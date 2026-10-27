@@ -45,7 +45,7 @@
                 <data
                     android:scheme="https"
                     android:host="prayagi-store-and-services.github.io"
-                    android:pathPrefix="/netra-eco/app/eco" />
+                    android:pathPrefix="/netra-eco/app/" />
             </intent-filter>
         </activity>
 

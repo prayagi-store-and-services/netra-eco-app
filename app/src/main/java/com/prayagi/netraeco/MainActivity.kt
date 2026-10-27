@@ -92,14 +92,28 @@ private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): L
 
 class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
+    private val routeAppId = mutableStateOf<String?>(null)
+
+    internal val requestedAppForTest: String? get() = routeAppId.value
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("eco_requested_app", routeAppId.value)
+        super.onSaveInstanceState(outState)
+    }
+    private fun closeAppPage() {
+        routeAppId.value = null
+        intent?.data = null
+    }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        UpdateAlert.handle(this, intent)
+        setIntent(intent)
+        routeAppId.value = EcoAppRoute.appId(intent.dataString)
+        if (intent.data == null) UpdateAlert.handle(this, intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        routeAppId.value = if (savedInstanceState?.containsKey("eco_requested_app") == true) savedInstanceState.getString("eco_requested_app") else EcoAppRoute.appId(intent?.dataString)
         if (com.prayagi.netraeco.geo.GeoGuard.isBlocked(this)) {
             val pad = (24 * resources.displayMetrics.density).toInt()
             val box = android.widget.LinearLayout(this).apply {
@@ -120,6 +134,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         com.prayagi.netraeco.festival.JayMataDi.greetIfDue(this)
+        if (intent?.data != null) intent.removeExtra(UpdateAlert.EXTRA_AUTO_UPDATE)
         UpdateAlert.start(this)
         // Keep the half-hour time announcements scheduled across app updates and process restarts.
         TimeSpeakOut.scheduleNext(this)
@@ -128,7 +143,7 @@ class MainActivity : ComponentActivity() {
         if (TimeSpeakOut.isEnabled(this)) TimeSpeaker.get(this)
         CrashReporter.install(this)
         setContent {
-            NetraTheme { EcoScreen(resumeCount.intValue) }
+            NetraTheme { EcoScreen(resumeCount.intValue, requestedAppId = routeAppId.value, onCloseApp = { closeAppPage() }) }
         }
     }
 
@@ -222,7 +237,9 @@ fun EcoScreen(
     resumeKey: Int,
     catalogLoader: suspend (Context) -> List<AppRow>? = { loadRows(it) },
     textLoader: (String) -> String? = { Net.fetchText(it) },
-    selfChecker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) }
+    selfChecker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) },
+    requestedAppId: String? = null,
+    onCloseApp: () -> Unit = {}
 ) {
     val context = LocalContext.current
     // Keeps an explicit update check or installer verification alive across section changes.
@@ -278,7 +295,7 @@ fun EcoScreen(
                 Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(4.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (requestedAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!futureSelected) Button(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
                 else OutlinedButton(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
                 if (futureSelected) Button(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
@@ -309,6 +326,20 @@ fun EcoScreen(
                     listState.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }.toSet()
                 }
             }
+            if (requestedAppId != null) {
+                androidx.activity.compose.BackHandler(onBack = onCloseApp)
+                LazyColumn(Modifier.weight(1f).testTag("handoff-app"), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    item { OutlinedButton(onClick = onCloseApp) { Text("Back to all apps") } }
+                    item { Text("App update page", style = MaterialTheme.typography.titleLarge) }
+                    val requestedRow = rows?.firstOrNull { it.app.id == requestedAppId }
+                    when {
+                        loading -> item { Text("Loading app details...") }
+                        failed -> item { Text("Unavailable: could not refresh app details. No download started."); OutlinedButton(onClick = { reload++ }) { Text("Check again") } }
+                        requestedRow == null -> item { Text("Unavailable: this app is not in the current catalog. No download started.") }
+                        else -> item { AppCard(requestedRow, pendingRoadmap, false, false, actionScope = screenScope, installActions = installActions) { reload++ } }
+                    }
+                }
+            } else {
             LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item(key = "section-controls") {
                     Column {
@@ -386,6 +417,7 @@ fun EcoScreen(
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
                 }
+            }
             }
         }
     }
