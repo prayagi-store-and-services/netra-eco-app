@@ -32,6 +32,31 @@ import kotlinx.coroutines.withContext
  */
 object UpdateAlert {
     const val EXTRA_AUTO_UPDATE = "netra_auto_update"
+    private const val ACTION_INTERNAL_UPDATE = "com.prayagi.netraeco.action.CONFIRMED_UPDATE"
+    private const val EXTRA_TOKEN = "netra_update_token"
+    private const val TOKEN_PREF = "pending_execution_token"
+    internal var executionObserver: (() -> Unit)? = null
+    internal fun notificationIntent(c: Context): Intent {
+        val token = java.util.UUID.randomUUID().toString()
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(TOKEN_PREF, token).apply()
+        return Intent(c, MainActivity::class.java).setAction(ACTION_INTERNAL_UPDATE)
+            .putExtra(EXTRA_AUTO_UPDATE, true).putExtra(EXTRA_TOKEN, token)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
+    internal fun consumeAuthorizedNotification(c: Context, intent: Intent?): Boolean {
+        if (intent == null || intent.action != ACTION_INTERNAL_UPDATE || intent.data != null || intent.clipData != null ||
+            intent.getBooleanExtra(EXTRA_AUTO_UPDATE, false) != true) return false
+        val offered = intent.getStringExtra(EXTRA_TOKEN) ?: return false
+        val prefs = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        synchronized(this) {
+            val expected = prefs.getString(TOKEN_PREF, null) ?: return false
+            if (!java.security.MessageDigest.isEqual(expected.toByteArray(Charsets.UTF_8), offered.toByteArray(Charsets.UTF_8))) return false
+            prefs.edit().remove(TOKEN_PREF).commit()
+        }
+        intent.removeExtra(EXTRA_AUTO_UPDATE)
+        intent.removeExtra(EXTRA_TOKEN)
+        return true
+    }
     private const val NOTIFICATION_ID = 7431
     private const val WORK_NAME = "netra_update_alert"
     private const val PREFS = "netra_update_alert"
@@ -101,8 +126,8 @@ object UpdateAlert {
 
     /** Runs when the notification was tapped: check, download, verify, hand to the installer. */
     fun handle(activity: Activity, intent: Intent?) {
-        if (intent?.getBooleanExtra(EXTRA_AUTO_UPDATE, false) != true) return
-        intent.removeExtra(EXTRA_AUTO_UPDATE)
+        if (!consumeAuthorizedNotification(activity.applicationContext, intent)) return
+        executionObserver?.let { it(); return }
         val app = activity.applicationContext
         Toast.makeText(app, "Preparing the update...", Toast.LENGTH_SHORT).show()
         Thread {
@@ -148,8 +173,7 @@ object UpdateAlert {
                     if (BEEP) NotificationManager.IMPORTANCE_HIGH else NotificationManager.IMPORTANCE_LOW)
             )
         }
-        val launch = c.packageManager.getLaunchIntentForPackage(c.packageName) ?: return
-        launch.putExtra(EXTRA_AUTO_UPDATE, true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val launch = notificationIntent(c)
         val open = PendingIntent.getActivity(c, 0, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(c, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
