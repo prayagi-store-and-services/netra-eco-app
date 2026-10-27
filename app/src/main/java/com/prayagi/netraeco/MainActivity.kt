@@ -42,6 +42,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -222,14 +224,25 @@ fun EcoScreen(
     textLoader: (String) -> String? = { Net.fetchText(it) }
 ) {
     val context = LocalContext.current
+    // Keeps an explicit update check or installer verification alive across section changes.
+    val screenScope = rememberCoroutineScope()
     var rows by remember { mutableStateOf<List<AppRow>?>(null) }
     var failed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     var reload by remember { mutableIntStateOf(0) }
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
-    var query by remember { mutableStateOf("") }
-    var cat by remember { mutableStateOf<AppCategory?>(null) }
+    var futureSelected by rememberSaveable { mutableStateOf(false) }
+    var currentQuery by rememberSaveable { mutableStateOf("") }
+    var futureQuery by rememberSaveable { mutableStateOf("") }
+    var currentCat by remember { mutableStateOf<AppCategory?>(null) }
+    var futureCat by remember { mutableStateOf<AppCategory?>(null) }
+    val query = if (futureSelected) futureQuery else currentQuery
+    val cat = if (futureSelected) futureCat else currentCat
+    val setQuery: (String) -> Unit = { if (futureSelected) futureQuery = it else currentQuery = it }
+    val setCat: (AppCategory?) -> Unit = { if (futureSelected) futureCat = it else currentCat = it }
+    val currentListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val futureListState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     LaunchedEffect(resumeKey, reload) {
         upcoming = withContext(Dispatchers.IO) { textLoader(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
@@ -261,36 +274,46 @@ fun EcoScreen(
                 Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(4.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!futureSelected) Button(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                if (futureSelected) Button(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+            }
+            Text(if (futureSelected) "Planned apps. Not released; no download or install. Dates are estimates, not promises." else "Released apps. Download availability is checked for each app.", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            val sectionRows = if (futureSelected) emptyList() else rows ?: emptyList()
+            val sectionUpcoming = if (futureSelected) upcoming else emptyList()
             val searching = query.isNotBlank()
-            val shownRows = (rows ?: emptyList()).filter { matchesQuery(query, it.app.name, it.app.type, it.app.summary) }
-            val shownUpcoming = upcoming.filter { matchesQuery(query, it.name, it.type, it.summary) }
+            val shownRows = sectionRows.filter { matchesQuery(query, it.app.name, it.app.type, it.app.summary) }
+            val shownUpcoming = sectionUpcoming.filter { matchesQuery(query, it.name, it.type, it.summary) }
             if (rows != null) {
                 OutlinedTextField(
                     value = query,
-                    onValueChange = { query = it.take(60) },
+                    onValueChange = { setQuery(it.take(60)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     label = { Text("Search apps") },
-                    trailingIcon = { if (searching) TextButton(onClick = { query = "" }) { Text("Clear") } }
+                    trailingIcon = { if (searching) TextButton(onClick = { setQuery("") }) { Text("Clear") } }
                 )
                 Spacer(Modifier.height(8.dp))
             }
-            val catRows = (rows ?: emptyList()).map { it to AppCategories.classify(it.app.name, it.app.type, it.app.summary, it.app.categories) }
-            val catUp = upcoming.map { it to AppCategories.classify(it.name, it.type, it.summary) }
+            val catRows = sectionRows.map { it to AppCategories.classify(it.app.name, it.app.type, it.app.summary, it.app.categories) }
+            val catUp = sectionUpcoming.map { it to AppCategories.classify(it.name, it.type, it.summary) }
             val usedCats = AppCategory.values().filter { c -> catRows.any { c in it.second } || catUp.any { c in it.second } }
             if (rows != null && !searching && usedCats.size > 1) {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (cat == null) Button(onClick = { cat = null }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { cat = null }) { Text("All", maxLines = 1) }
+                    if (cat == null) Button(onClick = { setCat(null) }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { setCat(null) }) { Text("All", maxLines = 1) }
                     usedCats.forEach { c ->
-                        if (cat == c) Button(onClick = { cat = null }) { Text(c.label, maxLines = 1) } else OutlinedButton(onClick = { cat = c }) { Text(c.label, maxLines = 1) }
+                        if (cat == c) Button(onClick = { setCat(null) }) { Text(c.label, maxLines = 1) } else OutlinedButton(onClick = { setCat(c) }) { Text(c.label, maxLines = 1) }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+            val listState = if (futureSelected) futureListState else currentListState
             // Smooth scrolling (20 Oct): which live-app card may autoplay its preview video.
             // Only the most-visible live card gets the token; every other card shows a poster.
-            val activePreviewKey by remember {
+            val activePreviewKey by remember(listState) {
                 androidx.compose.runtime.derivedStateOf {
                     val info = listState.layoutInfo
                     PreviewFocus.pickActive(
@@ -299,19 +322,19 @@ fun EcoScreen(
                     )
                 }
             }
-            val visiblePreviewKeys by remember {
+            val visiblePreviewKeys by remember(listState) {
                 androidx.compose.runtime.derivedStateOf {
                     listState.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }.toSet()
                 }
             }
-            LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (searching) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
                     }
                     items(mergedEcoEntries(shownRows, shownUpcoming), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys) { reload++ }
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys, actionScope = screenScope) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -324,32 +347,37 @@ fun EcoScreen(
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
                     items(mergedEcoEntries(inRows, inUp), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys) { reload++ }
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys, actionScope = screenScope) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
                     return@LazyColumn
                 }
+                if (!futureSelected) {
                 item(key = "intro") {
                     Column {
                         Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(8.dp))
-                        SelfUpdateButton(onRefresh = { reload++ })
+                        SelfUpdateButton(onRefresh = { reload++ }, actionScope = screenScope)
                     }
                 }
                 item(key = "trikaal") { TrikaalCard() }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList()) }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
-                items(mergedEcoEntries(rows ?: emptyList(), upcoming), key = { it.itemKey }) { e ->
+                }
+                if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text("No planned apps are listed right now.") }
+                items(mergedEcoEntries(sectionRows, sectionUpcoming), key = { it.itemKey }) { e ->
                     when (e) {
-                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys) { reload++ }
+                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys, actionScope = screenScope) { reload++ }
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
+                if (!futureSelected) {
                 item(key = "timespeak") { TimeSpeakCard() }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
+                }
             }
         }
     }
@@ -367,9 +395,10 @@ private fun StatusPill(status: Status) {
 }
 
 @Composable
-fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Boolean, previewVisible: Boolean, onChanged: () -> Unit) {
+fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Boolean, previewVisible: Boolean, actionScope: kotlinx.coroutines.CoroutineScope? = null, onChanged: () -> Unit) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val localScope = rememberCoroutineScope()
+    val scope = actionScope ?: localScope
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf<String?>(null) }
@@ -444,7 +473,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
             }
             Spacer(Modifier.height(10.dp))
             when (status) {
-                Status.NotInstalled, Status.UpdateAvailable -> AppDownloadButton(row, status)
+                Status.NotInstalled, Status.UpdateAvailable -> AppDownloadButton(row, status, actionScope = scope)
                 Status.InstalledNewer -> Text("Installed version is newer than the published one", style = MaterialTheme.typography.bodySmall)
                 Status.Unavailable -> Text("Latest version Unavailable right now", style = MaterialTheme.typography.bodySmall)
                 Status.UpToDate -> {}
@@ -488,9 +517,10 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
 }
 
 @Composable
-private fun SelfUpdateButton(onRefresh: () -> Unit) {
+private fun SelfUpdateButton(onRefresh: () -> Unit, actionScope: kotlinx.coroutines.CoroutineScope? = null) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val localScope = rememberCoroutineScope()
+    val scope = actionScope ?: localScope
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf<String?>(null) }
@@ -511,11 +541,11 @@ private fun SelfUpdateButton(onRefresh: () -> Unit) {
             if (status == Status.UpdateAvailable) release = latest
             busy = false
         }
-    }) { Text(if (busy) "Checking..." else "Check for update", color = Color.White) }
-    message?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
-    progress?.let { Text(it, color = Color(0xFFD0ECE8), style = MaterialTheme.typography.bodySmall) }
+    }) { Text(if (busy) "Checking..." else "Check for update") }
+    message?.let { Text(it, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall) }
+    progress?.let { Text(it, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall) }
     release?.let { r ->
-        SelfDownloadButton(r)
+        SelfDownloadButton(r, actionScope = scope)
     }
     }
 }
