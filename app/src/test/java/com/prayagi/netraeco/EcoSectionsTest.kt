@@ -1,5 +1,11 @@
 package com.prayagi.netraeco
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CompletableDeferred
+import android.content.Context
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -24,14 +30,17 @@ import org.robolectric.annotation.GraphicsMode
 @Config(qualifiers = "w320dp-h1000dp-xxhdpi", sdk = [34], application = Application::class)
 class EcoSectionsTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
-    private val catalog = """{"upcoming":[{"id":"future-one","name":"Future Alpha","type":"Planned","summary":"Not released"},{"id":"future-two","name":"Future Beta","type":"Planned","summary":"Not released"}]}"""
-    private fun show(large: Boolean = true, dark: Boolean = false): () -> Int {
+    private val catalog = """{"upcoming":[{"id":"future-one","name":"Future Alpha","type":"Planned","summary":"Not released"},{"id":"future-two","name":"Future Beta","type":"Music","summary":"Not released"}]}"""
+    private fun show(large: Boolean = true, dark: Boolean = false, short: Boolean = false, roadmap: String? = null,
+        checker: suspend (Context) -> Pair<String, LatestRelease?> = { "Fixture checked" to null }): () -> Int {
         var loads = 0
         val app = CatalogApp("fixture", "Current Alpha", "Utility", "Released fixture", "", "test.fixture", "", "")
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, if (large) 1.5f else 1f)) {
                 androidx.compose.material3.MaterialTheme(colorScheme = if (dark) androidx.compose.material3.darkColorScheme() else androidx.compose.material3.lightColorScheme()) {
-                    EcoScreen(0, catalogLoader = { loads++; listOf(AppRow(app, null, null)) }, textLoader = { if (it == Net.CATALOG_URL) catalog else null })
+                    Box(if (short) Modifier.height(480.dp) else Modifier) {
+                    EcoScreen(0, catalogLoader = { loads++; listOf(AppRow(app, null, null)) }, textLoader = { if (it == Net.CATALOG_URL) catalog else roadmap }, selfChecker = checker)
+                    }
                 }
             }
         }
@@ -70,6 +79,78 @@ class EcoSectionsTest {
         rule.onNodeWithTag("future-list").assertExists()
         rule.onNodeWithText("Current").performClick()
         rule.onNodeWithText("Current Alpha").assertIsDisplayed()
+    }
+    @Test fun explicitCheckCompletesWhileFutureVisibleAndResultSurvivesReturn() {
+        val gate = CompletableDeferred<Unit>()
+        var calls = 0
+        show(checker = { calls++; gate.await(); "Fixture checked once" to null })
+        rule.onNodeWithText("Check for update").performClick()
+        rule.onNodeWithText("Checking...").assertIsNotEnabled()
+        rule.onNodeWithText("Future").performClick()
+        rule.runOnIdle { gate.complete(Unit) }
+        rule.onNodeWithText("Current").performClick()
+        rule.onNodeWithText("Fixture checked once").assertIsDisplayed()
+        assertEquals(1, calls)
+    }
+    @Test fun futureScrollPositionSurvivesCurrentVisit() {
+        show(large = false)
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithTag("future-list").performScrollToKey("up-future-two")
+        rule.onNodeWithText("Future Beta").assertIsDisplayed()
+        rule.onNodeWithText("Current").performClick()
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithText("Future Beta").assertIsDisplayed()
+    }
+    @Test fun futureCategorySurvivesCurrentVisit() {
+        show(large = false)
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithText("Media", substring = false).performClick()
+        rule.onNodeWithText("Future Beta").assertExists()
+        rule.onAllNodesWithText("Future Alpha").assertCountEquals(0)
+        rule.onNodeWithText("Current").performClick()
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithText("Future Beta").assertExists()
+        rule.onAllNodesWithText("Future Alpha").assertCountEquals(0)
+    }
+    @Test fun activeDownloadFinishesAcrossFutureVisit() {
+        DownloadCenter.items.value = emptyMap()
+        show(large = false)
+        val bytes = ByteArray(128) { it.toByte() }
+        val started = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/fixture.apk") { x ->
+            started.countDown()
+            release.await(10, java.util.concurrent.TimeUnit.SECONDS)
+            x.sendResponseHeaders(200, bytes.size.toLong())
+            x.responseBody.use { it.write(bytes) }
+        }
+        server.start()
+        val app = CatalogApp("download-fixture", "Download fixture", "", "", "", "fixture.test", "", "")
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        val r = LatestRelease("v1.0.0", "1.0.0", 1, "", "http://127.0.0.1:" + server.address.port + "/fixture.apk", sha, bytes.size.toLong())
+        val key = DownloadCenter.keyFor(app, r)
+        try {
+            rule.runOnIdle { DownloadCenter.start(rule.activity, app, r) }
+            assertTrue(started.await(10, java.util.concurrent.TimeUnit.SECONDS))
+            rule.onNodeWithText("Future").performClick()
+            release.countDown()
+            rule.waitUntil(15000) { DownloadCenter.items.value[key]?.state == DownloadCenter.DONE }
+            rule.onNodeWithText("Current").performClick()
+            assertEquals(DownloadCenter.DONE, DownloadCenter.items.value[key]?.state)
+            assertTrue(DownloadCenter.file(rule.activity, key).readBytes().contentEquals(bytes))
+        } finally { release.countDown(); server.stop(0); DownloadCenter.delete(rule.activity, key) }
+    }
+    @Test fun realTickerAndShortViewportStillReachLastCurrentItem() {
+        val roadmap = """{"apps":[{"id":"eco","name":"Netra Ecosystem"}],"items":[{"title":"Long planned Current and Future accessibility release","status":"In progress","eta":"2026-11-01T20:00:00+05:30","apps":["eco"]}]}"""
+        show(short = true, roadmap = roadmap)
+        rule.onNodeWithTag("current-list").performScrollToKey("perms")
+        shot("short-large-real-ticker-bottom")
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithText("Search apps").performTextInput("Future")
+        rule.onNodeWithTag("future-list").performScrollToKey("up-future-two")
+        rule.onNodeWithText("Future Beta").assertIsDisplayed()
+        shot("short-large-search-real-ticker")
     }
     @Test fun currentUpdateAndTickerLargeLight() {
         show()
