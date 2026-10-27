@@ -162,13 +162,14 @@ private fun mb(b: Long) = String.format(java.util.Locale.US, "%.1f MB", b / 1048
 
 /** The button on one app card: download (several can run at once), then Install from the finished file. */
 @Composable
-fun AppDownloadButton(row: AppRow, status: Status) {
+fun AppDownloadButton(row: AppRow, status: Status, actionScope: kotlinx.coroutines.CoroutineScope? = null) {
     if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) {
         Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
         return
     }
     val context = LocalContext.current
-    val installScope = rememberCoroutineScope()
+    val localInstallScope = rememberCoroutineScope()
+    val installScope = actionScope ?: localInstallScope
     val latest = row.latest ?: return
     val key = DownloadCenter.keyFor(row.app, latest)
     val all by DownloadCenter.items.collectAsState()
@@ -216,9 +217,10 @@ private fun ProgressBlock(i: DownloadCenter.Item) {
 
 /** Self update: start the download here, the finished file then shows in Downloads with an Install button. */
 @Composable
-fun SelfDownloadButton(release: LatestRelease) {
+fun SelfDownloadButton(release: LatestRelease, actionScope: kotlinx.coroutines.CoroutineScope? = null) {
     val context = LocalContext.current
-    val installScope = rememberCoroutineScope()
+    val localInstallScope = rememberCoroutineScope()
+    val installScope = actionScope ?: localInstallScope
     val all by DownloadCenter.items.collectAsState()
     val self = remember { Net.selfApp(context) }
     val k = DownloadCenter.keyFor(self, release)
