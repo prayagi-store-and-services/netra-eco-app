@@ -284,36 +284,14 @@ fun EcoScreen(
                 if (futureSelected) Button(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
                 else OutlinedButton(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
             }
-            Text(if (futureSelected) "Planned apps. Not released; no download or install. Dates are estimates, not promises." else "Released apps. Download availability is checked for each app.", style = MaterialTheme.typography.bodySmall)
-            Spacer(Modifier.height(8.dp))
             val sectionRows = if (futureSelected) emptyList() else rows ?: emptyList()
             val sectionUpcoming = if (futureSelected) upcoming else emptyList()
             val searching = query.isNotBlank()
             val shownRows = sectionRows.filter { matchesQuery(query, it.app.name, it.app.type, it.app.summary) }
             val shownUpcoming = sectionUpcoming.filter { matchesQuery(query, it.name, it.type, it.summary) }
-            if (rows != null) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { setQuery(it.take(60)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text("Search apps") },
-                    trailingIcon = { if (searching) TextButton(onClick = { setQuery("") }) { Text("Clear") } }
-                )
-                Spacer(Modifier.height(8.dp))
-            }
             val catRows = sectionRows.map { it to AppCategories.classify(it.app.name, it.app.type, it.app.summary, it.app.categories) }
             val catUp = sectionUpcoming.map { it to AppCategories.classify(it.name, it.type, it.summary) }
             val usedCats = AppCategory.values().filter { c -> catRows.any { c in it.second } || catUp.any { c in it.second } }
-            if (rows != null && !searching && usedCats.size > 1) {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (cat == null) Button(onClick = { setCat(null) }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { setCat(null) }) { Text("All", maxLines = 1) }
-                    usedCats.forEach { c ->
-                        if (cat == c) Button(onClick = { setCat(null) }) { Text(c.label, maxLines = 1) } else OutlinedButton(onClick = { setCat(c) }) { Text(c.label, maxLines = 1) }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-            }
             val listState = if (futureSelected) futureListState else currentListState
             // Smooth scrolling (20 Oct): which live-app card may autoplay its preview video.
             // Only the most-visible live card gets the token; every other card shows a poster.
@@ -332,6 +310,32 @@ fun EcoScreen(
                 }
             }
             LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                item(key = "section-controls") {
+                    Column {
+            Text(if (futureSelected) "Planned apps. Not released; no download or install. Dates are estimates, not promises." else "Released apps. Download availability is checked for each app.", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            if (rows != null) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { setQuery(it.take(60)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Search apps") },
+                    trailingIcon = { if (searching) TextButton(onClick = { setQuery("") }) { Text("Clear") } }
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            if (rows != null && !searching && usedCats.size > 1) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (cat == null) Button(onClick = { setCat(null) }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { setCat(null) }) { Text("All", maxLines = 1) }
+                    usedCats.forEach { c ->
+                        if (cat == c) Button(onClick = { setCat(null) }) { Text(c.label, maxLines = 1) } else OutlinedButton(onClick = { setCat(c) }) { Text(c.label, maxLines = 1) }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+                    }
+                }
                 if (searching) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
