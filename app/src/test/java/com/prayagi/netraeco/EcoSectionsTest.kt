@@ -147,11 +147,15 @@ class EcoSectionsTest {
         val roadmap = """{"apps":[{"id":"eco","name":"Netra Ecosystem"}],"items":[{"title":"Long planned Current and Future accessibility release","status":"In progress","eta":"2026-11-01T20:00:00+05:30","apps":["eco"]}]}"""
         show(short = true, roadmap = roadmap)
         rule.onNodeWithTag("current-list").performScrollToKey("perms")
+        rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithText("Permissions").assertIsDisplayed()
         shot("short-large-real-ticker-bottom")
         rule.onNodeWithText("Future").performClick()
+        rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithText("Search apps").performTextInput("Future")
+        rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithTag("future-list").performScrollToKey("up-future-two")
+        rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithText("Future Beta").assertIsDisplayed()
         shot("short-large-search-real-ticker")
     }
