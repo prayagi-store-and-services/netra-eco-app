@@ -92,7 +92,7 @@ jobs:
           import re, sys
           text = open(sys.argv[1]).read()
           match = re.search(r"^package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", text, re.M)
-          assert match and match.groups() == ('com.prayagi.netraeco', '57', '1.2.43'), 'Unexpected signed APK identity'
+          assert match and match.groups() == ('com.prayagi.netraeco', '58', '1.2.44'), 'Unexpected signed APK identity'
           PY
       - name: Stage draft release for independent audit
         env:
