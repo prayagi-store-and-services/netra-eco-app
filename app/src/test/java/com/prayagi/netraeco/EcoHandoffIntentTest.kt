@@ -38,4 +38,30 @@ class EcoHandoffIntentTest {
   UpdateAlert.handle(activity,valid);assertEquals(1,executions)
   UpdateAlert.handle(activity,valid);assertEquals(1,executions)
  }
+
+ @Test fun tokenRemovalCommitFailureRejectsExecution() {
+  val app=org.robolectric.RuntimeEnvironment.getApplication()
+  val valid=UpdateAlert.notificationIntent(app)
+  val wrapped=object:android.content.ContextWrapper(app) {
+   override fun getSharedPreferences(name:String,mode:Int):android.content.SharedPreferences {
+    val real=super.getSharedPreferences(name,mode)
+    return object:android.content.SharedPreferences by real {
+     override fun edit():android.content.SharedPreferences.Editor {
+      val edit=real.edit()
+      return object:android.content.SharedPreferences.Editor by edit { override fun remove(key:String):android.content.SharedPreferences.Editor { edit.remove(key); return this }; override fun commit()=false }
+     }
+    }
+   }
+  }
+  assertFalse(UpdateAlert.consumeAuthorizedNotification(wrapped,valid))
+ }
+ @Test fun clipWrongActionAndMissingTokenAreRejected() {
+  val app=org.robolectric.RuntimeEnvironment.getApplication()
+  val valid=UpdateAlert.notificationIntent(app)
+  val badClip=Intent(valid).apply { clipData=android.content.ClipData.newPlainText("test","untrusted") }
+  assertFalse(UpdateAlert.consumeAuthorizedNotification(app,badClip))
+  assertFalse(UpdateAlert.consumeAuthorizedNotification(app,Intent(valid).setAction(Intent.ACTION_VIEW)))
+  assertFalse(UpdateAlert.consumeAuthorizedNotification(app,Intent(valid).apply{removeExtra("netra_update_token")}))
+  assertTrue(UpdateAlert.consumeAuthorizedNotification(app,valid))
+ }
 }
