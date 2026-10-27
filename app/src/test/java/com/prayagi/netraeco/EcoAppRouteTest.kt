@@ -9,4 +9,8 @@ class EcoAppRouteTest {
     @Test fun rejectsUntrustedAndExecutableRoutes() {
         listOf(null,"",root+"unknown/",root+"kbc/?download=1",root+"kbc/#install",root+"%6bbc/",root+"../kbc/",root+"kbc/extra",root.replace("https:","http:")+"kbc/",root.replace(".io", ".io.evil.invalid")+"kbc/",root.replace("https://", "https://user@")+"kbc/",root.replace(".io/", ".io:443/")+"kbc/").forEach { assertNull(it,EcoAppRoute.appId(it)) }
     }
+ @org.junit.Test fun emptyQueryOrFragmentAreRejected(){
+  org.junit.Assert.assertNull(EcoAppRoute.appId("https://prayagi-store-and-services.github.io/netra-eco/app/kbc/?"))
+  org.junit.Assert.assertNull(EcoAppRoute.appId("https://prayagi-store-and-services.github.io/netra-eco/app/kbc/#"))
+ }
 }
