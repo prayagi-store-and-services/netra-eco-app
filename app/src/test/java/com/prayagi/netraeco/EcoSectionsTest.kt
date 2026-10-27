@@ -35,6 +35,7 @@ class EcoSectionsTest {
         checker: suspend (Context) -> Pair<String, LatestRelease?> = { "Fixture checked" to null }): () -> Int {
         var loads = 0
         val app = CatalogApp("fixture", "Current Alpha", "Utility", "Released fixture", "", "test.fixture", "", "")
+        if (roadmap != null) rule.mainClock.autoAdvance = false
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, if (large) 1.5f else 1f)) {
                 androidx.compose.material3.MaterialTheme(colorScheme = if (dark) androidx.compose.material3.darkColorScheme() else androidx.compose.material3.lightColorScheme()) {
@@ -44,6 +45,7 @@ class EcoSectionsTest {
                 }
             }
         }
+        if (roadmap != null) rule.mainClock.advanceTimeBy(1000)
         rule.onNodeWithText("Search apps").assertExists()
         return { loads }
     }
@@ -145,6 +147,7 @@ class EcoSectionsTest {
         val roadmap = """{"apps":[{"id":"eco","name":"Netra Ecosystem"}],"items":[{"title":"Long planned Current and Future accessibility release","status":"In progress","eta":"2026-11-01T20:00:00+05:30","apps":["eco"]}]}"""
         show(short = true, roadmap = roadmap)
         rule.onNodeWithTag("current-list").performScrollToKey("perms")
+        rule.onNodeWithText("Permissions").assertIsDisplayed()
         shot("short-large-real-ticker-bottom")
         rule.onNodeWithText("Future").performClick()
         rule.onNodeWithText("Search apps").performTextInput("Future")
