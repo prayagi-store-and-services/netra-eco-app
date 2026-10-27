@@ -33,8 +33,21 @@ class EcoHandoffScreenTest {
   }
  }
  @Test fun failedLoadDoesNotDisplayStaleCard() {
+  rule.runOnUiThread {
+   val config=android.content.res.Configuration(rule.activity.resources.configuration).apply{fontScale=1.5f}
+   rule.activity.resources.updateConfiguration(config,rule.activity.resources.displayMetrics)
+  }
   rule.setContent { MaterialTheme { EcoScreen(0,catalogLoader={null},textLoader={null},requestedAppId="kbc") } }
   rule.waitUntil(10000){rule.onAllNodesWithText("Unavailable: could not refresh app details. No download started.").fetchSemanticsNodes().isNotEmpty()}
-  rule.onNodeWithText("Check again").assertExists()
+  rule.onNodeWithText("Check again").assertIsDisplayed()
+  rule.onAllNodesWithText("Current").assertCountEquals(0)
+  rule.onAllNodesWithText("Future").assertCountEquals(0)
+  rule.runOnIdle {
+   val view=rule.activity.window.decorView
+   val bitmap=android.graphics.Bitmap.createBitmap(view.width,view.height,android.graphics.Bitmap.Config.ARGB_8888)
+   view.draw(android.graphics.Canvas(bitmap))
+   java.io.File("build/outputs/eco-handoff-failed-largefont.png").apply{parentFile.mkdirs()}.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
+   bitmap.recycle()
+  }
  }
 }
