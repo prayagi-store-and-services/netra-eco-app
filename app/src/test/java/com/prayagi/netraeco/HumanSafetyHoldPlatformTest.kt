@@ -11,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [34], application = Application::class, shadows = [ShadowApkDataSource::class])
 class HumanSafetyHoldPlatformTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
     private fun app() = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO,
