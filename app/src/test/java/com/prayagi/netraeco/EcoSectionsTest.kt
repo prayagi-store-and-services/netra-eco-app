@@ -98,6 +98,23 @@ class EcoSectionsTest {
         rule.onNodeWithText("Update Netra Player").assertIsDisplayed()
         shot("named-updates")
     }
+    @Test fun futureKnownTargetLargeFontMixedOrder() {
+        val now = System.currentTimeMillis()
+        val near = java.time.Instant.ofEpochMilli(now + 86_400_000L).toString()
+        val far = java.time.Instant.ofEpochMilli(now + 172_800_000L).toString()
+        val past = java.time.Instant.ofEpochMilli(now - 86_400_000L).toString()
+        val data = """{"projects":[],"upcoming":[{"id":"undated","name":"Undated"},{"id":"far","name":"Far target","eta":"$far"},{"id":"past","name":"Passed target","eta":"$past"},{"id":"near","name":"Nearest target","eta":"$near"}]}"""
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
+                androidx.compose.material3.MaterialTheme { EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { if (it == Net.CATALOG_URL) data else null }) }
+            }
+        }
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithTag("future-list").performScrollToKey("up-near")
+        rule.onNodeWithText("Nearest target").assertIsDisplayed()
+        rule.onNodeWithText(Upcoming.targetLabel(java.time.Instant.parse(near).toEpochMilli())).assertIsDisplayed()
+        shot("future-known-target-large")
+    }
     @Test fun currentScrollPositionSurvivesFutureVisit() {
         show(large = false)
         rule.onNodeWithTag("current-list").performScrollToKey("l-fixture")
