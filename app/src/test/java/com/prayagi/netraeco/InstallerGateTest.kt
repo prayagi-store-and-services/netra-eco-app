@@ -10,7 +10,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class, shadows = [ShadowApkDataSource::class])
+@Config(sdk = [34], application = Application::class, shadows = [ShadowApkDataSource::class, ShadowArchiveSigningInfo::class])
 class InstallerGateTest {
     private val pkg = "com.aistudio.reasoningquiz.tark"
     private fun release(file: File) = LatestRelease("v1.1.37", "1.1.37", 0L, "", "", InstallerGate.hash(file), file.length())
@@ -38,6 +38,16 @@ class InstallerGateTest {
         val f = File(c.cacheDir, "kbc-v1.1.37.apk").apply { original.copyTo(this, overwrite = true) }
         val app = CatalogApp("kbc", "KBC", "", "", "$ORG/KBC", pkg, "", "")
         val archive = InstallerGate.archive(c, f)!!
+        val observedSigners = archive.signingInfo?.apkContentsSigners.orEmpty().map {
+            java.security.MessageDigest.getInstance("SHA-256").digest(it.toByteArray()).joinToString("") { b -> "%02x".format(b) }
+        }
+        @Suppress("DEPRECATION") val legacySigners = archive.signatures.orEmpty().map {
+            java.security.MessageDigest.getInstance("SHA-256").digest(it.toByteArray()).joinToString("") { b -> "%02x".format(b) }
+        }
+        println("APK_GATE_DIMENSIONS package=${archive.packageName} expected=$pkg version=${archive.versionName} code=${archive.longVersionCode} signingInfo=${archive.signingInfo != null} currentSigners=$observedSigners legacySigners=$legacySigners expectedSigner=${InstallerGate.expectedSigner(pkg)}")
+        assertEquals("archive package", pkg, archive.packageName)
+        assertTrue("archive version code", archive.longVersionCode > 0)
+        assertEquals("SigningInfo signer fingerprints", setOf(InstallerGate.expectedSigner(pkg)), observedSigners.toSet())
         InstallerGate.remember(c, app, release(f).copy(versionName = archive.versionName!!))
         InstallerGate.requireValid(c, f, archive)
         f.writeBytes(f.readBytes().also { it[50] = (it[50].toInt() xor 1).toByte() })
