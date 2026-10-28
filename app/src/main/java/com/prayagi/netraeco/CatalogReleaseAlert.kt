@@ -14,6 +14,7 @@ import org.json.JSONObject
 
 /** Uses the existing six-hour worker and foreground catalog refresh, never a polling loop. */
 object CatalogReleaseAlert {
+    const val ACTION_CURRENT = "com.prayagi.netraeco.action.VIEW_CURRENT_RELEASES"
     private const val PREFS = "catalog_release_alerts"
     private const val CHANNEL = "netra_new_app_releases"
     internal fun newlyReleased(planned: Set<String>, live: Set<String>): Set<String> = planned.intersect(live)
@@ -43,7 +44,7 @@ object CatalogReleaseAlert {
         val nm = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(NotificationChannel(CHANNEL, "New Netra apps", NotificationManager.IMPORTANCE_DEFAULT))
         val open = PendingIntent.getActivity(c, 7433,
-            Intent(c, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            Intent(c, MainActivity::class.java).setAction(ACTION_CURRENT).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         try {
             nm.notify(7433, NotificationCompat.Builder(c, CHANNEL)
