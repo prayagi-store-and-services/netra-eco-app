@@ -42,7 +42,7 @@ class BrandScreenshotTest {
             HumanSafetyHold.PACKAGE, "", "")
         rule.setContent {
             MaterialTheme {
-                AppCard(AppRow(app, null, null), null, false, false) {}
+                AppCard(AppRow(app, null, null), null) {}
             }
         }
         rule.onNodeWithText("Human Safety release unavailable").assertIsDisplayed()

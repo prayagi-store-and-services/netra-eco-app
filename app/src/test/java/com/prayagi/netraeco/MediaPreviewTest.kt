@@ -2,7 +2,6 @@ package com.prayagi.netraeco
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,10 +21,10 @@ class MediaPreviewTest {
 
     @Test fun badJsonGivesEmptyMap() = assertTrue(MediaPreviewStore.parse("not json").isEmpty())
 
-    @Test fun videoAndShotsParse() {
+    @Test fun videoIsIgnoredAndShotsParse() {
         val m = MediaPreviewStore.parse(json(trustedVideo, listOf(trustedShot to "Home")))
         val p = m["netra-eco"]!!
-        assertEquals(trustedVideo, p.videoUrl)
+        // Video fields are not represented at all; only screenshots survive.
         assertEquals(listOf(trustedShot to "Home"), p.shots)
     }
 
@@ -34,13 +33,23 @@ class MediaPreviewTest {
         assertTrue(MediaPreviewStore.isTrustedMediaUrl(trustedVideo))
         val m = MediaPreviewStore.parse(json(evil, listOf(evil to "Evil", trustedShot to "Home")))
         val p = m["netra-eco"]!!
-        assertNull(p.videoUrl)
         assertEquals(listOf(trustedShot to "Home"), p.shots)
     }
 
     @Test fun entryWithNoUsableMediaIsHidden() {
         assertTrue(MediaPreviewStore.parse(json()).isEmpty())
         assertTrue(MediaPreviewStore.parse(json(evil, listOf(evil to "Evil"))).isEmpty())
+    }
+
+    @Test fun trustedVideoOnlyEntryIsHidden() {
+        assertTrue(MediaPreviewStore.parse(json(trustedVideo)).isEmpty())
+    }
+
+    @Test fun everyVideoSchemeIsIgnoredWithScreenshotsPreserved() {
+        listOf(trustedVideo, "https://youtube.com/watch?v=x", "file:///sdcard/movie.mp4", "content://movie/1").forEach { video ->
+            val p = MediaPreviewStore.parse(json(video, listOf(trustedShot to "Home")))["netra-eco"]!!
+            assertEquals(listOf(trustedShot to "Home"), p.shots)
+        }
     }
 
     @Test fun missingAppsObjectGivesEmptyMap() =
