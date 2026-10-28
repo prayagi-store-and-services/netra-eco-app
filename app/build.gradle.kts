@@ -44,7 +44,16 @@ android {
   }
   buildFeatures { compose = true
     buildConfig = true }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        // Robolectric's Android APK verifier maps APK data through JDK internals on JDK 21.
+        it.jvmArgs("--add-opens=java.base/java.nio=ALL-UNNAMED", "--add-exports=java.base/java.nio=ALL-UNNAMED",
+          "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED")
+      }
+    }
+  }
 }
 
 dependencies {
