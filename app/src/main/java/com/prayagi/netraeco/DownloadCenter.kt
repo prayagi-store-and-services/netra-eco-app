@@ -253,13 +253,32 @@ fun DownloadManagerCard(rows: List<AppRow>, actionScope: kotlinx.coroutines.Coro
     val actions = installActions ?: localActions
     val all by DownloadCenter.items.collectAsState()
     LaunchedEffect(Unit) { DownloadCenter.refresh(context) }
-    val updatable = rows.filter {
+    val updates = AppSort.current(rows).filter {
+        it.latest != null && statusForRelease(it.installed?.first, it.installed?.second, it.latest) == Status.UpdateAvailable
+    }
+    val updatable = updates.filter {
         DownloadCenter.allowedForDownload(it.app, it.latest) && it.latest != null && statusForRelease(it.installed?.first, it.installed?.second, it.latest) == Status.UpdateAvailable &&
             all[DownloadCenter.keyFor(it.app, it.latest)]?.state.let { s -> s != DownloadCenter.DOWNLOADING && s != DownloadCenter.DONE }
     }
-    if (all.isEmpty() && updatable.isEmpty()) return
+    if (all.isEmpty() && updates.isEmpty()) return
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Updates available", style = MaterialTheme.typography.titleMedium)
+            if (updates.isEmpty()) Text("No updates found in the last check.")
+            updates.forEach { row ->
+                val latest = row.latest!!
+                val key = DownloadCenter.keyFor(row.app, latest)
+                val busy = actions.state(key).busy || all[key]?.state == DownloadCenter.DOWNLOADING
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(row.app.name, style = MaterialTheme.typography.titleSmall)
+                    Text("Installed: " + row.installed?.second.orEmpty().ifBlank { "Unavailable" } + " | Published: " + latest.versionName)
+                    if (!DownloadCenter.allowedForDownload(row.app, latest)) Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
+                    else Button(enabled = !busy, onClick = { actions.update(installScope, context, row) }) {
+                        Text(if (busy) "Preparing update..." else "Update " + row.app.name)
+                    }
+                    actions.state(key).error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            }
             Text("Downloads", style = MaterialTheme.typography.titleMedium)
             if (updatable.size > 1) {
                 Button(modifier = Modifier.fillMaxWidth(), onClick = { updatable.forEach { DownloadCenter.start(context, it.app, it.latest!!) } }) {
