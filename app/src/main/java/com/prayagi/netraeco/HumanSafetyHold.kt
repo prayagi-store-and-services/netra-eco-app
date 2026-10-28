@@ -38,7 +38,7 @@ object HumanSafetyHold {
                     a.optString("browser_download_url") == URL
             }
             if (!valid) null else LatestRelease(TAG, VERSION, CODE,
-                "App-local updater removed. Owner reported heating/battery resolved on the tested build; not a measured guarantee.", URL, SHA, SIZE)
+                "App-local updater removed. Owner reported heating/battery resolved on the tested build; not a measured guarantee.", URL, SHA, SIZE, releaseTimeMillis(x.optString("published_at")))
         }
     } catch (_: Exception) { null }
     fun fileAllowed(file: File): Boolean = try {
