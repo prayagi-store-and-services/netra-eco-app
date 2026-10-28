@@ -310,22 +310,6 @@ fun EcoScreen(
             val catUp = sectionUpcoming.map { it to AppCategories.classify(it.name, it.type, it.summary) }
             val usedCats = AppCategory.values().filter { c -> catRows.any { c in it.second } || catUp.any { c in it.second } }
             val listState = if (futureSelected) futureListState else currentListState
-            // Smooth scrolling (20 Oct): which live-app card may autoplay its preview video.
-            // Only the most-visible live card gets the token; every other card shows a poster.
-            val activePreviewKey by remember(listState) {
-                androidx.compose.runtime.derivedStateOf {
-                    val info = listState.layoutInfo
-                    PreviewFocus.pickActive(
-                        info.visibleItemsInfo.map { VisibleEntry(it.key as? String ?: "", it.offset, it.size) },
-                        info.viewportStartOffset, info.viewportEndOffset
-                    )
-                }
-            }
-            val visiblePreviewKeys by remember(listState) {
-                androidx.compose.runtime.derivedStateOf {
-                    listState.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }.toSet()
-                }
-            }
             if (requestedAppId != null) {
                 androidx.activity.compose.BackHandler(onBack = onCloseApp)
                 LazyColumn(Modifier.weight(1f).testTag("handoff-app"), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -336,7 +320,7 @@ fun EcoScreen(
                         loading -> item { Text("Loading app details...") }
                         failed -> item { Text("Unavailable: could not refresh app details. No download started."); OutlinedButton(onClick = { reload++ }) { Text("Check again") } }
                         requestedRow == null -> item { Text("Unavailable: this app is not in the current catalog. No download started.") }
-                        else -> item { AppCard(requestedRow, pendingRoadmap, false, false, actionScope = screenScope, installActions = installActions) { reload++ } }
+                        else -> item { AppCard(requestedRow, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ } }
                     }
                 }
             } else {
@@ -373,7 +357,7 @@ fun EcoScreen(
                     }
                     items(mergedEcoEntries(shownRows, shownUpcoming), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys, actionScope = screenScope, installActions = installActions) { reload++ }
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -386,7 +370,7 @@ fun EcoScreen(
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
                     items(mergedEcoEntries(inRows, inUp), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys, actionScope = screenScope, installActions = installActions) { reload++ }
+                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -407,7 +391,7 @@ fun EcoScreen(
                 if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text("No planned apps are listed right now.") }
                 items(mergedEcoEntries(sectionRows, sectionUpcoming), key = { it.itemKey }) { e ->
                     when (e) {
-                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, activePreviewKey == e.itemKey, e.itemKey in visiblePreviewKeys, actionScope = screenScope, installActions = installActions) { reload++ }
+                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
@@ -436,7 +420,7 @@ private fun StatusPill(status: Status) {
 }
 
 @Composable
-fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Boolean, previewVisible: Boolean, actionScope: kotlinx.coroutines.CoroutineScope? = null, installActions: EcoInstallActions? = null, onChanged: () -> Unit) {
+fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlinx.coroutines.CoroutineScope? = null, installActions: EcoInstallActions? = null, onChanged: () -> Unit) {
     val context = LocalContext.current
     val localScope = rememberCoroutineScope()
     val scope = actionScope ?: localScope
@@ -470,7 +454,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, previewActive: Bool
                 Button(enabled = false, onClick = {}) { Text("Download and update paused") }
                 return@Column
             }
-            PreviewBlock(row.app.id, previewActive, previewVisible)
+            PreviewBlock(row.app.id)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f)) {
