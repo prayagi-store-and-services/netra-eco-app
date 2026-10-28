@@ -75,6 +75,46 @@ class EcoSectionsTest {
         rule.onNodeWithText("Search apps").assertTextContains("Future Beta")
         assertEquals(1, loads())
     }
+    @Test fun releaseNotificationSwitchesFutureToCurrent() {
+        val request = androidx.compose.runtime.mutableIntStateOf(0)
+        rule.setContent {
+            EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { if (it == Net.CATALOG_URL) catalog else null }, currentRequestKey = request.intValue)
+        }
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithTag("future-list").assertExists()
+        rule.runOnIdle { request.intValue++ }
+        rule.onNodeWithTag("current-list").assertExists()
+        rule.onAllNodesWithTag("future-list").assertCountEquals(0)
+    }
+    @Test fun namedUpdateIsVisibleWithBothVersions() {
+        val app = CatalogApp("fixture", "Netra Player", "Media", "Fixture", "", "test.fixture", "", "")
+        val release = LatestRelease("v1.0.1", "1.0.1", 2L, "", "", "a".repeat(64), 1L)
+        rule.setContent {
+            EcoScreen(0, catalogLoader = { listOf(AppRow(app, 1L to "1.0.0", release)) }, textLoader = { null })
+        }
+        rule.onNodeWithTag("current-list").performScrollToKey("downloads")
+        rule.onNodeWithText("Updates available").assertIsDisplayed()
+        rule.onNodeWithText("Installed: 1.0.0 | Published: 1.0.1").assertIsDisplayed()
+        rule.onNodeWithText("Update Netra Player").assertIsDisplayed()
+        shot("named-updates")
+    }
+    @Test fun futureKnownTargetLargeFontMixedOrder() {
+        val now = System.currentTimeMillis()
+        val near = java.time.Instant.ofEpochMilli(now + 86_400_000L).toString()
+        val far = java.time.Instant.ofEpochMilli(now + 172_800_000L).toString()
+        val past = java.time.Instant.ofEpochMilli(now - 86_400_000L).toString()
+        val data = """{"projects":[],"upcoming":[{"id":"undated","name":"Undated"},{"id":"far","name":"Far target","eta":"$far"},{"id":"past","name":"Passed target","eta":"$past"},{"id":"near","name":"Nearest target","eta":"$near"}]}"""
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
+                androidx.compose.material3.MaterialTheme { EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { if (it == Net.CATALOG_URL) data else null }) }
+            }
+        }
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithTag("future-list").performScrollToKey("up-near")
+        rule.onNodeWithText("Nearest target").assertIsDisplayed()
+        rule.onNodeWithText(Upcoming.targetLabel(java.time.Instant.parse(near).toEpochMilli())).assertIsDisplayed()
+        shot("future-known-target-large")
+    }
     @Test fun currentScrollPositionSurvivesFutureVisit() {
         show(large = false)
         rule.onNodeWithTag("current-list").performScrollToKey("l-fixture")
@@ -84,17 +124,11 @@ class EcoSectionsTest {
         rule.onNodeWithText("Current").performClick()
         rule.onNodeWithText("Current Alpha").assertIsDisplayed()
     }
-    @Test fun explicitCheckCompletesWhileFutureVisibleAndResultSurvivesReturn() {
-        val gate = CompletableDeferred<Unit>()
-        var calls = 0
-        show(checker = { calls++; gate.await(); "Fixture checked once" to null })
-        rule.onNodeWithText("Check for update").performClick()
-        rule.onNodeWithText("Checking...").assertIsNotEnabled()
+    @Test fun noManualUpdateCheckInEitherSection() {
+        show()
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
         rule.onNodeWithText("Future").performClick()
-        rule.runOnIdle { gate.complete(Unit) }
-        rule.onNodeWithText("Current").performClick()
-        rule.onNodeWithText("Fixture checked once").assertIsDisplayed()
-        assertEquals(1, calls)
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
     }
     @Test fun futureScrollPositionSurvivesCurrentVisit() {
         show(large = false)
@@ -130,7 +164,7 @@ class EcoSectionsTest {
             x.responseBody.use { it.write(bytes) }
         }
         server.start()
-        val app = CatalogApp("download-fixture", "Download fixture", "", "", "", "fixture.test", "", "")
+        val app = CatalogApp("kbc", "KBC transfer fixture", "", "", "$ORG/KBC", "com.aistudio.reasoningquiz.tark", "", "")
         val sha = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
         val r = LatestRelease("v1.0.0", "1.0.0", 1, "", "http://127.0.0.1:" + server.address.port + "/fixture.apk", sha, bytes.size.toLong())
         val key = DownloadCenter.keyFor(app, r)
@@ -172,13 +206,13 @@ class EcoSectionsTest {
     }
     @Test fun currentUpdateAndTickerLargeLight() {
         show()
-        rule.onNodeWithText("Check for update").assertIsDisplayed()
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
         rule.onNodeWithText("Roadmap Unavailable right now.").assertIsDisplayed()
         shot("current-large-light")
     }
     @Test fun currentUpdateAndTickerLargeDark() {
         show(dark = true)
-        rule.onNodeWithText("Check for update").assertIsDisplayed()
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
         shot("current-large-dark")
     }
 }

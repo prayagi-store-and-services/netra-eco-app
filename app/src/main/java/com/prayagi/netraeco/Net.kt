@@ -55,11 +55,11 @@ object Net {
                 ?.let { HumanSafetyHold.parseRelease(it) }
         }
         val fromApi = try {
-            val body = fetchText("https://api.github.com/repos/${app.repo}/releases/latest?_=${System.currentTimeMillis()}", fresh = true)
+            val body = textLoader("https://api.github.com/repos/${app.repo}/releases/latest", true)
             if (body == null) null else {
                 val o = JSONObject(body)
                 val tag = o.getString("tag_name")
-                if (!isValidTag(tag)) null else {
+                if (!isValidTag(tag) || o.optBoolean("draft") || o.optBoolean("prerelease")) null else {
                     val assets = o.getJSONArray("assets")
                     var latestJsonUrl: String? = null
                     var apkSize = 0L
@@ -71,13 +71,13 @@ object Net {
                             "app-release.apk" -> { apkSize = a.optLong("size"); apkSha = shaFromDigest(a.optString("digest")) }
                         }
                     }
-                    val viaJson = latestJsonUrl?.let { fetchText(it) }?.let { parseLatest(it, app.repo) }
+                    val viaJson = latestJsonUrl?.let { textLoader(it, true) }?.let { parseLatest(it, app.repo) }
                     when {
-                        viaJson != null && viaJson.tag == tag -> viaJson
+                        viaJson != null && viaJson.tag == tag -> viaJson.copy(publishedAtMillis = releaseTimeMillis(o.optString("published_at")))
                         apkSha != null && apkSize > 0L -> LatestRelease(
                             tag = tag, versionName = tag.removePrefix("v"), versionCode = 0L, notes = "",
                             apkUrl = "https://github.com/${app.repo}/releases/download/$tag/app-release.apk",
-                            sha256 = apkSha, size = apkSize
+                            sha256 = apkSha, size = apkSize, publishedAtMillis = releaseTimeMillis(o.optString("published_at"))
                         )
                         else -> null
                     }
@@ -86,7 +86,7 @@ object Net {
         } catch (e: Exception) {
             null
         }
-        return fromApi ?: fetchText(app.latestJsonUrl, fresh = true)?.let { parseLatest(it, app.repo) }
+        return fromApi ?: textLoader(app.latestJsonUrl, true)?.let { parseLatest(it, app.repo) }
     }
 
     fun parseCatalog(json: String): List<CatalogApp> = try {
@@ -124,7 +124,8 @@ object Net {
             notes = o.optString("notes", "").trim(),
             apkUrl = "https://github.com/$repo/releases/download/$tag/app-release.apk",
             sha256 = sha,
-            size = size
+            size = size,
+            publishedAtMillis = releaseTimeMillis(o.optString("published_at"))
         )
     } catch (e: Exception) {
         null
@@ -221,6 +222,7 @@ object Net {
             file.delete()
             throw IllegalStateException("The downloaded file did not match its checksum, so it was not installed.")
         }
+        try { InstallerGate.remember(context, app, release) } catch (e: Exception) { file.delete(); throw e }
         DownloadCount.countFinishedDownload(context, app.repo)
         return file
     }
@@ -229,9 +231,12 @@ object Net {
     suspend fun install(context: Context, file: File) {
         withContext(Dispatchers.IO) {
         // Inspect the APK itself as well as the legacy cache filename. Metadata/catalog removal cannot bypass this.
-        val archive = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
-            ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
-        HumanSafetyHold.requireInstaller(file, archive.packageName, archive.versionName, PackageInfoCompat.getLongVersionCode(archive))
+        val archive = InstallerGate.archive(context, file)
+            ?: run { file.delete(); throw IllegalStateException("The installer package could not be verified. Download it again from its app card.") }
+        try {
+            HumanSafetyHold.requireInstaller(file, archive.packageName, archive.versionName, PackageInfoCompat.getLongVersionCode(archive))
+            InstallerGate.requireValid(context, file, archive)
+        } catch (e: Exception) { file.delete(); throw e }
         }
         withContext(Dispatchers.Main.immediate) {
         if (!context.packageManager.canRequestPackageInstalls()) {

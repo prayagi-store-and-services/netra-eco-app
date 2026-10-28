@@ -34,6 +34,18 @@ object Upcoming {
     fun etaFor(app: UpcomingApp, pendingRoadmap: List<RoadmapItem>?): Long? =
         app.etaMillis ?: pendingRoadmap?.let { Roadmap.nextFor(it, app.id)?.etaMillis }
 
+    /** Upcoming nearest first, passed targets next, undated last. Never change published dates. */
+    fun sorted(apps: List<UpcomingApp>, pendingRoadmap: List<RoadmapItem>?, nowMillis: Long = System.currentTimeMillis()): List<UpcomingApp> =
+        apps.sortedWith(compareBy<UpcomingApp> {
+            val eta = etaFor(it, pendingRoadmap)
+            when { eta == null -> 2; eta > nowMillis -> 0; else -> 1 }
+        }.thenBy { etaFor(it, pendingRoadmap) ?: Long.MAX_VALUE })
+
+    fun targetLabel(etaMillis: Long): String = "Release target: " +
+        java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy, h:mm a", java.util.Locale.ENGLISH)
+            .withZone(java.time.ZoneId.of("Asia/Kolkata"))
+            .format(java.time.Instant.ofEpochMilli(etaMillis)) + " IST"
+
     fun parse(json: String): List<UpcomingApp> = try {
         val arr = JSONObject(json).optJSONArray("upcoming")
         if (arr == null) emptyList() else (0 until arr.length()).mapNotNull { i ->
@@ -68,6 +80,7 @@ fun UpcomingCard(app: UpcomingApp, pendingRoadmap: List<RoadmapItem>?) {
             Text("Coming soon", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             val eta = Upcoming.etaFor(app, pendingRoadmap)
             if (eta != null) {
+                Text(Upcoming.targetLabel(eta), style = MaterialTheme.typography.labelMedium)
                 LiveCountdown(eta, false)
                 Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
             } else {

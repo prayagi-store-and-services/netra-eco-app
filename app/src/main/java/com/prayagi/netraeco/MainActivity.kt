@@ -87,11 +87,12 @@ sealed interface EcoEntry {
 }
 
 /** Released and coming-soon apps merged into one A-Z list (Netra prefix ignored, letter by letter). */
-private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): List<EcoEntry> =
-    AppSort.sorted(rows.map { EcoEntry.Live(it) } + upcoming.map { EcoEntry.Soon(it) }) { it.displayName }
+private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>, pendingRoadmap: List<RoadmapItem>? = null): List<EcoEntry> =
+    AppSort.current(rows).map { EcoEntry.Live(it) } + Upcoming.sorted(upcoming, pendingRoadmap).map { EcoEntry.Soon(it) }
 
 class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
+    private val currentRequest = mutableIntStateOf(0)
     private val routeAppId = mutableStateOf<String?>(null)
 
     internal val requestedAppForTest: String? get() = routeAppId.value
@@ -108,11 +109,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         routeAppId.value = EcoAppRoute.appId(intent.dataString)
+        if (intent.action == CatalogReleaseAlert.ACTION_CURRENT) currentRequest.intValue++
         if (intent.data == null) UpdateAlert.handle(this, intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.action == CatalogReleaseAlert.ACTION_CURRENT) currentRequest.intValue++
         routeAppId.value = if (savedInstanceState?.containsKey("eco_requested_app") == true) savedInstanceState.getString("eco_requested_app") else EcoAppRoute.appId(intent?.dataString)
         if (com.prayagi.netraeco.geo.GeoGuard.isBlocked(this)) {
             val pad = (24 * resources.displayMetrics.density).toInt()
@@ -143,7 +146,7 @@ class MainActivity : ComponentActivity() {
         if (TimeSpeakOut.isEnabled(this)) TimeSpeaker.get(this)
         CrashReporter.install(this)
         setContent {
-            NetraTheme { EcoScreen(resumeCount.intValue, requestedAppId = routeAppId.value, onCloseApp = { closeAppPage() }) }
+            NetraTheme { EcoScreen(resumeCount.intValue, currentRequestKey = currentRequest.intValue, requestedAppId = routeAppId.value, onCloseApp = { closeAppPage() }) }
         }
     }
 
@@ -194,7 +197,8 @@ private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Disp
             }
         }.awaitAll()
     }
-    val sortedRows = AppSort.sorted(rows) { it.app.name }
+    val sortedRows = AppSort.current(rows)
+    CatalogReleaseAlert.observe(context, catalogJson, rows)
     try {
         val statuses = sortedRows.map { statusForRelease(it.installed?.first, it.installed?.second, it.latest) }
         val lines = sortedRows.mapIndexed { i, r -> EcoWidgetStore.lineFor(r.app.name, r.installed?.second, r.latest?.versionName, statuses[i]) }
@@ -239,7 +243,8 @@ fun EcoScreen(
     textLoader: (String) -> String? = { Net.fetchText(it) },
     selfChecker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) },
     requestedAppId: String? = null,
-    onCloseApp: () -> Unit = {}
+    onCloseApp: () -> Unit = {},
+    currentRequestKey: Int = 0
 ) {
     val context = LocalContext.current
     // Keeps an explicit update check or installer verification alive across section changes.
@@ -253,6 +258,7 @@ fun EcoScreen(
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
     var futureSelected by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) futureSelected = false }
     var currentQuery by rememberSaveable { mutableStateOf("") }
     var futureQuery by rememberSaveable { mutableStateOf("") }
     var currentCat by rememberSaveable { mutableStateOf<AppCategory?>(null) }
@@ -355,7 +361,7 @@ fun EcoScreen(
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
                     }
-                    items(mergedEcoEntries(shownRows, shownUpcoming), key = { it.itemKey }) { e ->
+                    items(mergedEcoEntries(shownRows, shownUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                         when (e) {
                             is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
@@ -368,7 +374,7 @@ fun EcoScreen(
                     val inRows = catRows.filter { picked in it.second }.map { it.first }
                     val inUp = catUp.filter { picked in it.second }.map { it.first }
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
-                    items(mergedEcoEntries(inRows, inUp), key = { it.itemKey }) { e ->
+                    items(mergedEcoEntries(inRows, inUp, pendingRoadmap), key = { it.itemKey }) { e ->
                         when (e) {
                             is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
@@ -381,15 +387,15 @@ fun EcoScreen(
                     Column {
                         Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(8.dp))
-                        SelfUpdateButton(onRefresh = { reload++ }, actionScope = screenScope, check = updateCheck, installActions = installActions, checker = selfChecker)
+                        Text("Updates are checked automatically when the app list loads.", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                item(key = "trikaal") { TrikaalCard() }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList(), actionScope = screenScope, installActions = installActions) }
+                item(key = "trikaal") { TrikaalCard() }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
                 if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text("No planned apps are listed right now.") }
-                items(mergedEcoEntries(sectionRows, sectionUpcoming), key = { it.itemKey }) { e ->
+                items(mergedEcoEntries(sectionRows, sectionUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                     when (e) {
                         is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
@@ -548,30 +554,6 @@ private suspend fun checkSelfUpdate(context: Context): Pair<String, LatestReleas
     val status = statusForRelease(installed?.first, installed?.second, latest)
     selfUpdateMessage(installed?.second.orEmpty().ifBlank { "Unavailable" }, status, latest?.versionName) to
         latest.takeIf { status == Status.UpdateAvailable }
-}
-
-@Composable
-private fun SelfUpdateButton(
-    onRefresh: () -> Unit,
-    actionScope: kotlinx.coroutines.CoroutineScope? = null,
-    check: EcoUpdateCheck = remember { EcoUpdateCheck() },
-    installActions: EcoInstallActions? = null,
-    checker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) }
-) {
-    val context = LocalContext.current
-    val localScope = rememberCoroutineScope()
-    val scope = actionScope ?: localScope
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        OutlinedButton(enabled = !check.busy, onClick = {
-            check.start(scope) {
-                val result = checker(context)
-                onRefresh()
-                result
-            }
-        }) { Text(if (check.busy) "Checking..." else "Check for update") }
-        check.message?.let { Text(it, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall) }
-        check.release?.let { SelfDownloadButton(it, actionScope = scope, installActions = installActions) }
-    }
 }
 
 @Composable

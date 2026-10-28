@@ -14,5 +14,11 @@ object AppSort {
         return k
     }
 
+    /** Current apps use the latest actual publication time, newest first; unknown dates last. */
+    fun current(rows: List<AppRow>): List<AppRow> = rows.sortedWith(
+        compareByDescending<AppRow> { it.latest?.publishedAtMillis ?: Long.MIN_VALUE }
+            .thenBy { key(it.app.name) }.thenBy { it.app.id }
+    )
+
     fun <T> sorted(items: List<T>, name: (T) -> String): List<T> = items.sortedBy { key(name(it)) }
 }

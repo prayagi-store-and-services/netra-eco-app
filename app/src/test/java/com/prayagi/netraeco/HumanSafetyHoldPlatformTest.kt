@@ -11,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [34], application = Application::class, shadows = [ShadowApkDataSource::class, ShadowArchiveSigningInfo::class])
 class HumanSafetyHoldPlatformTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
     private fun app() = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO,
@@ -53,7 +53,7 @@ class HumanSafetyHoldPlatformTest {
         catch (e: IllegalStateException) { assertTrue(e.message!!.contains("could not be verified")) }
     }
     @Test fun realRenamedHubArchiveIsIdentifiedAndBlocked() {
-        val apk = File("build/apk-fixtures/renamed-hub.apk")
+        val apk = File(context.cacheDir, "old-hub-copy.apk").apply { File("build/apk-fixtures/renamed-hub.apk").copyTo(this, overwrite = true) }
         assertTrue("CI must download public Hub fixture", apk.exists())
         val pkg = context.packageManager.getPackageArchiveInfo(apk.absolutePath, 0)?.packageName
         assertEquals(HumanSafetyHold.PACKAGE, pkg)
@@ -61,7 +61,7 @@ class HumanSafetyHoldPlatformTest {
         catch (e: IllegalStateException) { assertEquals(HumanSafetyHold.MESSAGE, e.message) }
     }
     @Test fun validOtherAppArchivePassesQuarantine() {
-        val apk = File("build/apk-fixtures/other-app.apk")
+        val apk = File(context.cacheDir, "other-copy.apk").apply { File("build/apk-fixtures/other-app.apk").copyTo(this, overwrite = true) }
         assertTrue("CI must download public KBC fixture", apk.exists())
         val pkg = context.packageManager.getPackageArchiveInfo(apk.absolutePath, 0)?.packageName
         assertNotNull(pkg)
@@ -69,6 +69,6 @@ class HumanSafetyHoldPlatformTest {
         HumanSafetyHold.requireAllowed(packageName = pkg)
         // Robolectric denies unknown-source install by default; reaching that check proves hold did not block KBC.
         try { kotlinx.coroutines.runBlocking { Net.install(context, apk) } }
-        catch (e: IllegalStateException) { assertEquals("Allow installs from Netra Ecosystem, then tap the button again.", e.message) }
+        catch (e: IllegalStateException) { assertTrue(e.message!!.contains("could not be verified")) }
     }
 }

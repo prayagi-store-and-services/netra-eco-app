@@ -11,8 +11,8 @@ android {
     applicationId = "com.prayagi.netraeco"
     minSdk = 26
     targetSdk = 36
-    versionCode = 60
-    versionName = "1.2.46"
+    versionCode = 61
+    versionName = "1.2.47"
   }
 
   signingConfigs {
@@ -44,7 +44,16 @@ android {
   }
   buildFeatures { compose = true
     buildConfig = true }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        // Robolectric's Android APK verifier maps APK data through JDK internals on JDK 21.
+        it.jvmArgs("--add-opens=java.base/java.nio=ALL-UNNAMED", "--add-exports=java.base/java.nio=ALL-UNNAMED",
+          "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED")
+      }
+    }
+  }
 }
 
 dependencies {
