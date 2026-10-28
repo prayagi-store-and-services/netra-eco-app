@@ -62,6 +62,7 @@ object DownloadCenter {
     /** Remembers a finished, verified file (for example one fetched in the background) so the list keeps it until it is installed. */
     fun register(c: Context, app: CatalogApp, release: LatestRelease) {
         HumanSafetyHold.requireAllowed(app.repo, app.packageName, release)
+        InstallerGate.remember(c, app, release)
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(keyFor(app, release), listOf(app.packageName, release.versionName, release.versionCode, release.size, app.name, app.id).joinToString("|")).apply()
     }
@@ -70,7 +71,7 @@ object DownloadCenter {
     suspend fun hasFile(c: Context, app: CatalogApp, release: LatestRelease): Boolean = kotlinx.coroutines.withContext(Dispatchers.IO) {
         File(dir(c), keyFor(app, release)).let {
             if (HumanSafetyHold.matches(app.repo, app.packageName)) HumanSafetyHold.allowed(release) && HumanSafetyHold.fileAllowed(it)
-            else it.exists() && it.length() == release.size
+            else InstallerGate.bytesMatch(it, release).also { valid -> if (!valid) it.delete() }
         }
     }
     private fun dir(c: Context) = File(c.cacheDir, "updates").apply { mkdirs() }
