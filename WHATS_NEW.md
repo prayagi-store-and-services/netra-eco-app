@@ -7,3 +7,5 @@
 - Removed manual self-update checks. Install permission remains only for Eco's explicit installer flow. No new dependency or polling loop.
 
 Awaiting CI, visual checks and independent review. No measured battery or thermal guarantee.
+
+Review hardening (candidate): every installer entry now checks expected size, SHA256, package/version and independently pinned signing certificate immediately before Android handoff. Bad cached files are deleted; legacy files without bound metadata require a fresh download. Unknown signing identities fail closed. Existing Human Safety pin stays unchanged. The Future countdown stops when the hosting activity is not STARTED. This is not a measured battery improvement or Play approval; the existing APK self-update architecture is not suitable for Play distribution without a separate policy change.
