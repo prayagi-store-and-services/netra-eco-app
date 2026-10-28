@@ -65,7 +65,7 @@ class HumanSafetyHoldScreenTest {
         DownloadCenter.items.value = emptyMap()
         val a = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO, HumanSafetyHold.PACKAGE, "", "")
         val release = LatestRelease(HumanSafetyHold.TAG, HumanSafetyHold.VERSION, HumanSafetyHold.CODE, "Checked v1.5.2 only", HumanSafetyHold.URL, HumanSafetyHold.SHA, HumanSafetyHold.SIZE)
-        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null,false,false) {} } }
+        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null) {} } }
         rule.onNodeWithText("Download").assertIsDisplayed()
         rule.onAllNodesWithText(HumanSafetyHold.MESSAGE).assertCountEquals(0)
         shot("checked-available-320")
@@ -81,7 +81,7 @@ class HumanSafetyHoldScreenTest {
         DownloadCenter.register(context,a,release)
         DownloadCenter.items.value = emptyMap()
         DownloadCenter.refresh(context)
-        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null,false,false) {} } }
+        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null) {} } }
         rule.onAllNodesWithText("Downloaded - tap to install").assertCountEquals(0)
         rule.waitUntil(timeoutMillis=10000) { rule.onAllNodesWithText("Unverified installer. Installation stays blocked.").fetchSemanticsNodes().size == 1 }
         rule.onNodeWithText("Unverified installer. Installation stays blocked.").assertIsDisplayed()
@@ -98,7 +98,7 @@ class HumanSafetyHoldScreenTest {
         DownloadCenter.register(context,a,release)
         DownloadCenter.items.value = emptyMap()
         DownloadCenter.refresh(context)
-        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null,false,false) {} } }
+        rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null) {} } }
         rule.waitUntil(timeoutMillis=10000) { rule.onAllNodesWithText("Downloaded - tap to install").fetchSemanticsNodes().size == 1 }
         rule.onNodeWithText("Downloaded - tap to install").assertIsDisplayed().assertIsEnabled()
         shot("verified-done-card-320")
