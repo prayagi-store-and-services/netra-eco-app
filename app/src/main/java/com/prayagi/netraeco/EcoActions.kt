@@ -11,7 +11,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /** Screen-owned action state, shared by every installer entry point and retained across tabs. */
-class EcoInstallActions {
+class EcoInstallActions(
+    private val updateFile: suspend (Context, AppRow) -> File = { context, row ->
+        val release = requireNotNull(row.latest)
+        val key = DownloadCenter.keyFor(row.app, release)
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            if (DownloadCenter.hasFile(context, row.app, release)) DownloadCenter.file(context, key)
+            else Net.download(context, row.app, release).also { DownloadCenter.register(context, row.app, release) }
+        }
+    },
+    private val installer: suspend (Context, File) -> Unit = { c, file -> Net.install(c, file) }
+) {
     data class Result(val busy: Boolean = false, val error: String? = null)
     private val results = mutableStateMapOf<String, Result>()
     fun state(key: String): Result = results[key] ?: Result()
@@ -30,11 +40,8 @@ class EcoInstallActions {
         val key = DownloadCenter.keyFor(row.app, release)
         start(scope, key) {
             check(DownloadCenter.allowedForDownload(row.app, release)) { HumanSafetyHold.MESSAGE }
-            val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                if (DownloadCenter.hasFile(context, row.app, release)) DownloadCenter.file(context, key)
-                else Net.download(context, row.app, release).also { DownloadCenter.register(context, row.app, release) }
-            }
-            Net.install(context, file)
+            val file = updateFile(context, row)
+            installer(context, file)
         }
     }
     fun install(scope: CoroutineScope, context: Context, file: File) =
