@@ -109,9 +109,12 @@ object UpdateAlert {
 
     fun start(activity: Activity) {
         schedule(activity.applicationContext)
+        val permissionPrefs = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (Build.VERSION.SDK_INT >= 33 &&
-            activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+            !permissionPrefs.getBoolean("notification_permission_asked", false)
         ) {
+            permissionPrefs.edit().putBoolean("notification_permission_asked", true).apply()
             activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7432)
         }
         handle(activity, activity.intent)
