@@ -391,6 +391,7 @@ fun EcoScreen(
                     }
                 }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList(), actionScope = screenScope, installActions = installActions) }
+                item(key = "community") { CommunityCard() }
                 item(key = "trikaal") { TrikaalCard() }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
@@ -454,6 +455,8 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
+            AppCommunityLinks(row.app.id)
+            Spacer(Modifier.height(10.dp))
             if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) {
                 Text("Human Safety release unavailable", style = MaterialTheme.typography.titleMedium)
                 Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
