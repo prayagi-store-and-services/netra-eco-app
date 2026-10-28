@@ -164,7 +164,7 @@ class EcoSectionsTest {
             x.responseBody.use { it.write(bytes) }
         }
         server.start()
-        val app = CatalogApp("download-fixture", "Download fixture", "", "", "", "fixture.test", "", "")
+        val app = CatalogApp("kbc", "KBC transfer fixture", "", "", "$ORG/KBC", "com.aistudio.reasoningquiz.tark", "", "")
         val sha = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
         val r = LatestRelease("v1.0.0", "1.0.0", 1, "", "http://127.0.0.1:" + server.address.port + "/fixture.apk", sha, bytes.size.toLong())
         val key = DownloadCenter.keyFor(app, r)
