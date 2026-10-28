@@ -189,6 +189,7 @@ object UpdateAlert {
 
 class UpdateAlertWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        try { CatalogReleaseAlert.check(applicationContext) } catch (_: Exception) { }
         try { UpdateAlert.checkAndNotify(applicationContext) } catch (_: Exception) { }
         Result.success()
     }
