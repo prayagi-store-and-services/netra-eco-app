@@ -222,6 +222,7 @@ object Net {
             file.delete()
             throw IllegalStateException("The downloaded file did not match its checksum, so it was not installed.")
         }
+        try { InstallerGate.remember(context, app, release) } catch (e: Exception) { file.delete(); throw e }
         DownloadCount.countFinishedDownload(context, app.repo)
         return file
     }
@@ -230,9 +231,12 @@ object Net {
     suspend fun install(context: Context, file: File) {
         withContext(Dispatchers.IO) {
         // Inspect the APK itself as well as the legacy cache filename. Metadata/catalog removal cannot bypass this.
-        val archive = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
-            ?: throw IllegalStateException("The installer package could not be verified. Download it again from its app card.")
-        HumanSafetyHold.requireInstaller(file, archive.packageName, archive.versionName, PackageInfoCompat.getLongVersionCode(archive))
+        val archive = InstallerGate.archive(context, file)
+            ?: run { file.delete(); throw IllegalStateException("The installer package could not be verified. Download it again from its app card.") }
+        try {
+            HumanSafetyHold.requireInstaller(file, archive.packageName, archive.versionName, PackageInfoCompat.getLongVersionCode(archive))
+            InstallerGate.requireValid(context, file, archive)
+        } catch (e: Exception) { file.delete(); throw e }
         }
         withContext(Dispatchers.Main.immediate) {
         if (!context.packageManager.canRequestPackageInstalls()) {
