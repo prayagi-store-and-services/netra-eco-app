@@ -75,6 +75,29 @@ class EcoSectionsTest {
         rule.onNodeWithText("Search apps").assertTextContains("Future Beta")
         assertEquals(1, loads())
     }
+    @Test fun releaseNotificationSwitchesFutureToCurrent() {
+        val request = androidx.compose.runtime.mutableIntStateOf(0)
+        rule.setContent {
+            EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { if (it == Net.CATALOG_URL) catalog else null }, currentRequestKey = request.intValue)
+        }
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithTag("future-list").assertExists()
+        rule.runOnIdle { request.intValue++ }
+        rule.onNodeWithTag("current-list").assertExists()
+        rule.onAllNodesWithTag("future-list").assertCountEquals(0)
+    }
+    @Test fun namedUpdateIsVisibleWithBothVersions() {
+        val app = CatalogApp("fixture", "Netra Player", "Media", "Fixture", "", "test.fixture", "", "")
+        val release = LatestRelease("v1.0.1", "1.0.1", 2L, "", "", "a".repeat(64), 1L)
+        rule.setContent {
+            EcoScreen(0, catalogLoader = { listOf(AppRow(app, 1L to "1.0.0", release)) }, textLoader = { null })
+        }
+        rule.onNodeWithTag("current-list").performScrollToKey("downloads")
+        rule.onNodeWithText("Updates available").assertIsDisplayed()
+        rule.onNodeWithText("Installed: 1.0.0 | Published: 1.0.1").assertIsDisplayed()
+        rule.onNodeWithText("Update Netra Player").assertIsDisplayed()
+        shot("named-updates")
+    }
     @Test fun currentScrollPositionSurvivesFutureVisit() {
         show(large = false)
         rule.onNodeWithTag("current-list").performScrollToKey("l-fixture")
