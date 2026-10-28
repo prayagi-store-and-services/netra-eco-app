@@ -21,7 +21,8 @@ data class LatestRelease(
     val notes: String,
     val apkUrl: String,
     val sha256: String,
-    val size: Long
+    val size: Long,
+    val publishedAtMillis: Long? = null
 )
 
 enum class Status { NotInstalled, UpdateAvailable, UpToDate, InstalledNewer, Unavailable }
@@ -108,4 +109,9 @@ fun matchesQuery(query: String, vararg fields: String): Boolean {
     if (words.isEmpty()) return true
     val hay = fields.joinToString(" ").lowercase()
     return words.all { hay.contains(it) }
+}
+
+/** Missing or invalid release times stay unknown, never inferred from a version or build time. */
+fun releaseTimeMillis(raw: String?): Long? = raw?.takeIf { it.isNotBlank() }?.let {
+    runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull()
 }
