@@ -34,9 +34,12 @@ object Upcoming {
     fun etaFor(app: UpcomingApp, pendingRoadmap: List<RoadmapItem>?): Long? =
         app.etaMillis ?: pendingRoadmap?.let { Roadmap.nextFor(it, app.id)?.etaMillis }
 
-    /** Published targets only. Undated last; stable order for equal targets. */
-    fun sorted(apps: List<UpcomingApp>, pendingRoadmap: List<RoadmapItem>?): List<UpcomingApp> =
-        apps.sortedBy { etaFor(it, pendingRoadmap) ?: Long.MAX_VALUE }
+    /** Upcoming nearest first, passed targets next, undated last. Never change published dates. */
+    fun sorted(apps: List<UpcomingApp>, pendingRoadmap: List<RoadmapItem>?, nowMillis: Long = System.currentTimeMillis()): List<UpcomingApp> =
+        apps.sortedWith(compareBy<UpcomingApp> {
+            val eta = etaFor(it, pendingRoadmap)
+            when { eta == null -> 2; eta > nowMillis -> 0; else -> 1 }
+        }.thenBy { etaFor(it, pendingRoadmap) ?: Long.MAX_VALUE })
 
     fun targetLabel(etaMillis: Long): String = "Release target: " +
         java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy, h:mm a", java.util.Locale.ENGLISH)
