@@ -15,6 +15,11 @@
 
     <!-- Lets this app see whether each Netra app is installed (Android 11+ package visibility). Only these packages. -->
     <queries>
+        <!-- Only declared browser apps are eligible for community links. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_BROWSER" />
+        </intent>
         <package android:name="com.aistudio.batterysentinel.ntra" />
         <package android:name="com.aistudio.reasoningquiz.tark" />
         <package android:name="com.aistudio.netrasensorhub.kxmpzq" />
