@@ -69,4 +69,5 @@ jobs:
             app/build/outputs/ecosystem-header.png
             app/build/outputs/human-safety-hold*.png
             app/build/outputs/eco-sections*.png
+            app/build/outputs/community-*.png
           if-no-files-found: warn
