@@ -1,3 +1,6 @@
+## 1.2.46 video removal
+All in-app video playback, poster/tap and autoplay paths are removed. The shared website media catalog remains unchanged; the app ignores video objects and keeps trusted screenshots only. Existing image size/cache limits remain. No new permissions, dependencies, endpoints or disclosures. Not phone-tested. This is a media/resource-surface reduction, not a claim of a newly fixed vulnerability.
+
 # Per-app update handoff (v1.2.45)
 
 Strict allowlisted HTTPS app routes open only the selected catalog app card. Unknown hosts, encoded paths, credentials, custom ports, query and fragment actions are rejected. Opening a route never starts a download/install. Eco retains its existing installer checks and Human Safety exact-release gate. Other Netra apps will use metadata-only update notices and hand off to this Eco version or the per-app website, not download APKs themselves. This is navigation hardening, not a guarantee that Google Play Protect will never warn. No new permissions or telemetry.
