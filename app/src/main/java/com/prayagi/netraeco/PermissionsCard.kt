@@ -56,6 +56,12 @@ internal fun openInstallSettings(context: Context) {
 
 internal fun ecoPermissions(): List<PermItem> = listOf(
     PermItem(
+        "Notifications",
+        "New app releases and updates. If denied, releases remain visible in Current. Tap to change Android notification settings.",
+        { if (CatalogReleaseAlert.enabled(it)) "Allowed" else "Not allowed" },
+        { it.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, it.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    ),
+    PermItem(
         "Internet",
         "Used to read the list of Netra apps and their latest versions, and to download an app or update you ask for. Nothing about you is sent except the anonymous usage count if you leave it on.",
         { "Always allowed (normal permission)" },
