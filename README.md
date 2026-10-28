@@ -12,3 +12,6 @@ Removed all in-app video preview paths and video metadata parsing. Screenshots r
 
 ## Description maintenance
 Whenever shipped features or architecture change, update app/store/site/Eco descriptions, README and release notes to match verified behavior. Do not describe planned work as shipped or promise unmeasured battery savings.
+
+## v1.2.47 candidate (not released)
+Current release-time sorting, named available updates, observed new-app release notifications and Future target date/time ordering are under test. Notification delivery depends on Android permissions and background scheduling; not instant push. Manual self-update checks are removed in this candidate. Eco retains explicit download/install controls and Android confirmation.
