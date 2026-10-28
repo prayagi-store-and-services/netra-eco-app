@@ -88,7 +88,7 @@ sealed interface EcoEntry {
 
 /** Released and coming-soon apps merged into one A-Z list (Netra prefix ignored, letter by letter). */
 private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): List<EcoEntry> =
-    AppSort.sorted(rows.map { EcoEntry.Live(it) } + upcoming.map { EcoEntry.Soon(it) }) { it.displayName }
+    AppSort.current(rows).map { EcoEntry.Live(it) } + AppSort.sorted(upcoming) { it.name }.map { EcoEntry.Soon(it) }
 
 class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
@@ -194,7 +194,8 @@ private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Disp
             }
         }.awaitAll()
     }
-    val sortedRows = AppSort.sorted(rows) { it.app.name }
+    val sortedRows = AppSort.current(rows)
+    CatalogReleaseAlert.observe(context, catalogJson, rows)
     try {
         val statuses = sortedRows.map { statusForRelease(it.installed?.first, it.installed?.second, it.latest) }
         val lines = sortedRows.mapIndexed { i, r -> EcoWidgetStore.lineFor(r.app.name, r.installed?.second, r.latest?.versionName, statuses[i]) }
@@ -381,11 +382,11 @@ fun EcoScreen(
                     Column {
                         Text("All Netra apps in one place. Netra by Prayagi Team.", style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(8.dp))
-                        SelfUpdateButton(onRefresh = { reload++ }, actionScope = screenScope, check = updateCheck, installActions = installActions, checker = selfChecker)
+                        Text("Updates are checked automatically when the app list loads.", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                item(key = "trikaal") { TrikaalCard() }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList(), actionScope = screenScope, installActions = installActions) }
+                item(key = "trikaal") { TrikaalCard() }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
                 if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text("No planned apps are listed right now.") }
@@ -548,30 +549,6 @@ private suspend fun checkSelfUpdate(context: Context): Pair<String, LatestReleas
     val status = statusForRelease(installed?.first, installed?.second, latest)
     selfUpdateMessage(installed?.second.orEmpty().ifBlank { "Unavailable" }, status, latest?.versionName) to
         latest.takeIf { status == Status.UpdateAvailable }
-}
-
-@Composable
-private fun SelfUpdateButton(
-    onRefresh: () -> Unit,
-    actionScope: kotlinx.coroutines.CoroutineScope? = null,
-    check: EcoUpdateCheck = remember { EcoUpdateCheck() },
-    installActions: EcoInstallActions? = null,
-    checker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) }
-) {
-    val context = LocalContext.current
-    val localScope = rememberCoroutineScope()
-    val scope = actionScope ?: localScope
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        OutlinedButton(enabled = !check.busy, onClick = {
-            check.start(scope) {
-                val result = checker(context)
-                onRefresh()
-                result
-            }
-        }) { Text(if (check.busy) "Checking..." else "Check for update") }
-        check.message?.let { Text(it, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall) }
-        check.release?.let { SelfDownloadButton(it, actionScope = scope, installActions = installActions) }
-    }
 }
 
 @Composable
