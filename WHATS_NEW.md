@@ -1,3 +1,9 @@
+## Unreleased - community links
+
+- Official YouTube, Instagram, Facebook, X and Telegram links in Current.
+- Per-app website, real ratings/reviews and private feedback browser handoffs.
+- No automated follows, incentives, fake scores or new telemetry. Installer gates unchanged.
+
 # v1.2.47 candidate (not released)
 
 - Current apps use the latest actual release time, newest first; unknown times stay last.
