@@ -87,11 +87,12 @@ sealed interface EcoEntry {
 }
 
 /** Released and coming-soon apps merged into one A-Z list (Netra prefix ignored, letter by letter). */
-private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>): List<EcoEntry> =
-    AppSort.current(rows).map { EcoEntry.Live(it) } + AppSort.sorted(upcoming) { it.name }.map { EcoEntry.Soon(it) }
+private fun mergedEcoEntries(rows: List<AppRow>, upcoming: List<UpcomingApp>, pendingRoadmap: List<RoadmapItem>? = null): List<EcoEntry> =
+    AppSort.current(rows).map { EcoEntry.Live(it) } + Upcoming.sorted(upcoming, pendingRoadmap).map { EcoEntry.Soon(it) }
 
 class MainActivity : ComponentActivity() {
     private val resumeCount = mutableIntStateOf(0)
+    private val currentRequest = mutableIntStateOf(0)
     private val routeAppId = mutableStateOf<String?>(null)
 
     internal val requestedAppForTest: String? get() = routeAppId.value
@@ -108,11 +109,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         routeAppId.value = EcoAppRoute.appId(intent.dataString)
+        if (intent.action == CatalogReleaseAlert.ACTION_CURRENT) currentRequest.intValue++
         if (intent.data == null) UpdateAlert.handle(this, intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.action == CatalogReleaseAlert.ACTION_CURRENT) currentRequest.intValue++
         routeAppId.value = if (savedInstanceState?.containsKey("eco_requested_app") == true) savedInstanceState.getString("eco_requested_app") else EcoAppRoute.appId(intent?.dataString)
         if (com.prayagi.netraeco.geo.GeoGuard.isBlocked(this)) {
             val pad = (24 * resources.displayMetrics.density).toInt()
@@ -143,7 +146,7 @@ class MainActivity : ComponentActivity() {
         if (TimeSpeakOut.isEnabled(this)) TimeSpeaker.get(this)
         CrashReporter.install(this)
         setContent {
-            NetraTheme { EcoScreen(resumeCount.intValue, requestedAppId = routeAppId.value, onCloseApp = { closeAppPage() }) }
+            NetraTheme { EcoScreen(resumeCount.intValue, currentRequestKey = currentRequest.intValue, requestedAppId = routeAppId.value, onCloseApp = { closeAppPage() }) }
         }
     }
 
@@ -240,7 +243,8 @@ fun EcoScreen(
     textLoader: (String) -> String? = { Net.fetchText(it) },
     selfChecker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) },
     requestedAppId: String? = null,
-    onCloseApp: () -> Unit = {}
+    onCloseApp: () -> Unit = {},
+    currentRequestKey: Int = 0
 ) {
     val context = LocalContext.current
     // Keeps an explicit update check or installer verification alive across section changes.
@@ -254,6 +258,7 @@ fun EcoScreen(
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
     var futureSelected by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) futureSelected = false }
     var currentQuery by rememberSaveable { mutableStateOf("") }
     var futureQuery by rememberSaveable { mutableStateOf("") }
     var currentCat by rememberSaveable { mutableStateOf<AppCategory?>(null) }
@@ -356,7 +361,7 @@ fun EcoScreen(
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
                         item(key = "nomatch") { Text("No app matches \"" + query.trim() + "\".", style = MaterialTheme.typography.bodyMedium) }
                     }
-                    items(mergedEcoEntries(shownRows, shownUpcoming), key = { it.itemKey }) { e ->
+                    items(mergedEcoEntries(shownRows, shownUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                         when (e) {
                             is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
@@ -369,7 +374,7 @@ fun EcoScreen(
                     val inRows = catRows.filter { picked in it.second }.map { it.first }
                     val inUp = catUp.filter { picked in it.second }.map { it.first }
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
-                    items(mergedEcoEntries(inRows, inUp), key = { it.itemKey }) { e ->
+                    items(mergedEcoEntries(inRows, inUp, pendingRoadmap), key = { it.itemKey }) { e ->
                         when (e) {
                             is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
@@ -390,7 +395,7 @@ fun EcoScreen(
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
                 if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text("No planned apps are listed right now.") }
-                items(mergedEcoEntries(sectionRows, sectionUpcoming), key = { it.itemKey }) { e ->
+                items(mergedEcoEntries(sectionRows, sectionUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                     when (e) {
                         is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
