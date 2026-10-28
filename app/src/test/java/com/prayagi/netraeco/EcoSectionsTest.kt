@@ -84,17 +84,11 @@ class EcoSectionsTest {
         rule.onNodeWithText("Current").performClick()
         rule.onNodeWithText("Current Alpha").assertIsDisplayed()
     }
-    @Test fun explicitCheckCompletesWhileFutureVisibleAndResultSurvivesReturn() {
-        val gate = CompletableDeferred<Unit>()
-        var calls = 0
-        show(checker = { calls++; gate.await(); "Fixture checked once" to null })
-        rule.onNodeWithText("Check for update").performClick()
-        rule.onNodeWithText("Checking...").assertIsNotEnabled()
+    @Test fun noManualUpdateCheckInEitherSection() {
+        show()
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
         rule.onNodeWithText("Future").performClick()
-        rule.runOnIdle { gate.complete(Unit) }
-        rule.onNodeWithText("Current").performClick()
-        rule.onNodeWithText("Fixture checked once").assertIsDisplayed()
-        assertEquals(1, calls)
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
     }
     @Test fun futureScrollPositionSurvivesCurrentVisit() {
         show(large = false)
@@ -172,13 +166,13 @@ class EcoSectionsTest {
     }
     @Test fun currentUpdateAndTickerLargeLight() {
         show()
-        rule.onNodeWithText("Check for update").assertIsDisplayed()
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
         rule.onNodeWithText("Roadmap Unavailable right now.").assertIsDisplayed()
         shot("current-large-light")
     }
     @Test fun currentUpdateAndTickerLargeDark() {
         show(dark = true)
-        rule.onNodeWithText("Check for update").assertIsDisplayed()
+        rule.onAllNodesWithText("Check for update").assertCountEquals(0)
         shot("current-large-dark")
     }
 }
