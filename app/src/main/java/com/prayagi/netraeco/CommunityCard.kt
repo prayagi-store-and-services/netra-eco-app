@@ -17,7 +17,7 @@ private fun PublicLink(label: String, url: String, open: ((String) -> Unit)? = n
         failed = false
         try {
             if (open != null) open(url)
-            else context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            else CommunityBrowser.open(context, url)
         } catch (_: Exception) { failed = true }
     }) { Text(label) }
     if (failed) Text("Could not open this link. Check that a browser is available.", color = MaterialTheme.colorScheme.error)
@@ -31,7 +31,7 @@ fun AppCommunityLinks(appId: String, open: ((String) -> Unit)? = null) {
         PublicLink("Open this app's website", site, open)
         PublicLink("Rate this app or read reviews", CommunityLinks.reviews(appId)!!, open)
         PublicLink("Private complaint or feedback", CommunityLinks.contact(appId)!!, open)
-        Text("Opens a web page. Ratings are real community submissions, not Google Play ratings. No reward or required follow.", style = MaterialTheme.typography.bodySmall)
+        Text("Reviews open a public web form: phone model and any name or area you enter are public, and a copy is emailed through FormSubmit. Use the separate private contact form for private feedback. Not Google Play ratings; no reward or required follow.", style = MaterialTheme.typography.bodySmall)
     }
 }
 
