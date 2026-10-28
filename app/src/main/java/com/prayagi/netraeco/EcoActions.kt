@@ -24,6 +24,19 @@ class EcoInstallActions {
             catch (e: Exception) { results[key] = Result(error = plainFailure(e, "Install failed.")) }
         }
     }
+    /** One explicit Update tap downloads verified bytes, then asks Android to install. */
+    fun update(scope: CoroutineScope, context: Context, row: AppRow) {
+        val release = row.latest ?: return
+        val key = DownloadCenter.keyFor(row.app, release)
+        start(scope, key) {
+            check(DownloadCenter.allowedForDownload(row.app, release)) { HumanSafetyHold.MESSAGE }
+            val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                if (DownloadCenter.hasFile(context, row.app, release)) DownloadCenter.file(context, key)
+                else Net.download(context, row.app, release).also { DownloadCenter.register(context, row.app, release) }
+            }
+            Net.install(context, file)
+        }
+    }
     fun install(scope: CoroutineScope, context: Context, file: File) =
         start(scope, file.name) { Net.install(context, file) }
 }
