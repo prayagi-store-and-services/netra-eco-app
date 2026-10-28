@@ -2,6 +2,8 @@
 
 - Official YouTube, Instagram, Facebook, X and Telegram links in Current.
 - Per-app website, real ratings/reviews and private feedback browser handoffs.
+- General-browser-only routing avoids reopening Eco through its own app links; no-browser errors stay visible.
+- Public review form disclosure names phone model, optional name/area and FormSubmit email copy; private contact stays separate.
 - No automated follows, incentives, fake scores or new telemetry. Installer gates unchanged.
 
 # v1.2.47 candidate (not released)
