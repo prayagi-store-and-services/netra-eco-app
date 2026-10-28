@@ -10,7 +10,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
+@Config(sdk = [34], application = Application::class, shadows = [ShadowApkDataSource::class])
 class InstallerGateTest {
     private val pkg = "com.aistudio.reasoningquiz.tark"
     private fun release(file: File) = LatestRelease("v1.1.37", "1.1.37", 0L, "", "", InstallerGate.hash(file), file.length())
