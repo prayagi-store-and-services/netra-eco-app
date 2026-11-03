@@ -5,7 +5,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = android.app.Application::class)
 class DeviceCompatibilityTest {
     @Test fun unknownMinSdkIsAllowed() {
         assertTrue(sdkCompatible(24, null))
