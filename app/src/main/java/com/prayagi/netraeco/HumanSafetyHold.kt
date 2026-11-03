@@ -9,14 +9,14 @@ import org.json.JSONObject
 object HumanSafetyHold {
     const val REPO = "prayagi-store-and-services/netra-hub"
     const val PACKAGE = "com.aistudio.netrasensorhub.kxmpzq"
-    const val TAG = "v1.5.7"
-    const val VERSION = "1.5.7"
-    const val CODE = 83L
+    const val TAG = "v1.5.8"
+    const val VERSION = "1.5.8"
+    const val CODE = 84L
     const val SIZE = 4455670L
-    const val SHA = "d071396fde628eb2b2900d3d437c7f85fc49e9d73657e09767bd874afd4c2de4"
-    const val URL = "https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.7/app-release.apk"
-    const val MESSAGE = "Only the checked Human Safety v1.5.7 file is allowed. Older or unverified installers stay paused."
-    const val ADVISORY = "Human Safety v1.5.7 only. Owner reported heating/battery resolved on the tested build; no measured battery or thermal guarantee. Updates are handled through Netra Ecosystem only."
+    const val SHA = "1353f45452b34a3ba26509969f27caf4b067af340ca8708e12a2637295bcc665"
+    const val URL = "https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.8/app-release.apk"
+    const val MESSAGE = "Only the checked Human Safety v1.5.8 file is allowed. Older or unverified installers stay paused."
+    const val ADVISORY = "Human Safety v1.5.8 only. Owner reported heating/battery resolved on the tested build; no measured battery or thermal guarantee. Updates are handled through Netra Ecosystem only."
     fun matches(repo: String = "", packageName: String = ""): Boolean = repo == REPO || packageName == PACKAGE
     fun installerName(name: String): Boolean = name.startsWith("netra-hub-v") && name.endsWith(".apk")
     fun allowed(release: LatestRelease?): Boolean = release != null && release.tag == TAG &&

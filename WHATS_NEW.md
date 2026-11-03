@@ -1,3 +1,7 @@
+## 1.2.49 - Human Safety v1.5.8
+
+- Human Safety v1.5.8 is the checked release: update notices there are timely (checks about every 6 hours and at launch) and its update card shows only when a newer version exists.
+
 ## 1.2.48 - Human Safety available again, no more scrolling strip
 
 - Human Safety v1.5.7 (adaptive phone/tablet interface) is the checked release; the store lock now matches the website.

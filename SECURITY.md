@@ -1,3 +1,7 @@
+## v1.2.49 - Human Safety pin advance to v1.5.8
+
+The exact-release gate for Human Safety advances from v1.5.7 to the published v1.5.8 (versionCode 84; size 4455670 and SHA-256 verified against the live release asset). The gate stays fail-closed: every installer byte check, the verified cache and the hide-on-unverified rule are unchanged. No new permissions, endpoints, or telemetry.
+
 ## v1.2.48 - Human Safety pin advance + verified cache
 
 The exact-release gate for Human Safety advances from v1.5.2 to the already-published, website-pinned v1.5.7 (versionCode 83; size and SHA-256 verified against the live release). The gate stays fail-closed for downloads and installs: every installer byte check is unchanged. New: the store caches the last fully verified release payload so transient fetch failures (offline, GitHub rate limit) no longer flip the listing; the cache is written only after full verification and is re-verified on every read. An unverified state now hides the app from lists instead of rendering an Unavailable card. No new permissions, endpoints, or telemetry.
