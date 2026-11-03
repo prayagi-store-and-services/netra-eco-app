@@ -1,3 +1,9 @@
+## 1.2.51 - Catalog and roadmap recovery
+
+- Future apps and the roadmap can load from the same Netra repository's public JSON if the website's custom domain cannot be reached.
+- A failed Future-app request says it could not load, rather than incorrectly saying no apps are planned.
+- No new permission or personal-data collection. Download/install verification remains unchanged.
+
 ## 1.2.50 - Device compatibility check
 
 - Each release now states the minimum Android version it needs (minSdk). Before a download or update, Eco checks it against your device like the Play Store: an incompatible release is not offered, and the card says which Android version it needs.

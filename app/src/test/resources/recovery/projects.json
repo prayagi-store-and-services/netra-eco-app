@@ -1,0 +1,264 @@
+{
+  "family": "Netra Ecosystem",
+  "tagline": "Ek parivaar, kai projects - Netra by Prayagi Team",
+  "projects": [
+    {
+      "id": "battery-sentinel",
+      "package": "com.aistudio.batterysentinel.ntra",
+      "latestJson": "https://prayagi-store-and-services.github.io/-Battery-Sentinel-Pro-Netra/latest.json",
+      "name": "Netra Battery Sentinel Pro",
+      "type": "Battery and device health app",
+      "summary": "Android battery and charging readings, heat and charge-target alerts, consent-based power-saving tools, and last observed full-charge session history. Android/OEM limits apply; no guaranteed cooling, battery life or hardware charge cutoff. Missing readings show \"Unavailable\". Updates open the exact Netra Ecosystem page; BSPN does not download APKs.",
+      "repo": "prayagi-store-and-services/-Battery-Sentinel-Pro-Netra",
+      "site": "https://prayagi-store-and-services.github.io/-Battery-Sentinel-Pro-Netra/",
+      "icon": "https://prayagi-store-and-services.github.io/-Battery-Sentinel-Pro-Netra/icon.svg",
+      "code": "bspn",
+      "privacy": "https://prayagi-store-and-services.github.io/-Battery-Sentinel-Pro-Netra/privacy.html",
+      "minAndroid": "7.0"
+    },
+    {
+      "id": "kbc",
+      "package": "com.aistudio.reasoningquiz.tark",
+      "name": "Netra KBC",
+      "type": "Game",
+      "summary": "An adaptive 17-question reasoning quiz game for Android.",
+      "repo": "prayagi-store-and-services/KBC",
+      "site": "https://prayagi-store-and-services.github.io/KBC/",
+      "icon": "https://prayagi-store-and-services.github.io/KBC/icon.svg",
+      "code": "kbc",
+      "privacy": "../../legal/privacy-kbc.html",
+      "minAndroid": "7.0"
+    },
+    {
+      "id": "netra-hub",
+      "package": "com.aistudio.netrasensorhub.kxmpzq",
+      "name": "Netra Human Safety",
+      "type": "Security application",
+      "summary": "Android safety dashboard with sensor tools, SOS, earthquake information and official IMD subdivision / NDMA CAP reports matched on the phone. Green reports stay silent; verified Yellow, Orange and Red IMD warnings can notify and speak. Checks are about 30 minutes, subject to Android delays, not every forecast or district nowcast. Beta/testing, not an emergency-service replacement; physical-phone delivery unverified. Updates through Netra Ecosystem only.",
+      "repo": "prayagi-store-and-services/netra-hub",
+      "site": "https://prayagi-store-and-services.github.io/netra-hub/",
+      "icon": "https://prayagi-store-and-services.github.io/netra-hub/icon.svg",
+      "code": "hub",
+      "privacy": "../../legal/privacy-hub.html",
+      "minAndroid": "7.0"
+    },
+    {
+      "id": "prayagi-privacy",
+      "package": "com.aistudio.sensorguard.prvsec",
+      "name": "Netra Privacy Guard",
+      "type": "Privacy application",
+      "summary": "A dedicated privacy app for microphone and camera transparency.",
+      "repo": "prayagi-store-and-services/prayagi-Privacy-",
+      "site": "https://prayagi-store-and-services.github.io/prayagi-Privacy-/",
+      "icon": "https://prayagi-store-and-services.github.io/prayagi-Privacy-/icon.svg",
+      "code": "privacy",
+      "privacy": "../../legal/privacy-guard.html",
+      "minAndroid": "7.0"
+    },
+    {
+      "id": "netra-trikaal",
+      "package": "com.prayagi.netratrikaal",
+      "name": "Netra Trikaal",
+      "type": "Vedic astrology app",
+      "summary": "On-device kundli, dasha, transits, a daily panchang card and rashifal from your saved birth profile. Hindi and English. Traditional interpretations, not scientific certainty or medical, legal or financial advice. Updates open the exact Trikaal page in Netra Ecosystem; Trikaal does not download APKs.",
+      "repo": "prayagi-store-and-services/netra-trikaal",
+      "code": "trikaal",
+      "privacy": "../../legal/privacy-trikaal.html",
+      "minAndroid": "8.0"
+    },
+    {
+      "id": "netra-player",
+      "package": "com.prayagi.netraplayer",
+      "name": "Netra Player",
+      "type": "Video and MP3 player",
+      "summary": "A simple video and MP3 player for Android. Plays video and music files stored on your phone.",
+      "repo": "prayagi-store-and-services/netra-player",
+      "code": "player",
+      "privacy": "../../legal/privacy-player.html",
+      "minAndroid": "8.0"
+    },
+    {
+      "id": "netra-eco",
+      "package": "com.prayagi.netraeco",
+      "latestJson": "https://github.com/prayagi-store-and-services/netra-eco-app/releases/latest/download/latest.json",
+      "name": "Netra Ecosystem",
+      "type": "All Netra apps in one place",
+      "summary": "Browse released and planned Netra apps, read descriptions and release notes, view screenshot-only app previews, and download, install or update released apps with Android approval. No in-app videos or autoplay from v1.2.46. Website videos remain. Free, no account.",
+      "repo": "prayagi-store-and-services/netra-eco-app",
+      "site": "https://prayagi-store-and-services.github.io/netra-eco/",
+      "icon": "https://prayagi-store-and-services.github.io/netra-eco/logo.svg",
+      "code": "eco",
+      "privacy": "../../legal/privacy-eco.html",
+      "minAndroid": "8.0"
+    },
+    {
+      "id": "netra-charge",
+      "package": "com.netracharge.app",
+      "name": "Netra Charge",
+      "type": "Battery and charger voice announcements",
+      "summary": "A very small free app that speaks four things: Connected, Disconnected, Full charge and Low battery (15% by default, adjustable). For Android, with a Shortcuts setup guide for iPhone.",
+      "code": "charge",
+      "download": "https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/app-release.apk",
+      "latestJson": "https://prayagi-store-and-services.github.io/netra-eco/downloads/netra-charge/latest.json",
+      "privacy": "../../legal/privacy-charge.html"
+    }
+  ],
+  "upcoming": [
+    {
+      "id": "netra-one",
+      "name": "Netra One",
+      "type": "Android voice command layer (beta, in private testing)",
+      "summary": "Voice command layer for the Netra apps, working on-device and understanding Hindi and Hinglish. A first beta is in private testing. Not released publicly yet.",
+      "features": [
+        "Voice commands for the Netra apps, on-device",
+        "Understands Hindi and Hinglish",
+        "First beta (v0.4.0-beta.1) in private testing"
+      ]
+    },
+    {
+      "id": "netra-intruder",
+      "name": "Netra Intruder",
+      "type": "Anti-theft Android app (planned, private)",
+      "summary": "Planned to take a photo after a wrong unlock attempt and warn you if the SIM card is changed. Everything stays on your phone. Approved plan, development not started yet. Not released yet.",
+      "eta": "2026-10-25T21:00:00+05:30",
+      "targets": [
+        {
+          "label": "Public release target",
+          "eta": "2026-10-25T21:00:00+05:30",
+          "note": "Approximate. Release depends on tested features and green checks."
+        }
+      ],
+      "features": [
+        "Photo after a wrong unlock attempt",
+        "Optional photo at every unlock (experimental, Android 14+)",
+        "Optional app activity log (Usage Access, on-device only)"
+      ]
+    },
+    {
+      "id": "netra-email",
+      "name": "Netra Email",
+      "type": "Email app (planned, private)",
+      "summary": "A planned privacy-first email app for the Netra family. Not started yet and not released.",
+      "eta": "2026-11-10T18:00:00+05:30",
+      "targets": [
+        {
+          "label": "Public release target",
+          "eta": "2026-11-10T18:00:00+05:30",
+          "note": "Approximate. Planning stage."
+        }
+      ],
+      "features": [
+        "Privacy-first email app for the Netra family"
+      ]
+    },
+    {
+      "id": "netra-eco-tv",
+      "name": "Netra Ecosystem TV and KBC TV",
+      "type": "TV versions (upcoming)",
+      "summary": "Android TV versions of Netra Ecosystem and KBC, made for the remote and the big screen. Work is starting. Not released yet.",
+      "eta": "2027-01-31T18:00:00+05:30",
+      "targets": [
+        {
+          "label": "Public release target",
+          "eta": "2027-01-31T18:00:00+05:30",
+          "note": "Approximate. Work is starting; date can move with testing."
+        }
+      ],
+      "features": [
+        "Netra Ecosystem for Android TV, made for the remote and the big screen",
+        "Netra KBC for Android TV"
+      ]
+    },
+    {
+      "id": "netra-health-monitor",
+      "name": "Netra Pulse",
+      "type": "Health and fitness app (upcoming)",
+      "summary": "A private, on-device health and fitness app: steps, activity, sleep and the data your watch shares through Health Connect, with no account. Planned, not started and not released.",
+      "eta": "2026-12-27T12:00:00+05:30",
+      "targets": [
+        {
+          "label": "Public release target",
+          "eta": "2026-12-27T12:00:00+05:30",
+          "note": "Approximate. Planned, not started."
+        }
+      ],
+      "features": [
+        "Steps, activity and sleep tracking on-device",
+        "Data your watch shares through Health Connect",
+        "No account, private on your phone"
+      ]
+    },
+    {
+      "id": "netra-open-store",
+      "name": "Open app store for developers",
+      "type": "Store (idea)",
+      "summary": "An idea: let outside developers submit apps to Netra Ecosystem, with an automatic Play-Protect-style safety and privacy check. Apps that fail are not shown. Later idea: approved developers may be able to promote their listed apps once an app has been on the store for 30 days (details to be decided). Early idea stage. Not started.",
+      "features": [
+        "Outside developers can submit apps to Netra Ecosystem",
+        "Automatic Play-Protect-style safety and privacy check; apps that fail are not shown",
+        "Later idea: approved developers may promote a listed app after 30 days (details to be decided)"
+      ]
+    },
+    {
+      "id": "netra-neg",
+      "name": "Netra Neg",
+      "type": "Private gift ledger (beta; public release pending)",
+      "summary": "v0.3.0 beta includes the local ledger and encrypted own-Drive backup/restore. Active acceptance testing: real-device sign-in and reinstall/restore remain unverified. Public launch target 7 Nov 2026, 8 PM IST; not a release confirmation. Photos are not included in backup.",
+      "eta": "2026-11-07T20:00:00+05:30",
+      "targets": [
+        {
+          "label": "Public release target - 7 Nov 2026, 8 PM IST (one day before Diwali)",
+          "eta": "2026-11-07T20:00:00+05:30",
+          "note": "Active acceptance work. Public launch depends on real-device sign-in/restore validation and green release gates. No app-wide hold."
+        }
+      ],
+      "features": [
+        "Private gift ledger",
+        "Optional encrypted backup in your own Google Drive"
+      ]
+    },
+    {
+      "id": "netra-travel-rider",
+      "name": "Netra Travel Rider",
+      "type": "Offline Bluetooth intercom for riders (in development, private)",
+      "summary": "Push-to-talk voice intercom for motorbike riders. Scan the creator's QR or enter the channel code to join one private group: incoming voice plays on its own, one button to talk, automatic reconnect. Offline map with your own position, optional in-channel location sharing, SOS alert. Works fully offline over Bluetooth and Wi-Fi Direct, no internet, no account. In development in a private repository. Not released yet.",
+      "eta": "2026-11-22T20:00:00+05:30",
+      "targets": [
+        {
+          "label": "Public release target",
+          "eta": "2026-11-22T20:00:00+05:30",
+          "note": "22 Nov is the outer limit; it may arrive earlier. Release depends on tested features and green checks."
+        }
+      ],
+      "features": [
+        "Push-to-talk intercom over Bluetooth/Wi-Fi Direct (offline)",
+        "Join by scanning the creator's QR or entering the channel code",
+        "Auto-play incoming voice, one button to talk, auto-reconnect, mute",
+        "Helmet Bluetooth headset support",
+        "One speaker at a time, 4-6 riders",
+        "Offline map: download a region, see your own position",
+        "Optional in-channel location sharing (off by default)",
+        "SOS alert to all riders",
+        "Works with screen off (foreground service)",
+        "Later (v1.1): phone-to-phone map transfer, buddy direction arrow, rally point, leader/sweeper roles, breadcrumb trail, left-group alert"
+      ]
+    },
+    {
+      "id": "netra-dialer",
+      "name": "Netra Dialer",
+      "type": "Android dialer and verified business calling platform (planned, private)",
+      "summary": "New Netra Dialer project from the 27 October 2026 master plan, separate from the earlier dropped dialer idea. Planned privacy-first personal and business calling, spam protection, supported recording, contacts/call-log backup and a verified-business Voice AI assistant. Feasibility and architecture documented; Android bootstrap in progress. No working dialer or public APK yet. Device, consent and provider limits apply; no release date is set.",
+      "features": [
+        "Planned default dialer: incoming/outgoing calls, contacts, recent calls, T9 search, favorites, speed dial and dual-SIM support where available",
+        "Planned offline spam protection, allow/block lists, caller identification from authorized sources and approximately 24-hour spam-data sync; Android may delay sync",
+        "Planned Hindi/English caller-name or number announcements with quiet hours, headset and Bluetooth settings",
+        "Planned automatic/manual call recording only where supported and permitted; recordings stay on the phone, default auto-delete after 7 days can be disabled; optional transcription and summaries",
+        "Planned Google sign-in and encrypted Google Drive backup/restore for contacts and call log only, never recordings",
+        "Planned separate Personal and Business modes; GSTIN/Udyam identity and applicant-authorization checks, locked official business name and authorized phone numbers",
+        "Planned verified-business Voice AI: Hindi/English, approved business information, answering schedules, inquiries, call summaries, callbacks and human escalation; on-device AI only where supported",
+        "Planned outgoing verified business caller ID only through compatible authorized providers; recipient display is not guaranteed",
+        "Planned local-first privacy controls, diagnostics and bounded, battery-aware work; calling, recording, AI, backup and provider integrations are not operational yet; no measured battery-performance claim"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,739 @@
+{
+  "reviewed": "3 Nov 2026",
+  "note": "All dates are our own estimates and can change. An item with a \"ships\" list disappears by itself once the latest published release of every listed app has reached that version (the Eco app checks this from the real release data).",
+  "apps": [
+    {
+      "id": "bspn",
+      "name": "Netra Battery Sentinel Pro"
+    },
+    {
+      "id": "kbc",
+      "name": "Netra KBC"
+    },
+    {
+      "id": "netra-hub",
+      "name": "Netra Human Safety"
+    },
+    {
+      "id": "prayagi-privacy",
+      "name": "Netra Privacy Guard"
+    },
+    {
+      "id": "netra-player",
+      "name": "Netra Player (video and music)"
+    },
+    {
+      "id": "eco",
+      "name": "Netra Ecosystem"
+    },
+    {
+      "id": "netra-email",
+      "name": "Netra Email"
+    },
+    {
+      "id": "netra-trikaal",
+      "name": "Netra Trikaal"
+    },
+    {
+      "id": "netra-intruder",
+      "name": "Netra Intruder"
+    },
+    {
+      "id": "netra-neg",
+      "name": "Netra Neg"
+    },
+    {
+      "id": "netra-health-monitor",
+      "name": "Netra Pulse"
+    },
+    {
+      "id": "netra-travel-rider",
+      "name": "Netra Travel Rider"
+    },
+    {
+      "id": "netra-charge",
+      "name": "Netra Charge"
+    }
+  ],
+  "items": [
+    {
+      "title": "Standard header and scrolling: header shows only name, version and date/time, everything else scrolls",
+      "status": "Released (BSPN 2.x, KBC 1.1.1+, Hub 1.1.1+, Privacy Guard 1.1.0+, Player 1.1.1+)",
+      "eta": "2026-10-04T23:30:00+05:30",
+      "apps": [
+        "netra-hub",
+        "bspn",
+        "prayagi-privacy",
+        "kbc",
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "bspn",
+          "version": "1.2.3"
+        },
+        {
+          "app": "kbc",
+          "version": "1.1.1"
+        },
+        {
+          "app": "netra-hub",
+          "version": "1.1.1"
+        },
+        {
+          "app": "prayagi-privacy",
+          "version": "1.1.0"
+        },
+        {
+          "app": "netra-player",
+          "version": "1.1.1"
+        }
+      ]
+    },
+    {
+      "title": "Battery Sentinel 1.2.2: Saver restore fix and dummy switches removed",
+      "status": "Released in v1.2.2",
+      "eta": "2026-10-04T18:30:00+05:30",
+      "apps": [
+        "bspn"
+      ],
+      "ships": [
+        {
+          "app": "bspn",
+          "version": "1.2.2"
+        }
+      ]
+    },
+    {
+      "title": "Netra Privacy Guard 1.1.0: version in header and What's new",
+      "status": "Released in v1.1.0",
+      "eta": "2026-10-04T20:30:00+05:30",
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "ships": [
+        {
+          "app": "prayagi-privacy",
+          "version": "1.1.0"
+        }
+      ]
+    },
+    {
+      "title": "KBC 1.1.1: version in header and What's new",
+      "status": "Released in v1.1.1",
+      "eta": "2026-10-05T12:00:00+05:30",
+      "apps": [
+        "kbc"
+      ],
+      "ships": [
+        {
+          "app": "kbc",
+          "version": "1.1.1"
+        }
+      ]
+    },
+    {
+      "title": "Hub UI step 2: dashboard cards and SOS screen wording",
+      "status": "In progress (6 Oct 20:00 target missed; new date being estimated)",
+      "eta": "2026-10-06T20:00:00+05:30",
+      "apps": [
+        "netra-hub"
+      ]
+    },
+    {
+      "title": "Netra Ecosystem: app icons and a What's new section per app",
+      "status": "Released in v1.2.0",
+      "eta": "2026-10-05T14:00:00+05:30",
+      "apps": [
+        "eco"
+      ],
+      "ships": [
+        {
+          "app": "eco",
+          "version": "1.2.0"
+        }
+      ]
+    },
+    {
+      "apps": [
+        "bspn",
+        "kbc",
+        "netra-hub",
+        "prayagi-privacy"
+      ],
+      "title": "One voice, part 1: one speaker per topic",
+      "text": "Netra apps on the same phone recognise each other (same Netra signature only) and agree on who speaks. Each topic, like battery percent or temperature, is announced by one app only, never twice. All on the phone, offline, never between different phones.",
+      "status": "Planned",
+      "eta": "2026-11-22T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "bspn",
+        "kbc",
+        "netra-hub",
+        "prayagi-privacy"
+      ],
+      "title": "One voice, part 2: apps can ask each other for status",
+      "text": "An app can ask another Netra app on the same phone for information it lacks, such as battery or temperature state. Still offline and on the same phone only.",
+      "status": "Planned",
+      "eta": "2026-12-06T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "kbc"
+      ],
+      "title": "Battery and temperature check before a game",
+      "text": "Before a KBC game starts it reads this phone's own battery and temperature. If the phone is 42 C or hotter the game is held until it cools. A TEST button on the home screen shows the reading. If the temperature is unknown the game is never blocked. Local check only; asking the other Netra apps comes later.",
+      "status": "Released in KBC v1.1.35 (22 Oct); not yet phone-tested, CI/emulator only",
+      "eta": "2026-10-22T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "bspn",
+        "kbc",
+        "netra-hub",
+        "prayagi-privacy"
+      ],
+      "title": "Festival open animations",
+      "text": "When the app opens on a festival or national day, a short skippable animation for that occasion plays (for example the national flag on Independence Day) instead of a plain banner. Works offline.",
+      "status": "In progress (15 Oct 20:00 target missed; new release date 7 Nov)",
+      "missedEta": "2026-10-15T20:00:00+05:30",
+      "eta": "2026-11-07T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "Mic and camera switched off when the screen turns off, and where each app's data goes",
+      "text": "Netra Privacy Guard cuts microphone and camera access when the screen turns off - this part already ships since v1.0.x. The remaining part is new: per app, which domains it contacted and the country of the destination IP, seen through the on-device DNS filter. DNS-visibility only (not full traffic or byte counts); the country is destination-IP geography, not proof of where data is stored. Needs Android 10+ for per-app naming; everything stays on the phone.",
+      "status": "In progress (1 Nov 20:00 target missed; new release date 5 Nov)",
+      "eta": "2026-11-05T20:00:00+05:30",
+      "missedEta": "2026-11-01T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "kbc"
+      ],
+      "title": "No repeated questions and camera indicator for fair play",
+      "text": "KBC will not repeat a question you already saw, and will show a clear camera-in-use indicator for the anti-cheat check.",
+      "status": "Planned",
+      "eta": "2026-11-01T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "bspn"
+      ],
+      "title": "Solar and inverter monitoring",
+      "text": "Solar generation, grid and battery status of your home system inside Netra Battery Sentinel Pro. The detailed spec is still being decided with the owner, so this estimate is rough.",
+      "status": "Planning (spec pending)",
+      "eta": "2026-12-15T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "Disaster alerts, part 1: weather orange alerts (India)",
+      "text": "Released fallback in Hub v1.4.12: the NDMA SACHET feed is checked about every 30 minutes, subject to Android delays. Severe or Extreme alerts match district, locality or state names, not coordinates. IMD alerts arrive only if present in that feed; this is not a verified IMD orange/red mapping. The original 5-minute server-driven push design is incomplete. Phone delivery is untested. The 14 Oct 8 PM target was missed; a new completion date is Unavailable until those gaps are verified.",
+      "status": "In progress (fallback released v1.4.12; 19 Oct full-scope target missed - server push design and phone delivery still unverified; new target 26 Oct)",
+      "eta": "2026-10-26T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "Disaster alerts, part 2: earthquakes within about 200 km",
+      "text": "What the app does today: a card and a check about every 30 minutes read the USGS feed for quakes of magnitude 2.5 and above within 200 km in the last 7 days, and notify about new ones. It is not an official warning, and smaller quakes in India may be missing. NDMA is not used for quakes yet. In the app since Hub v1.4.x, not yet tested on a phone.",
+      "status": "Shipped in v1.4.19 (18 Oct; immediate checks on fresh location + district no-warning status + spoken official alerts added; phone test passed 19 Oct)",
+      "eta": "2026-10-18T20:30:00+05:30"
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "Disaster alerts, part 3: full suite",
+      "text": "More hazards, other countries and states using each country's own government agency, and a public alert report (area name and number of people alerted, never anyone's location).",
+      "status": "Third portion",
+      "eta": "2026-11-30T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "H2: steps card and daily step target (released in v1.1.3 to v1.1.5)",
+      "text": "Steps today card and an age-based daily step target from published research are live. Still open: the owner's own target numbers (8000 and 7000, editable), which are not applied yet.",
+      "status": "Released in v1.1.5",
+      "eta": "2026-10-08T20:00:00+05:30",
+      "ships": [
+        {
+          "app": "netra-hub",
+          "version": "1.1.5"
+        }
+      ]
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "H3: driving mode and family apps coordination (v1.3.0)",
+      "text": "Driving mode detection that tells the other Netra apps on the same phone to stop background work. Thermal protection always stays on. Netra Privacy Guard is not stopped. On the same phone, offline.",
+      "status": "Released in v1.4.2 (not yet tested on a phone)",
+      "eta": "2026-10-10T20:00:00+05:30",
+      "ships": [
+        {
+          "app": "netra-hub",
+          "version": "1.3.0"
+        }
+      ]
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "H4: emergency SMS, siren and parking (v1.4.0)",
+      "text": "Emergency SMS to your contacts, a siren with a Stop control, and automatic parking spot saving. Tested in simulation, not in real crashes.",
+      "status": "Released in v1.4.2 (not yet tested on a phone)",
+      "eta": "2026-10-10T20:00:00+05:30",
+      "ships": [
+        {
+          "app": "netra-hub",
+          "version": "1.4.0"
+        }
+      ]
+    },
+    {
+      "apps": [
+        "netra-hub"
+      ],
+      "title": "H5: magnetic alerts and final polish",
+      "text": "Not done yet. Hub v1.5.0 (24 Oct IST) added the saved or current area choice for automatic official alerts only. Always-on magnetic alerts and the final polish are still planned. Target for the complete Netra Human Safety release; the date is our estimate and can change.",
+      "status": "Planned",
+      "eta": "2026-10-26T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "S1: unknown-sources alert and security-patch age warning",
+      "text": "Warns when installs from unknown sources are allowed and when the device security patch is old. We do not patch the OS.",
+      "status": "Released in v1.2.0",
+      "eta": "2026-10-06T20:00:00+05:30",
+      "ships": [
+        {
+          "app": "prayagi-privacy",
+          "version": "1.2.0"
+        }
+      ]
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "S2: risky app permission check",
+      "text": "Lists installed apps with risky permission combinations. App-level protection only.",
+      "status": "Released in v1.2.1",
+      "eta": "2026-10-07T20:00:00+05:30",
+      "ships": [
+        {
+          "app": "prayagi-privacy",
+          "version": "1.2.1"
+        }
+      ]
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "S3: accessibility-service warning",
+      "text": "Shows enabled accessibility services and flags unusual ones.",
+      "status": "Released in v1.4.18 on 21 Oct 2026, 1:46 AM IST. Late twice: the 18 Oct 8 PM target and the 20 Oct 8 PM re-target were both missed (second miss by about 6 hours). Phone test pending.",
+      "eta": "2026-10-20T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "S5: overlay permission check",
+      "text": "Today the app list only tags apps that ASK for the draw-over-other-apps permission. This checks which apps are actually allowed to draw over other apps.",
+      "status": "Released in v1.4.20 on 22 Oct 2026, 1:07 AM IST. Late twice: the 19 Oct 8 PM target and the 21 Oct 8 PM re-target were both missed (second miss by about 5 hours). Phone test pending.",
+      "eta": "2026-10-21T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "S6: local VPN website blocking",
+      "text": "On-device website blocking through a local VPN. No outside VPN server, nothing leaves the phone for us. Blocks known domains with a list that updates daily.",
+      "status": "Planned",
+      "eta": "2026-11-15T20:00:00+05:30"
+    },
+    {
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "title": "S7: local VPN ad blocker",
+      "text": "Ad blocking through the same local VPN. Adult and gambling domains are always blocked.",
+      "status": "Planned",
+      "eta": "2026-11-29T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Player v1.1.8: State and error truth - real playback state and real error reasons",
+      "status": "Released in v1.1.8",
+      "eta": "2026-10-06T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.8"
+        }
+      ]
+    },
+    {
+      "title": "Netra Player v1.1.9: Update alerts",
+      "status": "Released in v1.1.9",
+      "eta": "2026-10-07T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.9"
+        }
+      ],
+      "text": "Silent update notification and verified download/install. Recent-files list is still pending."
+    },
+    {
+      "title": "Netra Player v1.1.10: Download progress and Downloads list",
+      "status": "Released in v1.1.10",
+      "eta": "2026-10-08T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.10"
+        }
+      ],
+      "text": "Percent downloaded counts up, time left, parallel downloads, Install/Delete list. Gesture controls are still pending."
+    },
+    {
+      "title": "Netra Player v1.1.11: Audio track and subtitle track choice (only tracks the file has)",
+      "status": "Released in v1.1.11",
+      "eta": "2026-10-09T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.11"
+        }
+      ]
+    },
+    {
+      "title": "Netra Player v1.1.12: Background audio with notification controls (adds a permission and a library)",
+      "status": "Released in v1.1.12",
+      "eta": "2026-10-10T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.12"
+        }
+      ]
+    },
+    {
+      "title": "Netra Player v1.1.13: Folder list and queue with the system folder picker",
+      "status": "Released in v1.1.13 (target Oct 11 was missed; released Oct 12)",
+      "eta": "2026-10-11T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.13"
+        }
+      ]
+    },
+    {
+      "title": "Netra Player v1.1.14: Subtitle files (.srt) picked by you",
+      "status": "Released in v1.1.14",
+      "eta": "2026-10-12T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.14"
+        }
+      ]
+    },
+    {
+      "title": "Netra Player v1.1.17: Headphone sound effect, only if the phone reports support, otherwise Unavailable",
+      "status": "Planned",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.17"
+        }
+      ],
+      "eta": "2026-11-01T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Player: Picture in picture (not established by v1.1.18)",
+      "status": "Active pending verification. v1.1.18 released update notices, not proof of Picture in picture. Original 8 Nov estimate retained, not a delivery confirmation.",
+      "apps": [
+        "netra-player"
+      ],
+      "eta": "2026-11-08T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Player v1.2.0: Netra Player complete release (video and MP3 only)",
+      "status": "Planned",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.2.0"
+        }
+      ],
+      "eta": "2026-12-13T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Player: Recent files list with real saved positions",
+      "status": "Planned",
+      "apps": [
+        "netra-player"
+      ],
+      "eta": "2026-11-15T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Player v1.1.16: Gesture controls: brightness, volume, seek swipe and double tap jump",
+      "status": "Planned",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.16"
+        }
+      ],
+      "eta": "2026-10-25T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Email: email app for your Gmail accounts with on-device AI (planning stage, nothing built yet, no release date)",
+      "status": "Planned (not started)",
+      "apps": [
+        "netra-email"
+      ],
+      "eta": "2026-11-10T20:00:00+05:30"
+    },
+    {
+      "title": "Interface update",
+      "status": "Active again by 3 Nov 18:34 instruction. The old 24 Oct target was missed; combined redesign is unfinished. New date unconfirmed; draft is not a release.",
+      "eta": "2026-10-24T20:00:00+05:30",
+      "apps": [
+        "netra-trikaal"
+      ]
+    },
+    {
+      "title": "Interface update",
+      "status": "Released v1.2.25 (phone test pending)",
+      "eta": "2026-10-14T20:00:00+05:30",
+      "apps": [
+        "eco"
+      ],
+      "text": "Smoother app-list scrolling and feature-based multi-category groups are shipped in v1.2.25. Scrolling feel has not been tested on the owner phone. Recently Used, on-device App Lock, task-based Smart Search and Hidden apps remain separate pending stages; this release does not include them.",
+      "ships": [
+        {
+          "app": "eco",
+          "version": "1.2.25"
+        }
+      ]
+    },
+    {
+      "title": "Interface update",
+      "status": "Released v2.2.8 on 22 Oct, earlier than the 23 Oct target (phone test pending; 15 Oct target was missed)",
+      "apps": [
+        "bspn"
+      ],
+      "missedEta": "2026-10-15T20:00:00+05:30",
+      "eta": "2026-10-23T20:00:00+05:30",
+      "text": "Small interface step: the app already had the standard header and TEST buttons; the Devices and Logs screens now use the same card spacing as the other screens. Tested in CI and emulator only. A larger redesign is not part of this step.",
+      "ships": [
+        {
+          "app": "bspn",
+          "version": "2.2.8"
+        }
+      ]
+    },
+    {
+      "title": "Interface update",
+      "status": "Planned (21 Oct 20:00 target missed - the day went to the driving-detection fix and security work; new target 25 Oct)",
+      "missedEta": "2026-10-21T20:00:00+05:30",
+      "eta": "2026-10-25T20:00:00+05:30",
+      "apps": [
+        "netra-hub"
+      ]
+    },
+    {
+      "title": "Interface update",
+      "status": "Released v1.1.42 on 1 Nov (21 and 26 Oct targets missed; CI/emulator-tested only, no phone or tablet test yet)",
+      "missedEta": "2026-10-21T20:00:00+05:30",
+      "eta": "2026-10-26T20:00:00+05:30",
+      "apps": [
+        "kbc"
+      ],
+      "text": "Phone/tablet adaptive sizing: every screen caps and centres content on wide displays (600/840 dp classes) and main headings and buttons scale up for smart-class distance viewing; phone layouts are unchanged. Also removed a hardcoded \"3 days active\" streak line on Home that was not backed by any tracking. A larger redesign is not part of this step.",
+      "ships": [
+        {
+          "app": "kbc",
+          "version": "1.1.42"
+        }
+      ]
+    },
+    {
+      "title": "Interface update",
+      "status": "Released v1.4.22 on 22 Oct (phone test pending)",
+      "eta": "2026-10-22T20:00:00+05:30",
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "text": "Small interface step: the Travel Checking and Site Blocking entries now sit in one Tools card with the same spacing as the other cards, plus a labelled TEST alert button. Tested in CI and emulator only, not yet on the owner phone. A larger redesign is not part of this step.",
+      "ships": [
+        {
+          "app": "prayagi-privacy",
+          "version": "1.4.22"
+        }
+      ]
+    },
+    {
+      "title": "Interface update",
+      "status": "Planned",
+      "eta": "2026-10-29T20:00:00+05:30",
+      "apps": [
+        "netra-player"
+      ]
+    },
+    {
+      "title": "Netra Intruder: anti-theft app (not started): photo after a wrong unlock attempt, optional photo at every unlock (experimental, Android 14+), opt-in app activity log. First release.",
+      "status": "Not started: forecast unable to meet the 25 Oct first-release target. The 13 Oct plan was a first build in the 23-25 Oct window with release only after the owner's phone test; that cannot fit alongside the current release chain. Proposed new target 9 Nov, pending owner agreement.",
+      "eta": "2026-10-25T21:00:00+05:30",
+      "apps": [
+        "netra-intruder"
+      ]
+    },
+    {
+      "title": "Netra Player: background update download",
+      "status": "Released in v1.1.16.1 (18 Oct 9:26 PM IST; phone test passed 19 Oct)",
+      "apps": [
+        "netra-player"
+      ],
+      "eta": "2026-10-19T20:00:00+05:30",
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.16.1"
+        }
+      ]
+    },
+    {
+      "title": "Netra Player v1.1.15: Playback size controls - Fit, Crop and Stretch",
+      "status": "Released in v1.1.15",
+      "apps": [
+        "netra-player"
+      ],
+      "ships": [
+        {
+          "app": "netra-player",
+          "version": "1.1.15"
+        }
+      ],
+      "text": "Playback size controls released. Recent files, local library and background update worker are not included.",
+      "eta": "2026-10-14T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Player: Optional local video and MP3 library with folder browsing",
+      "status": "In progress (PR33 draft; target 22 Nov)",
+      "apps": [
+        "netra-player"
+      ],
+      "eta": "2026-11-22T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Neg: private gift ledger with optional encrypted own-Drive backup. Public release target: 7 Nov 2026, one day before Diwali (8 Nov) - date only, not a release confirmation.",
+      "status": "Active: v0.3.0 beta published 3 Nov. Device sign-in, reinstall and restore acceptance remain unverified; public target 7 Nov 20:00 IST. Photos not included in backup. No app-wide hold.",
+      "targetDate": "2026-11-07",
+      "apps": [
+        "netra-neg"
+      ],
+      "eta": "2026-11-07T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Pulse: private health, activity, sleep and optional period tracking; only device-supported data and source-linked guidance. No confirmed release date.",
+      "status": "Planned",
+      "apps": [
+        "netra-health-monitor"
+      ],
+      "eta": "2026-12-27T20:00:00+05:30"
+    },
+    {
+      "title": "Live battery current in mA: improve the existing current view with observed min/max/sample-average; hide current if Android gives no real value.",
+      "status": "Released in v2.1.19 (phone test pending)",
+      "apps": [
+        "bspn"
+      ],
+      "ships": [
+        {
+          "app": "bspn",
+          "version": "2.1.19"
+        }
+      ],
+      "eta": "2026-10-15T20:00:00+05:30"
+    },
+    {
+      "title": "Netra Travel Rider v1: offline push-to-talk Bluetooth intercom for riders (QR create/join with channel code, auto-play incoming voice, auto-reconnect, mute, helmet headset support, one speaker at a time, 4-6 riders, SOS alert to all, screen-off foreground service) + basic offline map (download region, own GPS position) + opt-in in-channel location sharing with last-known timestamp. Later (v1.1, early Dec): phone-to-phone map transfer, buddy direction arrow, rally point, leader/sweeper roles, breadcrumb trail, someone-left-group alert. Mesh relay and public location sharing stay undecided.",
+      "status": "In development",
+      "apps": [
+        "netra-travel-rider"
+      ],
+      "eta": "2026-11-22T20:00:00+05:30"
+    },
+    {
+      "title": "Privacy Guard: foreground-only microphone while the screen is ON - the mic works only for the app actually open on screen, not for apps sitting in the background. Level 1: instant alert naming any background app that grabs the mic, with a one-tap jump to its system permission page (works for everyone, no extras). A Level 2 with true per-app blocking was tried and removed the same day: it needed extra setup that most people would not manage, and a privacy feature people cannot understand can do more harm than good. Level 1 (alerts) is what ships.",
+      "status": "Released in v1.4.13 (Level 1 alerts; phone test passed 19 Oct). A Shizuku-based Level 2 shipped in v1.4.14 and was removed in v1.4.16.",
+      "apps": [
+        "prayagi-privacy"
+      ],
+      "eta": "2026-10-17T16:00:00+05:30"
+    },
+    {
+      "title": "Netra Charge: four charging announcements (Connected, Disconnected, Full charge, Low battery) for Android and Windows, plus an iPhone Shortcuts setup guide. First release.",
+      "status": "Released 25 Oct 2026: Android v0.1.0 on the Netra Eco website.",
+      "eta": "2026-10-24T22:32:00+05:30",
+      "apps": [
+        "netra-charge"
+      ]
+    },
+    {
+      "title": "Netra Human Safety: area alert announcement. Planned idea, not built yet. When the user turns the mode on, the app takes the area once and then speaks new official weather, earthquake and government emergency warnings for that area, without repeating the same warning. Needs a check of official sources and background delivery before any build. Not a guaranteed emergency warning system.",
+      "status": "Planned: idea added 23 Oct 2026, research first. Not released and no date announced.",
+      "apps": [
+        "netra-hub"
+      ]
+    }
+  ]
+}

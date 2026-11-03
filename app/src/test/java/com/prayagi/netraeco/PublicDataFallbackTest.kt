@@ -9,6 +9,12 @@ import org.robolectric.RobolectricTestRunner
 class PublicDataFallbackTest {
     private val catalog = """{"projects":[],"upcoming":[{"id":"netra-neg","name":"Netra Neg"}]}"""
     private val roadmap = """{"apps":[],"items":[{"title":"Active work","status":"Active"}]}"""
+    @Test fun currentPublishedDataRetainsLegacyParserCompatibility() {
+        fun fixture(name: String) = javaClass.classLoader!!.getResource("recovery/$name")!!.readText()
+        assertEquals(9, Upcoming.parse(fixture("projects.json")).size)
+        assertTrue(Net.parseCatalog(fixture("projects.json")).isNotEmpty())
+        assertEquals(57, Roadmap.parse(fixture("roadmap.json")).size)
+    }
     @Test fun pagesDnsFailureUsesSameOwnerRawJson() {
         val calls = mutableListOf<String>()
         val result = Net.fetchWithFallback(Net.CATALOG_URL) { calls += it; if (it == Net.CATALOG_FALLBACK) catalog else null }
