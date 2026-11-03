@@ -75,6 +75,26 @@ class EcoSectionsTest {
         rule.onNodeWithText("Search apps").assertTextContains("Future Beta")
         assertEquals(1, loads())
     }
+    @Test fun failedFutureRequestShowsUnavailableNotAnEmptyRoadmapClaim() {
+        rule.setContent {
+            EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { null })
+        }
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithText("Planned apps could not be loaded. Check your connection and retry.").assertIsDisplayed()
+        rule.onAllNodesWithText("No planned apps are listed right now.").assertCountEquals(0)
+        shot("future-network-unavailable")
+    }
+    @Test fun recoveredPublishedFutureAppsRender() {
+        val catalog = javaClass.classLoader!!.getResource("recovery/projects.json")!!.readText()
+        val roadmap = javaClass.classLoader!!.getResource("recovery/roadmap.json")!!.readText()
+        rule.setContent {
+            EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { if (it == Net.CATALOG_URL) catalog else roadmap })
+        }
+        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithTag("future-list").performScrollToKey("up-netra-neg")
+        rule.onNodeWithText("Netra Neg").assertIsDisplayed()
+        shot("future-recovered-neg")
+    }
     @Test fun releaseNotificationSwitchesFutureToCurrent() {
         val request = androidx.compose.runtime.mutableIntStateOf(0)
         rule.setContent {
