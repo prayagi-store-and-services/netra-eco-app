@@ -86,18 +86,18 @@ class HumanSafetyHoldPlatformTest {
     @Test fun transientFetchFailureUsesLastVerifiedCache() {
         HumanSafetyHold.saveVerified(context, verifiedRaw())
         val urls = mutableListOf<String>()
-        val r = Net.fetchLatest(app(), { url, _ -> urls += url; null }, context)
+        val r = Net.fetchLatest(app(), context) { url, _ -> urls += url; null }
         assertEquals(HumanSafetyHold.TAG, r?.tag)
         assertEquals(HumanSafetyHold.SHA, r?.sha256)
         assertEquals(1, urls.size)
     }
     @Test fun successfulFetchRefreshesCache() {
-        val r = Net.fetchLatest(app(), { _, _ -> verifiedRaw() }, context)
+        val r = Net.fetchLatest(app(), context) { _, _ -> verifiedRaw() }
         assertEquals(HumanSafetyHold.TAG, r?.tag)
         assertEquals(HumanSafetyHold.TAG, HumanSafetyHold.loadVerified(context)?.tag)
     }
     @Test fun noCacheNoNetworkStillNull() {
         context.getSharedPreferences("human_safety_hold_verified", 0).edit().clear().commit()
-        assertNull(Net.fetchLatest(app(), { _, _ -> null }, context))
+        assertNull(Net.fetchLatest(app(), context) { _, _ -> null })
     }
 }
