@@ -37,7 +37,8 @@ class BrandScreenshotTest {
             bitmap.recycle()
         }
     }
-    @Test fun humanSafetyPausedCardFitsNarrowPhone() {
+    @Test fun humanSafetyUnverifiedIsHiddenFromList() {
+        // Owner rule (3 Nov): an unverifiable Human Safety release hides the card entirely - no Unavailable UI.
         val app = CatalogApp("netra-hub", "Netra Human Safety", "Safety", "", HumanSafetyHold.REPO,
             HumanSafetyHold.PACKAGE, "", "")
         rule.setContent {
@@ -45,17 +46,10 @@ class BrandScreenshotTest {
                 AppCard(AppRow(app, null, null), null) {}
             }
         }
-        rule.onNodeWithText("Human Safety release unavailable").assertIsDisplayed()
-        rule.onNodeWithText(HumanSafetyHold.MESSAGE).assertIsDisplayed()
-        rule.onNodeWithText("Download and update paused").assertIsDisplayed()
         rule.waitForIdle()
-        rule.runOnIdle {
-            val view = rule.activity.window.decorView
-            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-            view.draw(Canvas(bitmap))
-            val file = File("build/outputs/human-safety-hold.png").apply { parentFile.mkdirs() }
-            file.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
-            bitmap.recycle()
-        }
+        rule.onNodeWithText("Human Safety release unavailable").assertDoesNotExist()
+        rule.onNodeWithText(HumanSafetyHold.MESSAGE).assertDoesNotExist()
+        rule.onNodeWithText("Download and update paused").assertDoesNotExist()
+        rule.onNodeWithText("Netra Human Safety").assertDoesNotExist()
     }
 }

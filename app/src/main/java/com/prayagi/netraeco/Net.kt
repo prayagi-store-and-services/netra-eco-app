@@ -48,11 +48,17 @@ object Net {
      * published release shows within seconds), then that tag's latest.json, then the older cached latest.json file.
      * A release without a latest.json file (Battery Sentinel) is built from the API's size and SHA-256, with no version code.
      */
-    fun fetchLatest(app: CatalogApp, textLoader: (String, Boolean) -> String? = ::fetchText): LatestRelease? {
+    fun fetchLatest(app: CatalogApp, context: Context? = null, textLoader: (String, Boolean) -> String? = ::fetchText): LatestRelease? {
         if (HumanSafetyHold.matches(app.repo, app.packageName)) {
             if (app.repo != HumanSafetyHold.REPO || app.packageName != HumanSafetyHold.PACKAGE) return null
-            return textLoader("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/${HumanSafetyHold.TAG}", true)
-                ?.let { HumanSafetyHold.parseRelease(it) }
+            val raw = textLoader("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/${HumanSafetyHold.TAG}", true)
+            val fresh = raw?.let { HumanSafetyHold.parseRelease(it) }
+            if (fresh != null) {
+                if (context != null && raw != null) HumanSafetyHold.saveVerified(context, raw)
+                return fresh
+            }
+            // Transient fetch failure (offline or GitHub rate limit): fall back to the last verified release.
+            return context?.let { HumanSafetyHold.loadVerified(it) }
         }
         val fromApi = try {
             val body = textLoader("https://api.github.com/repos/${app.repo}/releases/latest", true)

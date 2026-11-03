@@ -1,3 +1,9 @@
+## 1.2.48 - Human Safety available again, no more scrolling strip
+
+- Human Safety v1.5.7 (adaptive phone/tablet interface) is the checked release; the store lock now matches the website.
+- A weak network or a busy GitHub no longer flips Human Safety to Unavailable: the last verified release is kept on the phone and used until a fresh check succeeds.
+- Apps whose release cannot be verified are now hidden from the list instead of showing an Unavailable card; they return as soon as verification passes.
+
 ## Unreleased - community links
 
 - Official YouTube, Instagram, Facebook, X and Telegram links in Current.

@@ -64,7 +64,7 @@ class HumanSafetyHoldScreenTest {
     @Test fun checkedReleaseShowsDownloadAt320() {
         DownloadCenter.items.value = emptyMap()
         val a = CatalogApp("netra-hub", "Human Safety", "", "", HumanSafetyHold.REPO, HumanSafetyHold.PACKAGE, "", "")
-        val release = LatestRelease(HumanSafetyHold.TAG, HumanSafetyHold.VERSION, HumanSafetyHold.CODE, "Checked v1.5.2 only", HumanSafetyHold.URL, HumanSafetyHold.SHA, HumanSafetyHold.SIZE)
+        val release = LatestRelease(HumanSafetyHold.TAG, HumanSafetyHold.VERSION, HumanSafetyHold.CODE, "Checked v1.5.7 only", HumanSafetyHold.URL, HumanSafetyHold.SHA, HumanSafetyHold.SIZE)
         rule.setContent { MaterialTheme { AppCard(AppRow(a,null,release),null) {} } }
         rule.onNodeWithText("Download").assertIsDisplayed()
         rule.onAllNodesWithText(HumanSafetyHold.MESSAGE).assertCountEquals(0)
