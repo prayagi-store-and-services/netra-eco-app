@@ -1,3 +1,9 @@
+## 1.2.51 - Catalog and roadmap recovery
+
+- Future apps and the roadmap load directly from the Netra GitHub repository, with direct GitHub Pages as a backup. Custom-domain DNS is not required.
+- A failed Future-app request says it could not load, rather than incorrectly saying no apps are planned.
+- No new permission or personal-data collection. Download/install verification remains unchanged.
+
 ## 1.2.50 - Device compatibility check
 
 - Each release now states the minimum Android version it needs (minSdk). Before a download or update, Eco checks it against your device like the Play Store: an incompatible release is not offered, and the card says which Android version it needs.

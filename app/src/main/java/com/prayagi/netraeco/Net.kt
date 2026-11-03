@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object Net {
-    const val CATALOG_URL = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
+    const val CATALOG_URL = "https://raw.githubusercontent.com/prayagi-store-and-services/netra-eco/main/projects.json"
 
     private fun open(url: String, fresh: Boolean = false): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
@@ -28,15 +28,51 @@ object Net {
         return c
     }
 
-    /** Small text download (catalog or latest.json). Returns null when offline or the server says no. */
-    fun fetchText(url: String, fresh: Boolean = false): String? = try {
-        val c = open(url, fresh)
-        if (c.responseCode != 200) null else {
-            val bytes = c.inputStream.use { it.readBytes() }
-            if (bytes.size > 1024 * 1024) null else String(bytes, Charsets.UTF_8)
+    const val CATALOG_FALLBACK = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
+    const val ROADMAP_FALLBACK = "https://prayagi-store-and-services.github.io/netra-eco/roadmap.json"
+
+    /** Only these two public, same-owner data files have a fallback. APK/update trust is unchanged. */
+    internal fun publicDataFallback(url: String): String? = when (url) {
+        CATALOG_URL -> CATALOG_FALLBACK
+        Roadmap.URL -> ROADMAP_FALLBACK
+        else -> null
+    }
+
+    internal fun fetchWithFallback(url: String, loader: (String) -> String?): String? {
+        fun valid(body: String?): String? {
+            if (body == null) return null
+            if (publicDataFallback(url) == null) return body
+            return runCatching {
+                val root = JSONObject(body)
+                if (url == CATALOG_URL) { root.getJSONArray("projects"); root.getJSONArray("upcoming") }
+                else { root.getJSONArray("apps"); root.getJSONArray("items") }
+                body
+            }.getOrNull()
         }
-    } catch (e: Exception) {
-        null
+        return valid(loader(url)) ?: publicDataFallback(url)?.let { valid(loader(it)) }
+    }
+
+    /** Small text download. Public data comes directly from GitHub raw; direct GitHub Pages is the fallback. */
+    fun fetchText(url: String, fresh: Boolean = false): String? =
+        fetchWithFallback(url) { fetchOne(it, fresh) }
+
+    private fun fetchOne(url: String, fresh: Boolean): String? {
+        var c: HttpURLConnection? = null
+        return try {
+            c = open(url, fresh)
+            if (c.responseCode != 200) null else c.inputStream.use { input ->
+                val out = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    if (out.size() + count > 1024 * 1024) return null
+                    out.write(buffer, 0, count)
+                }
+                out.toString("UTF-8")
+            }
+        } catch (_: Exception) { null }
+        finally { c?.disconnect() }
     }
 
     /** "sha256:abc..." from the GitHub API to a plain lowercase hash, or null when it is not a SHA-256. */
