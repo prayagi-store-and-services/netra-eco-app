@@ -21,13 +21,13 @@ class HumanSafetyHoldPlatformTest {
     @Test fun exactTagLookupOfflineCannotFallBack() {
         val urls = mutableListOf<String>()
         assertNull(Net.fetchLatest(app()) { url, fresh -> assertTrue(fresh); urls += url; null })
-        assertEquals(listOf("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/v1.5.7"), urls)
+        assertEquals(listOf("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/v1.5.8"), urls)
     }
     @Test fun malformedExactTagCannotFallBack() {
         val urls = mutableListOf<String>()
         assertNull(Net.fetchLatest(app()) { url, _ -> urls += url; "{}" })
         assertEquals(1, urls.size)
-        assertTrue(urls.single().endsWith("/tags/v1.5.7"))
+        assertTrue(urls.single().endsWith("/tags/v1.5.8"))
     }
     @Test fun hubDownloadFailsBeforeNetwork() {
         try { Net.download(context, app(), release()); fail("quarantine") }
