@@ -290,6 +290,7 @@ fun EcoScreen(
         EcoHeader(ecoName, ownVersion, clockNow)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
+        TickerStrip(pendingRoadmap)
         // Deepak (16 Oct): "Request a new app" sits next to the header. The header itself stays standard (name, version, date/time only), so this slim row lives directly under it.
         RequestAppEntry()
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
