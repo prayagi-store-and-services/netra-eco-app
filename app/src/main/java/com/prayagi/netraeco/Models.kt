@@ -22,10 +22,17 @@ data class LatestRelease(
     val apkUrl: String,
     val sha256: String,
     val size: Long,
-    val publishedAtMillis: Long? = null
+    val publishedAtMillis: Long? = null,
+    /** Minimum Android API level the release runs on; null when the release does not say. */
+    val minSdk: Int? = null
 )
 
 enum class Status { NotInstalled, UpdateAvailable, UpToDate, InstalledNewer, Unavailable }
+
+/** Pure compatibility check: unknown minSdk means allowed (nothing verified against the device). */
+fun sdkCompatible(deviceSdk: Int, minSdk: Int?): Boolean = minSdk == null || deviceSdk >= minSdk
+/** This device's compatibility with a release. */
+fun deviceCompatible(minSdk: Int?): Boolean = sdkCompatible(android.os.Build.VERSION.SDK_INT, minSdk)
 
 /**
  * Status shown on a card. When the latest version could not be read we say Unavailable,

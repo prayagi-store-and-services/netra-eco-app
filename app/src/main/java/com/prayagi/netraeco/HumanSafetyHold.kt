@@ -13,6 +13,7 @@ object HumanSafetyHold {
     const val VERSION = "1.5.8"
     const val CODE = 84L
     const val SIZE = 4455670L
+    const val MIN_SDK = 24
     const val SHA = "1353f45452b34a3ba26509969f27caf4b067af340ca8708e12a2637295bcc665"
     const val URL = "https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.8/app-release.apk"
     const val MESSAGE = "Only the checked Human Safety v1.5.8 file is allowed. Older or unverified installers stay paused."
@@ -50,7 +51,7 @@ object HumanSafetyHold {
                     a.optString("browser_download_url") == URL
             }
             if (!valid) null else LatestRelease(TAG, VERSION, CODE,
-                "App-local updater removed. Owner reported heating/battery resolved on the tested build; not a measured guarantee.", URL, SHA, SIZE, releaseTimeMillis(x.optString("published_at")))
+                "App-local updater removed. Owner reported heating/battery resolved on the tested build; not a measured guarantee.", URL, SHA, SIZE, releaseTimeMillis(x.optString("published_at")), MIN_SDK)
         }
     } catch (_: Exception) { null }
     fun fileAllowed(file: File): Boolean = try {

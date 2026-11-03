@@ -1,3 +1,7 @@
+## v1.2.50 - minSdk device-compatibility gate
+
+Releases now declare minSdk and the store checks it against the device before offering a download or update, like the Play Store. Incompatible updates are blocked from the download queue with an explanatory failure; installed apps whose latest release is incompatible show a static notice that no security updates or any further updates possible due to Android limit. A release without a minSdk declaration is treated as unknown and behaves as before; nothing is hidden without data. No new permissions, endpoints, or telemetry.
+
 ## v1.2.49 - Human Safety pin advance to v1.5.8
 
 The exact-release gate for Human Safety advances from v1.5.7 to the published v1.5.8 (versionCode 84; size 4455670 and SHA-256 verified against the live release asset). The gate stays fail-closed: every installer byte check, the verified cache and the hide-on-unverified rule are unchanged. No new permissions, endpoints, or telemetry.

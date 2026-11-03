@@ -83,7 +83,8 @@ object Net {
                         apkSha != null && apkSize > 0L -> LatestRelease(
                             tag = tag, versionName = tag.removePrefix("v"), versionCode = 0L, notes = "",
                             apkUrl = "https://github.com/${app.repo}/releases/download/$tag/app-release.apk",
-                            sha256 = apkSha, size = apkSize, publishedAtMillis = releaseTimeMillis(o.optString("published_at"))
+                            sha256 = apkSha, size = apkSize, publishedAtMillis = releaseTimeMillis(o.optString("published_at")),
+                            minSdk = parseBodyMinSdk(o.optString("body"))
                         )
                         else -> null
                     }
@@ -94,6 +95,10 @@ object Net {
         }
         return fromApi ?: textLoader(app.latestJsonUrl, true)?.let { parseLatest(it, app.repo) }
     }
+
+    /** minSdk from a release body line "minSdk: N" (Battery releases carry no latest.json). */
+    fun parseBodyMinSdk(body: String): Int? =
+        Regex("(?m)^minSdk: ([0-9]+)\r?$").find(body)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it in 1..40 }
 
     fun parseCatalog(json: String): List<CatalogApp> = try {
         val arr = JSONObject(json).getJSONArray("projects")
@@ -123,6 +128,7 @@ object Net {
         val sha = o.getString("sha256").lowercase()
         val size = o.getLong("size")
         val code = o.getLong("versionCode")
+        val minSdk = if (o.has("minSdk")) o.getInt("minSdk").takeIf { it in 1..40 } else null
         if (!isValidTag(tag) || !isValidSha256(sha) || size <= 0L || code <= 0L) null else LatestRelease(
             tag = tag,
             versionName = o.optString("versionName", tag.removePrefix("v")),
@@ -131,7 +137,8 @@ object Net {
             apkUrl = "https://github.com/$repo/releases/download/$tag/app-release.apk",
             sha256 = sha,
             size = size,
-            publishedAtMillis = releaseTimeMillis(o.optString("published_at"))
+            publishedAtMillis = releaseTimeMillis(o.optString("published_at")),
+            minSdk = minSdk
         )
     } catch (e: Exception) {
         null

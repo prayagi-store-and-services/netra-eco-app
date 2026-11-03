@@ -91,6 +91,12 @@ object DownloadCenter {
             (app.repo == HumanSafetyHold.REPO && app.packageName == HumanSafetyHold.PACKAGE && HumanSafetyHold.allowed(release))
 
     fun start(context: Context, app: CatalogApp, release: LatestRelease) {
+        val minSdk = release.minSdk
+        if (minSdk != null && android.os.Build.VERSION.SDK_INT < minSdk) {
+            put(Item(keyFor(app, release), app.id, app.name, release.versionName, release.versionCode,
+                app.packageName, 0L, release.size, null, FAILED, "This version needs Android " + minSdk + " or newer."))
+            return
+        }
         if (!allowedForDownload(app, release)) {
             put(Item(keyFor(app, release), app.id, app.name, release.versionName, release.versionCode,
                 app.packageName, 0L, release.size, null, FAILED, HumanSafetyHold.MESSAGE))

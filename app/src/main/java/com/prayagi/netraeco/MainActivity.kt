@@ -437,6 +437,8 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
     var message by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf<String?>(null) }
     val status = statusForRelease(row.installed?.first, row.installed?.second, row.latest)
+    val latestMinSdk = row.latest?.minSdk
+    val latestIncompatible = latestMinSdk != null && android.os.Build.VERSION.SDK_INT < latestMinSdk
 
     Card(
         Modifier.fillMaxWidth(),
@@ -454,6 +456,11 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
                     Text(AppCategories.classify(row.app.name, row.app.type, row.app.summary, row.app.categories).joinToString(" · ") { it.label }, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
                 StatusPill(status)
+            }
+            if (row.installed != null && latestIncompatible) {
+                Spacer(Modifier.height(6.dp))
+                Text("No security updates or any further updates possible due to Android limit.",
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.height(10.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
@@ -503,7 +510,9 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
             }
             Spacer(Modifier.height(10.dp))
             when (status) {
-                Status.NotInstalled, Status.UpdateAvailable -> AppDownloadButton(row, status, actionScope = scope, installActions = installActions)
+                Status.NotInstalled, Status.UpdateAvailable ->
+                    if (latestIncompatible) Text("Requires Android " + latestMinSdk + " or newer - this device cannot install or update to it.", style = MaterialTheme.typography.bodySmall)
+                    else AppDownloadButton(row, status, actionScope = scope, installActions = installActions)
                 Status.InstalledNewer -> Text("Installed version is newer than the published one", style = MaterialTheme.typography.bodySmall)
                 Status.Unavailable -> Text("Latest version Unavailable right now", style = MaterialTheme.typography.bodySmall)
                 Status.UpToDate -> {}

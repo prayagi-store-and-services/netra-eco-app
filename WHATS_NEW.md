@@ -1,3 +1,9 @@
+## 1.2.50 - Device compatibility check
+
+- Each release now states the minimum Android version it needs (minSdk). Before a download or update, Eco checks it against your device like the Play Store: an incompatible release is not offered, and the card says which Android version it needs.
+- If you already have an app installed and its latest version no longer supports your Android version, the card shows a short static line: no security updates or any further updates possible due to Android limit.
+- Releases that do not state a minimum version behave as before (nothing is hidden without data).
+
 ## 1.2.49 - Human Safety v1.5.8
 
 - Human Safety v1.5.8 is the checked release: update notices there are timely (checks about every 6 hours and at launch) and its update card shows only when a newer version exists.
