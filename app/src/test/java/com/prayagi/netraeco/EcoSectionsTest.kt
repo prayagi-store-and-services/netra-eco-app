@@ -85,12 +85,14 @@ class EcoSectionsTest {
         shot("future-network-unavailable")
     }
     @Test fun recoveredPublishedFutureAppsRender() {
+        rule.mainClock.autoAdvance = false
         val catalog = javaClass.classLoader!!.getResource("recovery/projects.json")!!.readText()
         val roadmap = javaClass.classLoader!!.getResource("recovery/roadmap.json")!!.readText()
         rule.setContent {
             EcoScreen(0, catalogLoader = { emptyList() }, textLoader = { if (it == Net.CATALOG_URL) catalog else roadmap })
         }
         rule.onNodeWithText("Future").performClick()
+        rule.mainClock.advanceTimeBy(1000)
         rule.onNodeWithTag("future-list").performScrollToKey("up-netra-neg")
         rule.onNodeWithText("Netra Neg").assertIsDisplayed()
         shot("future-recovered-neg")
