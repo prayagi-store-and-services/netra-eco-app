@@ -70,7 +70,7 @@ data class RoadmapItem(
 )
 
 object Roadmap {
-    const val URL = "https://prayagi-store-and-services.github.io/netra-eco/roadmap.json"
+    const val URL = "https://raw.githubusercontent.com/prayagi-store-and-services/netra-eco/main/roadmap.json"
 
     fun parse(json: String): List<RoadmapItem> = try {
         val root = JSONObject(json)

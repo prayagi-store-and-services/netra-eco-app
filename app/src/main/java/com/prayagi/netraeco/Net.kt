@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object Net {
-    const val CATALOG_URL = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
+    const val CATALOG_URL = "https://raw.githubusercontent.com/prayagi-store-and-services/netra-eco/main/projects.json"
 
     private fun open(url: String, fresh: Boolean = false): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
@@ -28,8 +28,8 @@ object Net {
         return c
     }
 
-    const val CATALOG_FALLBACK = "https://raw.githubusercontent.com/prayagi-store-and-services/netra-eco/main/projects.json"
-    const val ROADMAP_FALLBACK = "https://raw.githubusercontent.com/prayagi-store-and-services/netra-eco/main/roadmap.json"
+    const val CATALOG_FALLBACK = "https://prayagi-store-and-services.github.io/netra-eco/projects.json"
+    const val ROADMAP_FALLBACK = "https://prayagi-store-and-services.github.io/netra-eco/roadmap.json"
 
     /** Only these two public, same-owner data files have a fallback. APK/update trust is unchanged. */
     internal fun publicDataFallback(url: String): String? = when (url) {
@@ -52,7 +52,7 @@ object Net {
         return valid(loader(url)) ?: publicDataFallback(url)?.let { valid(loader(it)) }
     }
 
-    /** Small text download. Failed public Pages data can use the same repository's raw JSON. */
+    /** Small text download. Public data comes directly from GitHub raw; direct GitHub Pages is the fallback. */
     fun fetchText(url: String, fresh: Boolean = false): String? =
         fetchWithFallback(url) { fetchOne(it, fresh) }
 

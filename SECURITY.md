@@ -230,8 +230,8 @@ Test-environment adapters (not shipped): ShadowApkDataSource feeds exact pread b
 
 ## 3 November 2026 - v1.2.51 public-data availability fix
 
-Catalog and roadmap reads can fall back from the existing GitHub Pages URLs to the exact
-same public JSON files in the Netra Eco repository on raw.githubusercontent.com. No arbitrary
+Catalog and roadmap reads use the exact public JSON files in the Netra Eco repository on
+raw.githubusercontent.com first, with direct GitHub Pages URLs as backup. Custom-domain DNS is not required. No arbitrary
 host fallback, APK source change, new permission or personal data collection. Invalid HTML/data
 is rejected before fallback. Text reads are capped while streaming at 1 MiB and connections close.
 This is an availability fix, not a vulnerability patch. Future-data network failure no longer
