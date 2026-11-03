@@ -227,3 +227,12 @@ No new permission, dependency, endpoint, server, account or personal-data collec
 PR82 review hardening: InstallerGate is mandatory inside Net.install, covering card, download manager and notification entry points. Expected download metadata is stored in private preferences only after the existing trusted resolver/download flow. Size + SHA256 + archive package/version + approved signing certificate are rechecked, invalid files deleted, unknown/legacy files rejected. Human Safety v1.5.2 exact bytes remain pinned. Signing fingerprints independently checked against public signed release APKs: BSPN v2.2.22, KBC v1.1.39, Hub v1.5.2, Privacy v1.4.27, Player v1.1.16.8 and Eco v1.2.46 share 543b46402206ae0022d352f65bea618386bd7aa681b4d5bcfb5ce02bac49c8c4; Trikaal v1.0.20 uses 38bad1b7117f9cd94f8de94e2c9050861b6c7b482ce4241bfb9b4bf3c89fb8d8. Charge has no approved entry in this candidate. A new identity needs independent verification before enabling installs. No claim of Play policy compliance: Eco's existing APK self-update path remains a distribution architecture issue. No measured ultra-low-power guarantee; LiveCountdown now cancels its one-second loop outside STARTED, but this is not a full power audit.
 
 Test-environment adapters (not shipped): ShadowApkDataSource feeds exact pread bytes into Android's real APK DataDigester to avoid OpenJDK's incompatible DirectByteBuffer constructor. ShadowArchiveSigningInfo reads the real archive parser's SigningDetails rather than Robolectric's unset signature array. Archive controls retain signature verification and explicit package/version/certificate dimension assertions. Production InstallerGate is unchanged.
+
+## 3 November 2026 - v1.2.51 public-data availability fix
+
+Catalog and roadmap reads can fall back from the existing GitHub Pages URLs to the exact
+same public JSON files in the Netra Eco repository on raw.githubusercontent.com. No arbitrary
+host fallback, APK source change, new permission or personal data collection. Invalid HTML/data
+is rejected before fallback. Text reads are capped while streaming at 1 MiB and connections close.
+This is an availability fix, not a vulnerability patch. Future-data network failure no longer
+claims there are no planned apps. Physical-phone confirmation remains pending.

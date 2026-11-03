@@ -257,6 +257,7 @@ fun EcoScreen(
     var reload by remember { mutableIntStateOf(0) }
     var roadmap by remember { mutableStateOf<List<RoadmapItem>?>(null) }
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
+    var upcomingUnavailable by remember { mutableStateOf(false) }
     var futureSelected by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) futureSelected = false }
     var currentQuery by rememberSaveable { mutableStateOf("") }
@@ -271,7 +272,9 @@ fun EcoScreen(
     val futureListState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     LaunchedEffect(resumeKey, reload) {
-        upcoming = withContext(Dispatchers.IO) { textLoader(Net.CATALOG_URL)?.let { Upcoming.parse(it) } ?: emptyList() }
+        val futureJson = withContext(Dispatchers.IO) { textLoader(Net.CATALOG_URL) }
+        upcomingUnavailable = futureJson == null
+        upcoming = futureJson?.let { Upcoming.parse(it) } ?: emptyList()
         roadmap = withContext(Dispatchers.IO) { textLoader(Roadmap.URL)?.let { Roadmap.parse(it) } }
         loading = true
         val result = catalogLoader(context)
@@ -395,7 +398,7 @@ fun EcoScreen(
                 item(key = "trikaal") { TrikaalCard() }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
-                if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text("No planned apps are listed right now.") }
+                if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text(if (upcomingUnavailable) "Planned apps could not be loaded. Check your connection and retry." else "No planned apps are listed right now.") }
                 items(mergedEcoEntries(sectionRows, sectionUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                     when (e) {
                         is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
