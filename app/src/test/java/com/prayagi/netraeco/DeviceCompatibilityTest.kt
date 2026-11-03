@@ -29,12 +29,7 @@ class DeviceCompatibilityTest {
         assertNull(Net.parseLatest(json, "o/r")?.minSdk)
     }
     @Test fun bodyMinSdkParsed() {
-        assertEquals(24, Net.parseBodyMinSdk("versionCode: 109
-minSdk: 24
-
-notes"))
-        assertNull(Net.parseBodyMinSdk("versionCode: 109
-
-notes"))
+        assertEquals(24, Net.parseBodyMinSdk("versionCode: 109\nminSdk: 24\n\nnotes"))
+        assertNull(Net.parseBodyMinSdk("versionCode: 109\n\nnotes"))
     }
 }
