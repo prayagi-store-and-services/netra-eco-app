@@ -5,18 +5,18 @@ import java.security.MessageDigest
 import java.time.Instant
 import org.json.JSONObject
 
-/** Only this audited Human Safety release may pass. Other/older Hub bytes remain blocked. */
+/** Only this audited Human Safety release may pass. Other/older Hub bytes remain blocked. The last verified release is cached so a transient network or rate-limit failure never flips the store card; with no verified cache the app stays hidden from the list instead of showing an Unavailable card. */
 object HumanSafetyHold {
     const val REPO = "prayagi-store-and-services/netra-hub"
     const val PACKAGE = "com.aistudio.netrasensorhub.kxmpzq"
-    const val TAG = "v1.5.2"
-    const val VERSION = "1.5.2"
-    const val CODE = 78L
-    const val SIZE = 4439086L
-    const val SHA = "0f07aa1681888893b4e27ad194783d0ab41afc0d05787de14cd0f189e85f4245"
-    const val URL = "https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.2/app-release.apk"
-    const val MESSAGE = "Only the checked Human Safety v1.5.2 file is allowed. Older or unverified installers stay paused."
-    const val ADVISORY = "Human Safety v1.5.2 only. Owner reported heating/battery resolved on the tested build; no measured battery or thermal guarantee. Updates are handled through Netra Ecosystem only."
+    const val TAG = "v1.5.7"
+    const val VERSION = "1.5.7"
+    const val CODE = 83L
+    const val SIZE = 4455670L
+    const val SHA = "d071396fde628eb2b2900d3d437c7f85fc49e9d73657e09767bd874afd4c2de4"
+    const val URL = "https://github.com/prayagi-store-and-services/netra-hub/releases/download/v1.5.7/app-release.apk"
+    const val MESSAGE = "Only the checked Human Safety v1.5.7 file is allowed. Older or unverified installers stay paused."
+    const val ADVISORY = "Human Safety v1.5.7 only. Owner reported heating/battery resolved on the tested build; no measured battery or thermal guarantee. Updates are handled through Netra Ecosystem only."
     fun matches(repo: String = "", packageName: String = ""): Boolean = repo == REPO || packageName == PACKAGE
     fun installerName(name: String): Boolean = name.startsWith("netra-hub-v") && name.endsWith(".apk")
     fun allowed(release: LatestRelease?): Boolean = release != null && release.tag == TAG &&
@@ -25,6 +25,18 @@ object HumanSafetyHold {
     fun requireAllowed(repo: String = "", packageName: String = "", release: LatestRelease? = null) {
         check(!matches(repo, packageName) || (repo == REPO && packageName == PACKAGE && allowed(release))) { MESSAGE }
     }
+    private const val PREFS = "human_safety_hold_verified"
+
+    /** Persists the raw release payload after it fully verifies; the store uses it when a live fetch fails. */
+    fun saveVerified(context: android.content.Context, raw: String) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putString("raw", raw).apply()
+    }
+
+    /** The last verified release from cache, or null when nothing verified is stored. */
+    fun loadVerified(context: android.content.Context): LatestRelease? =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getString("raw", null)
+            ?.let { parseRelease(it) }
+
     fun parseRelease(raw: String): LatestRelease? = try {
         val x = JSONObject(raw)
         if (x.getString("tag_name") != TAG || x.getBoolean("draft") || x.getBoolean("prerelease")) null

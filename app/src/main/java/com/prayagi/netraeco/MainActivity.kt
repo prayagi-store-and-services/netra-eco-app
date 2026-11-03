@@ -193,7 +193,7 @@ private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Disp
         // The catalog may list Netra Ecosystem itself; this phone's own entry comes from selfApp only.
         (listOf(self) + apps.filter { it.id != self.id && it.packageName != self.packageName }).map { app ->
             async {
-                AppRow(app, Net.installed(context, app.packageName), Net.fetchLatest(app))
+                AppRow(app, Net.installed(context, app.packageName), Net.fetchLatest(app, context = context))
             }
         }.awaitAll()
     }
@@ -290,7 +290,6 @@ fun EcoScreen(
         EcoHeader(ecoName, ownVersion, clockNow)
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
-        TickerStrip(pendingRoadmap)
         // Deepak (16 Oct): "Request a new app" sits next to the header. The header itself stays standard (name, version, date/time only), so this slim row lives directly under it.
         RequestAppEntry()
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -428,6 +427,8 @@ private fun StatusPill(status: Status) {
 
 @Composable
 fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlinx.coroutines.CoroutineScope? = null, installActions: EcoInstallActions? = null, onChanged: () -> Unit) {
+    // Owner rule (3 Nov): an app whose release cannot be verified is hidden from the list, never shown as Unavailable.
+    if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) return
     val context = LocalContext.current
     val localScope = rememberCoroutineScope()
     val scope = actionScope ?: localScope
@@ -457,12 +458,6 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
             AppCommunityLinks(row.app.id)
             Spacer(Modifier.height(10.dp))
-            if (HumanSafetyHold.matches(row.app.repo, row.app.packageName) && !HumanSafetyHold.allowed(row.latest)) {
-                Text("Human Safety release unavailable", style = MaterialTheme.typography.titleMedium)
-                Text(HumanSafetyHold.MESSAGE, color = MaterialTheme.colorScheme.error)
-                Button(enabled = false, onClick = {}) { Text("Download and update paused") }
-                return@Column
-            }
             PreviewBlock(row.app.id)
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

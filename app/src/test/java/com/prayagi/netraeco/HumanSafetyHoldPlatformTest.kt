@@ -21,13 +21,13 @@ class HumanSafetyHoldPlatformTest {
     @Test fun exactTagLookupOfflineCannotFallBack() {
         val urls = mutableListOf<String>()
         assertNull(Net.fetchLatest(app()) { url, fresh -> assertTrue(fresh); urls += url; null })
-        assertEquals(listOf("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/v1.5.2"), urls)
+        assertEquals(listOf("https://api.github.com/repos/${HumanSafetyHold.REPO}/releases/tags/v1.5.7"), urls)
     }
     @Test fun malformedExactTagCannotFallBack() {
         val urls = mutableListOf<String>()
         assertNull(Net.fetchLatest(app()) { url, _ -> urls += url; "{}" })
         assertEquals(1, urls.size)
-        assertTrue(urls.single().endsWith("/tags/v1.5.2"))
+        assertTrue(urls.single().endsWith("/tags/v1.5.7"))
     }
     @Test fun hubDownloadFailsBeforeNetwork() {
         try { Net.download(context, app(), release()); fail("quarantine") }
@@ -70,5 +70,34 @@ class HumanSafetyHoldPlatformTest {
         // Robolectric denies unknown-source install by default; reaching that check proves hold did not block KBC.
         try { kotlinx.coroutines.runBlocking { Net.install(context, apk) } }
         catch (e: IllegalStateException) { assertTrue(e.message!!.contains("could not be verified")) }
+    }
+
+    private fun verifiedRaw(): String {
+        val a = org.json.JSONObject()
+        a.put("tag_name", HumanSafetyHold.TAG); a.put("draft", false); a.put("prerelease", false)
+        a.put("published_at", "2026-11-02T15:13:02Z")
+        val asset = org.json.JSONObject()
+        asset.put("name", "app-release.apk"); asset.put("state", "uploaded")
+        asset.put("size", HumanSafetyHold.SIZE); asset.put("digest", "sha256:" + HumanSafetyHold.SHA)
+        asset.put("browser_download_url", HumanSafetyHold.URL)
+        a.put("assets", org.json.JSONArray().put(asset))
+        return a.toString()
+    }
+    @Test fun transientFetchFailureUsesLastVerifiedCache() {
+        HumanSafetyHold.saveVerified(context, verifiedRaw())
+        val urls = mutableListOf<String>()
+        val r = Net.fetchLatest(app(), { url, _ -> urls += url; null }, context)
+        assertEquals(HumanSafetyHold.TAG, r?.tag)
+        assertEquals(HumanSafetyHold.SHA, r?.sha256)
+        assertEquals(1, urls.size)
+    }
+    @Test fun successfulFetchRefreshesCache() {
+        val r = Net.fetchLatest(app(), { _, _ -> verifiedRaw() }, context)
+        assertEquals(HumanSafetyHold.TAG, r?.tag)
+        assertEquals(HumanSafetyHold.TAG, HumanSafetyHold.loadVerified(context)?.tag)
+    }
+    @Test fun noCacheNoNetworkStillNull() {
+        context.getSharedPreferences("human_safety_hold_verified", 0).edit().clear().commit()
+        assertNull(Net.fetchLatest(app(), { _, _ -> null }, context))
     }
 }
