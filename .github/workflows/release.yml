@@ -116,8 +116,10 @@ jobs:
           cp "$D/app-release.apk" "$NAMED"
           SHA="$(sha256sum "$D/app-release.apk" | cut -d' ' -f1)"
           SIZE="$(stat -c %s "$D/app-release.apk")"
-          jq -n --arg tag "$TAG" --arg vn "$VNAME" --argjson vc "$VCODE" --arg sha "$SHA" --argjson size "$SIZE" --arg notes "$NOTES" \
-            '{tag:$tag,versionName:$vn,versionCode:$vc,sha256:$sha,size:$size,notes:$notes}' > "$D/latest.json"
+          MSDK="$(sed -n 's/^ *minSdk = \([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)"
+          test -n "$MSDK"
+          jq -n --arg tag "$TAG" --arg vn "$VNAME" --argjson vc "$VCODE" --arg sha "$SHA" --argjson size "$SIZE" --arg notes "$NOTES" --argjson msdk "$MSDK" \
+            '{tag:$tag,versionName:$vn,versionCode:$vc,minSdk:$msdk,sha256:$sha,size:$size,notes:$notes}' > "$D/latest.json"
           gh release create "$TAG" "$D/app-release.apk" "$NAMED" "$D/latest.json" --draft \
             --title "$TAG" --notes "$NOTES" --target "$GITHUB_SHA"
       - name: Upload signed APK and manifest for independent audit
