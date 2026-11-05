@@ -1,3 +1,9 @@
+# Upcoming store redesign (not released)
+
+- Compact app browsing and dedicated app details. Install for a known not-installed app; Installed + Update for a newer release; Open/Uninstall for current installed apps.
+- Unknown device state is not treated as not installed. Known Netra package IDs only; no new permission or all-app scan.
+- Updates list with real release size/date, per-item retry and Update all download queue. Android still confirms each install. Downloaded never means installed.
+- No invented ratings, reviews, download counts or data-safety claims. Privacy links come from the trusted catalog.
 ## 1.2.51 - Catalog and roadmap recovery
 
 - Future apps and the roadmap load directly from the Netra GitHub repository, with direct GitHub Pages as a backup. Custom-domain DNS is not required.

@@ -117,7 +117,7 @@ object Net {
                     when {
                         viaJson != null && viaJson.tag == tag -> viaJson.copy(publishedAtMillis = releaseTimeMillis(o.optString("published_at")))
                         apkSha != null && apkSize > 0L -> LatestRelease(
-                            tag = tag, versionName = tag.removePrefix("v"), versionCode = 0L, notes = "",
+                            tag = tag, versionName = tag.removePrefix("v"), versionCode = 0L, notes = o.optString("body"),
                             apkUrl = "https://github.com/${app.repo}/releases/download/$tag/app-release.apk",
                             sha256 = apkSha, size = apkSize, publishedAtMillis = releaseTimeMillis(o.optString("published_at")),
                             minSdk = parseBodyMinSdk(o.optString("body"))
@@ -140,7 +140,7 @@ object Net {
         val arr = JSONObject(json).getJSONArray("projects")
         (0 until arr.length()).mapNotNull { i ->
             val o = arr.getJSONObject(i)
-            val repo = o.optString("repo")
+            val repo = o.optString("repo").ifBlank { if (o.optString("id") == "netra-charge" && o.optString("package") == "com.netracharge.app") "prayagi-store-and-services/netra-charge" else "" }
             val pkg = o.optString("package")
             if (!isTrustedRepo(repo) || pkg.isBlank()) null else CatalogApp(
                 id = o.getString("id"),
@@ -151,6 +151,7 @@ object Net {
                 packageName = pkg,
                 latestJsonUrl = o.optString("latestJson").ifBlank { "https://github.com/$repo/releases/latest/download/latest.json" },
                 siteUrl = o.optString("site"),
+                privacyUrl = catalogPrivacyUrl(o.optString("privacy")),
                 categories = o.optJSONArray("categories")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
             )
         }

@@ -10,7 +10,8 @@ data class CatalogApp(
     val packageName: String,
     val latestJsonUrl: String,
     val siteUrl: String,
-    val categories: List<String> = emptyList()
+    val categories: List<String> = emptyList(),
+    val privacyUrl: String = ""
 )
 
 /** The newest release of an app, from its latest.json. */

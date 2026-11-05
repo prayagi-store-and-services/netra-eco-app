@@ -206,7 +206,7 @@ fun AppDownloadButton(row: AppRow, status: Status, actionScope: kotlinx.coroutin
             }) { Text(if (installing) "Checking installer..." else "Downloaded - tap to install") }
             else -> {
                 Button(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), onClick = { DownloadCenter.start(context, row.app, latest) }) {
-                    Text(if (status == Status.NotInstalled) "Download" else "Update")
+                    Text(if (status == Status.NotInstalled) "Install" else "Update")
                 }
                 if (item?.state == DownloadCenter.FAILED) { Spacer(Modifier.height(4.dp)); Text(item?.error ?: "Download failed.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             }

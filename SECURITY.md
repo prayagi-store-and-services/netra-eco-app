@@ -236,3 +236,7 @@ host fallback, APK source change, new permission or personal data collection. In
 is rejected before fallback. Text reads are capped while streaming at 1 MiB and connections close.
 This is an availability fix, not a vulnerability patch. Future-data network failure no longer
 claims there are no planned apps. Physical-phone confirmation remains pending.
+
+## Pending store redesign, 5 November 2026
+
+Known Netra package visibility adds Charge only; no new permissions or broad app inventory access. Failed or unknown package checks do not enable installation. The redesigned buttons and update queue retain existing APK size/hash/package/version/signature verification and Android confirmation. Queue completion is download completion, never proof of installation. Privacy links are restricted to catalog-supplied HTTPS policy paths on the existing trusted host. No rating or review collection backend is added.
