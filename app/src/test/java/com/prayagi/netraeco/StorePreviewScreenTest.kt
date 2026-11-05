@@ -37,4 +37,16 @@ class StorePreviewScreenTest {
         rule.onNodeWithTag("handoff-app").performScrollToNode(hasText("No verified ratings available. Reviews are not collected here yet."))
         rule.onNodeWithText("No verified ratings available. Reviews are not collected here yet.").assertExists()
     }
+    @Test fun optionalSettingsDefaultOffAndExplicitTogglePersists() {
+        val c=rule.activity
+        c.getSharedPreferences("conditional_updates",0).edit().clear().commit()
+        rule.setContent { MaterialTheme { androidx.compose.foundation.layout.Column { ConditionalUpdateSetting() } } }
+        rule.onNodeWithText("Off by default").assertIsDisplayed()
+        rule.onNode(isToggleable()).assertIsOff()
+        shot("optional-settings-off")
+        rule.onNode(isToggleable()).performClick().assertIsOn()
+        org.junit.Assert.assertTrue(ConditionalUpdates.enabled(c))
+        rule.onNode(isToggleable()).performClick().assertIsOff()
+        org.junit.Assert.assertFalse(ConditionalUpdates.enabled(c))
+    }
 }
