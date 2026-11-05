@@ -331,7 +331,6 @@ fun EcoScreen(
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
         TickerStrip(pendingRoadmap)
         // Deepak (16 Oct): "Request a new app" sits next to the header. The header itself stays standard (name, version, date/time only), so this slim row lives directly under it.
-        RequestAppEntry()
         Column(Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (failed && rows == null) {
                 Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.", color = MaterialTheme.colorScheme.error)
@@ -376,6 +375,7 @@ fun EcoScreen(
             LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item(key = "section-controls") {
                     Column {
+            RequestAppEntry()
             Text(if (futureSelected) "Planned apps. Not released; no download or install. Dates are estimates, not promises." else "Released apps. Download availability is checked for each app.", style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(8.dp))
             if (rows != null) {
