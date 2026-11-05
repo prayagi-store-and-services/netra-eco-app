@@ -449,13 +449,13 @@ fun EcoScreen(
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
-                item(key = "social-footer") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                 if (!futureSelected) {
                 item(key = "timespeak") { TimeSpeakCard() }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
                 }
+                item(key = "social-footer") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
             }
             }
         }
