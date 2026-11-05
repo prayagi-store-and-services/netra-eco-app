@@ -243,7 +243,7 @@ fun NetraTheme(content: @Composable () -> Unit) {
 fun EcoScreen(
     resumeKey: Int,
     catalogLoader: suspend (Context) -> List<AppRow>? = { loadRows(it) },
-    textLoader: (String) -> String? = { Net.fetchText(it) },
+    textLoader: (String) -> String? = { Net.fetchText(it, fresh = it == SocialPosts.URL) },
     selfChecker: suspend (Context) -> Pair<String, LatestRelease?> = { checkSelfUpdate(it) },
     requestedAppId: String? = null,
     onCloseApp: () -> Unit = {},

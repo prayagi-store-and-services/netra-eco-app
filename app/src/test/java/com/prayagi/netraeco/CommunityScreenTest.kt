@@ -59,6 +59,11 @@ class CommunityScreenTest {
         shot("feedback-large")
         assertEquals(7, opened.size)
     }
+    @Test fun realCountBadgeIsAccessibleAndVisibleAfterSwipe() {
+        rule.setContent { androidx.compose.material3.MaterialTheme { SocialLogoRow(counts = mapOf("telegram" to 2)) } }
+        rule.onNodeWithContentDescription("Telegram: 2 posts today").performScrollTo().assertIsDisplayed()
+        shot("today-badge")
+    }
     @Test fun unavailableBrowserShowsHonestFailure() {
         rule.setContent { androidx.compose.material3.MaterialTheme { AppCommunityLinks("netra-player") { error("No browser") } } }
         rule.onNodeWithText("Open this app's website").performClick()
