@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -56,6 +57,7 @@ fun SocialLogoRow(open: ((String) -> Unit)? = null) {
             CommunityLinks.social.forEachIndexed { index, link ->
                 FilledTonalIconButton(
                     modifier = Modifier.size(58.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = Color.White),
                     onClick = {
                         failed = false
                         try {
@@ -64,7 +66,7 @@ fun SocialLogoRow(open: ((String) -> Unit)? = null) {
                     }
                 ) {
                     Icon(painterResource(socialLogoResources[index]), contentDescription = link.label,
-                        modifier = Modifier.size(28.dp))
+                        modifier = Modifier.size(28.dp), tint = Color.Unspecified)
                 }
             }
             Spacer(Modifier.width(4.dp))
