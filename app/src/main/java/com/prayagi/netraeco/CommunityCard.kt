@@ -45,12 +45,12 @@ private val socialLogoResources = listOf(
 )
 
 @Composable
-fun SocialLogoRow(open: ((String) -> Unit)? = null) {
+fun SocialLogoRow(open: ((String) -> Unit)? = null, counts: Map<String, Int> = emptyMap(), modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var failed by remember { mutableStateOf(false) }
     Column {
         Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("social-logo-row"),
+            modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("social-logo-row"),
             horizontalArrangement = Arrangement.spacedBy(40.dp)
         ) {
             Spacer(Modifier.width(4.dp))
@@ -65,8 +65,11 @@ fun SocialLogoRow(open: ((String) -> Unit)? = null) {
                         } catch (_: Exception) { failed = true }
                     }
                 ) {
-                    Icon(painterResource(socialLogoResources[index]), contentDescription = link.label,
-                        modifier = Modifier.size(28.dp), tint = Color.Unspecified)
+                    val count = counts[link.label.lowercase()] ?: 0
+                    BadgedBox(badge = { if (count > 0) Badge { Text(if (count > 99) "99+" else count.toString()) } }) {
+                        Icon(painterResource(socialLogoResources[index]), contentDescription = if (count > 0) "${link.label}: $count posts today" else link.label,
+                            modifier = Modifier.size(28.dp), tint = Color.Unspecified)
+                    }
                 }
             }
             Spacer(Modifier.width(4.dp))

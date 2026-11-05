@@ -72,7 +72,8 @@ class CommunityScreenTest {
             }
         }
         rule.onNodeWithTag("current-list").performScrollToKey("community")
-        rule.onNodeWithTag("social-logo-row").assertIsDisplayed()
+        rule.onNodeWithTag("social-header").assertIsDisplayed()
+        rule.onNodeWithTag("social-footer").assertIsDisplayed()
         shot("current-integration")
     }
     @Test fun unknownAppShowsNoInventedLinks() {

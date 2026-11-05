@@ -249,6 +249,14 @@ fun EcoScreen(
     currentRequestKey: Int = 0
 ) {
     val context = LocalContext.current
+    var socialCountsDay by remember { mutableStateOf(SocialPosts.day(java.time.Instant.now())) }
+    var socialCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    LaunchedEffect(resumeKey) {
+        socialCounts = emptyMap()
+        val raw = withContext(Dispatchers.IO) { textLoader(SocialPosts.URL) }
+        socialCountsDay = SocialPosts.day(java.time.Instant.now())
+        socialCounts = SocialPosts.parse(raw, java.time.Instant.now())
+    }
     // Keeps an explicit update check or installer verification alive across section changes.
     val screenScope = rememberCoroutineScope()
     val installActions = remember { EcoInstallActions() }
@@ -292,19 +300,21 @@ fun EcoScreen(
 
     androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        // Standard header (all Netra apps): 56 dp content height, only app name, version and date/time. Nothing else lives here.
+        // Standard name/version/date header, with the separately approved social row directly below.
         var clockNow by remember { mutableStateOf(java.util.Date()) }
         LaunchedEffect(Unit) { while (true) { clockNow = java.util.Date(); delay(30_000) } }
         var ecoName by remember { mutableStateOf(NameGate.displayName(context)) }
         LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         EcoHeader(ecoName, ownVersion, clockNow)
+        val todayCounts = if (SocialPosts.day(clockNow.toInstant()) == socialCountsDay) socialCounts else emptyMap()
+        SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-header"))
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
         TickerStrip(pendingRoadmap)
         // Deepak (16 Oct): "Request a new app" sits next to the header. The header itself stays standard (name, version, date/time only), so this slim row lives directly under it.
         RequestAppEntry()
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Column(Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (failed && rows == null) {
                 Text("Unavailable: could not load the app list. Check your internet connection and tap Check again.", color = MaterialTheme.colorScheme.error)
             }
@@ -407,7 +417,7 @@ fun EcoScreen(
                     }
                 }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList(), actionScope = screenScope, installActions = installActions) }
-                item(key = "community") { CommunityCard() }
+                item(key = "community") { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { AppCommunityLinks("netra-eco") } } }
                 item(key = "trikaal") { TrikaalCard() }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
@@ -427,6 +437,7 @@ fun EcoScreen(
             }
             }
         }
+        SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer"))
     }
 }
 }
