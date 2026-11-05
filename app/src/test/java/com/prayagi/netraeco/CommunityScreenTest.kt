@@ -34,7 +34,7 @@ class CommunityScreenTest {
         File("build/outputs/community-$name.png").apply { parentFile.mkdirs() }.outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         bitmap.recycle()
     }
-    @Test fun socialLinksOnlyOpenOnExplicitTapAndWrapAtLargeFont() {
+    @Test fun socialLinksOnlyOpenOnExplicitTapAndSwipeAtLargeFont() {
         val opened = mutableListOf<String>()
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
@@ -45,9 +45,12 @@ class CommunityScreenTest {
         }
         assertTrue(opened.isEmpty())
         shot("social-large")
+        rule.onAllNodesWithText("Connect with Netra Ecosystem").assertCountEquals(0)
+        CommunityLinks.social.forEach { rule.onAllNodesWithText(it.label).assertCountEquals(0) }
         CommunityLinks.social.forEach { link ->
-            rule.onNodeWithText(link.icon + "  " + link.label).performScrollTo().performClick()
+            rule.onNodeWithContentDescription(link.label).performScrollTo().performClick()
             assertEquals(link.url, opened.last())
+            if (link.label == "Telegram") shot("social-swiped")
         }
         rule.onNodeWithText("Rate this app or read reviews").performScrollTo().performClick()
         assertEquals(CommunityLinks.reviews("netra-eco"), opened.last())
@@ -55,6 +58,11 @@ class CommunityScreenTest {
         assertEquals(CommunityLinks.contact("netra-eco"), opened.last())
         shot("feedback-large")
         assertEquals(7, opened.size)
+    }
+    @Test fun realCountBadgeIsAccessibleAndVisibleAfterSwipe() {
+        rule.setContent { androidx.compose.material3.MaterialTheme { SocialLogoRow(counts = mapOf("telegram" to 2)) } }
+        rule.onNodeWithContentDescription("Telegram: 2 posts today").performScrollTo().assertIsDisplayed()
+        shot("today-badge")
     }
     @Test fun unavailableBrowserShowsHonestFailure() {
         rule.setContent { androidx.compose.material3.MaterialTheme { AppCommunityLinks("netra-player") { error("No browser") } } }
@@ -69,7 +77,9 @@ class CommunityScreenTest {
             }
         }
         rule.onNodeWithTag("current-list").performScrollToKey("community")
-        rule.onNodeWithText("Connect with Netra Ecosystem").assertIsDisplayed()
+        rule.onNodeWithTag("social-header").assertIsDisplayed()
+        rule.onNodeWithTag("current-list").performScrollToKey("social-footer")
+        rule.onNodeWithTag("social-footer").assertIsDisplayed()
         shot("current-integration")
     }
     @Test fun unknownAppShowsNoInventedLinks() {

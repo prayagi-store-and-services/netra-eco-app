@@ -4,11 +4,11 @@ package com.prayagi.netraeco
 object CommunityLinks {
     data class Link(val label: String, val icon: String, val url: String)
     val social = listOf(
-        Link("YouTube - subscribe", "▶", "https://www.youtube.com/@NetraEcosystem"),
-        Link("Instagram - follow", "◎", "https://www.instagram.com/netraecosystem/"),
-        Link("Facebook - follow", "f", "https://www.facebook.com/netraecosystem"),
-        Link("X - follow", "𝕏", "https://x.com/netraecosystem"),
-        Link("Telegram - join", "➤", "https://t.me/Netraecosystem")
+        Link("YouTube", "▶", "https://www.youtube.com/@NetraEcosystem"),
+        Link("Instagram", "◎", "https://www.instagram.com/netraecosystem/"),
+        Link("Facebook", "f", "https://www.facebook.com/netraecosystem"),
+        Link("X", "𝕏", "https://x.com/netraecosystem"),
+        Link("Telegram", "➤", "https://t.me/Netraecosystem")
     )
     private val sites = mapOf(
         "battery-sentinel" to "https://prayagi-store-and-services.github.io/-Battery-Sentinel-Pro-Netra/",

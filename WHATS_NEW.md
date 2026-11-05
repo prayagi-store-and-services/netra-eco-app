@@ -1,5 +1,7 @@
 # 1.3.0 - Store browse, app details and explicit updates
 
+- Original-colour social logos in swipeable header and footer rows. Today-only verified public post counts; no badge when data is unavailable, invalid, zero or from another IST day. No user tracking.
+
 - Compact app browsing and dedicated app details. Install for a known not-installed app; Installed + Update for a newer release; Open/Uninstall for current installed apps.
 - Unknown device state is not treated as not installed. Known Netra package IDs only; no new permission or all-app scan.
 - Updates list with real release size/date, per-item retry and Update all download queue. Android still confirms each install. Downloaded never means installed.
