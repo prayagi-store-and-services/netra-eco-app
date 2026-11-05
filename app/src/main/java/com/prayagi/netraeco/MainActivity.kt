@@ -360,6 +360,9 @@ fun EcoScreen(
                 )
                 Spacer(Modifier.height(8.dp))
             }
+                    }
+                }
+                item(key = "category-controls") {
             if (rows != null && !searching && usedCats.size > 1) {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (cat == null) Button(onClick = { setCat(null) }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { setCat(null) }) { Text("All", maxLines = 1) }
@@ -369,7 +372,6 @@ fun EcoScreen(
                 }
                 Spacer(Modifier.height(8.dp))
             }
-                    }
                 }
                 if (searching) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
