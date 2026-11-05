@@ -1,3 +1,9 @@
+# 1.3.1 - Remove embedded Trikaal home card
+
+- Removed the embedded NETRA TRIKAAL chart-calculation card from Eco home.
+- Trikaal stays available as a normal store entry with its app detail page. Its standalone app and saved data are unchanged.
+- No new permission, telemetry, remote install, or silent-update feature.
+
 # 1.3.0 - Store browse, app details and explicit updates
 
 - Original-colour social logos in swipeable header and footer rows. Today-only verified public post counts; no badge when data is unavailable, invalid, zero or from another IST day. No user tracking.

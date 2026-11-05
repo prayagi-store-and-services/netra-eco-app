@@ -226,6 +226,26 @@ class EcoSectionsTest {
         rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithText("Search apps").assertIsDisplayed()
     }
+    @Test fun embeddedTrikaalCardRemovedButStoreEntryAndDetailRemain() {
+        val trikaal = CatalogApp("trikaal", "Netra Trikaal", "Utility", "Vedic astrology app", "prayagi-store-and-services/netra-trikaal", "com.prayagi.netratrikaal", "", "")
+        rule.setContent {
+            androidx.compose.material3.MaterialTheme {
+                EcoScreen(0, catalogLoader = { listOf(AppRow(trikaal, null, null)) }, textLoader = { null }, selfChecker = { "Fixture checked" to null })
+            }
+        }
+        rule.onNodeWithText("Search apps").assertExists()
+        rule.onNodeWithTag("current-list").performScrollToKey("festival")
+        rule.onAllNodesWithText("NETRA TRIKAAL").assertCountEquals(0)
+        rule.onAllNodesWithText("Vedic chart calculations • Lahiri • local profiles").assertCountEquals(0)
+        rule.onAllNodesWithText("Open Trikaal / त्रिकाल खोलें").assertCountEquals(0)
+        shot("removed-embedded-trikaal")
+        rule.onNodeWithTag("current-list").performScrollToKey("l-trikaal")
+        rule.onNodeWithText("Netra Trikaal", substring = false).assertIsDisplayed()
+        rule.onNodeWithText("App details").performClick()
+        rule.onNodeWithText("Back to all apps").assertIsDisplayed()
+        rule.onNodeWithText("Netra Trikaal", substring = false).assertExists()
+        shot("trikaal-store-detail-kept")
+    }
     @Test fun currentUpdateAndTickerLargeLight() {
         show()
         rule.onAllNodesWithText("Check for update").assertCountEquals(0)
