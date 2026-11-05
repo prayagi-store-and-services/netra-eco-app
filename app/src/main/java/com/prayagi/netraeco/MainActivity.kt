@@ -373,9 +373,9 @@ fun EcoScreen(
                 LazyColumn(Modifier.weight(1f)) { item { StoreUpdatesPanel(rows ?: emptyList(), screenScope, installActions) }; item { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) } }
             } else {
             LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                item(key = "request-entry") { RequestAppEntry() }
                 item(key = "section-controls") {
                     Column {
-            RequestAppEntry()
             Text(if (futureSelected) "Planned apps. Not released; no download or install. Dates are estimates, not promises." else "Released apps. Download availability is checked for each app.", style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(8.dp))
             if (rows != null) {
