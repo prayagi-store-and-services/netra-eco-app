@@ -1,4 +1,4 @@
-# Upcoming store redesign (not released)
+# 1.3.0 - Store browse, app details and explicit updates
 
 - Compact app browsing and dedicated app details. Install for a known not-installed app; Installed + Update for a newer release; Open/Uninstall for current installed apps.
 - Unknown device state is not treated as not installed. Known Netra package IDs only; no new permission or all-app scan.
