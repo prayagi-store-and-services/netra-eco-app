@@ -487,23 +487,6 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
             Text("About this app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
-            AppCommunityLinks(row.app.id)
-            PreviewBlock(row.app.id)
-            // Next planned release for this app, from the roadmap. Live countdown, approximate, may come earlier or later.
-            val nextPlan = pendingRoadmap?.let { Roadmap.nextFor(it, row.app.id) }
-            Spacer(Modifier.height(8.dp))
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
-                Text("Next planned release", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                val planEta = nextPlan?.etaMillis
-                if (nextPlan != null && planEta != null) {
-                    Text(nextPlan.title, style = MaterialTheme.typography.bodySmall)
-                    LiveCountdown(planEta, true)
-                    Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
-                } else {
-                    Text("Unavailable", fontWeight = FontWeight.Medium)
-                    Text(if (pendingRoadmap == null) "The roadmap could not be read." else "No planned release with an ETA is set for this app.", style = MaterialTheme.typography.labelSmall)
-                }
-            }
             val notes = usefulNotes(row.latest?.notes.orEmpty())
             if (notes.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
@@ -523,6 +506,23 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
             Spacer(Modifier.height(18.dp))
             Text("Ratings & reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text("No verified ratings available. Reviews are not collected here yet.", style = MaterialTheme.typography.bodySmall)
+            // Next planned release for this app, from the roadmap. Live countdown, approximate, may come earlier or later.
+            val nextPlan = pendingRoadmap?.let { Roadmap.nextFor(it, row.app.id) }
+            Spacer(Modifier.height(8.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
+                Text("Next planned release", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                val planEta = nextPlan?.etaMillis
+                if (nextPlan != null && planEta != null) {
+                    Text(nextPlan.title, style = MaterialTheme.typography.bodySmall)
+                    LiveCountdown(planEta, true)
+                    Text("Approximate, it may arrive a little earlier or later.", style = MaterialTheme.typography.labelSmall)
+                } else {
+                    Text("Unavailable", fontWeight = FontWeight.Medium)
+                    Text(if (pendingRoadmap == null) "The roadmap could not be read." else "No planned release with an ETA is set for this app.", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+            AppCommunityLinks(row.app.id)
+            PreviewBlock(row.app.id)
             message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             progress?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
         }
