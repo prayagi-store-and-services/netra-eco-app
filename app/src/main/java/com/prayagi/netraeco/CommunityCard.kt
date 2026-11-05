@@ -1,8 +1,10 @@
 package com.prayagi.netraeco
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -35,14 +37,48 @@ fun AppCommunityLinks(appId: String, open: ((String) -> Unit)? = null) {
     }
 }
 
+/** Logo artwork from Simple Icons (CC0), kept locally: no remote image requests. */
+private val socialLogoResources = listOf(
+    R.drawable.social_youtube, R.drawable.social_instagram, R.drawable.social_facebook,
+    R.drawable.social_x, R.drawable.social_telegram
+)
+
+@Composable
+fun SocialLogoRow(open: ((String) -> Unit)? = null) {
+    val context = LocalContext.current
+    var failed by remember { mutableStateOf(false) }
+    Column {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("social-logo-row"),
+            horizontalArrangement = Arrangement.spacedBy(40.dp)
+        ) {
+            Spacer(Modifier.width(4.dp))
+            CommunityLinks.social.forEachIndexed { index, link ->
+                FilledTonalIconButton(
+                    modifier = Modifier.size(58.dp),
+                    onClick = {
+                        failed = false
+                        try {
+                            if (open != null) open(link.url) else CommunityBrowser.open(context, link.url)
+                        } catch (_: Exception) { failed = true }
+                    }
+                ) {
+                    Icon(painterResource(socialLogoResources[index]), contentDescription = link.label,
+                        modifier = Modifier.size(28.dp))
+                }
+            }
+            Spacer(Modifier.width(4.dp))
+        }
+        if (failed) Text("Could not open this link. Check that a browser is available.", color = MaterialTheme.colorScheme.error)
+    }
+}
+
 @Composable
 fun CommunityCard(open: ((String) -> Unit)? = null) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Connect with Netra Ecosystem", style = MaterialTheme.typography.titleLarge)
-            Text("Open our official profiles. Nothing is followed, liked or posted automatically.", style = MaterialTheme.typography.bodySmall)
-            CommunityLinks.social.forEach { PublicLink(it.icon + "  " + it.label, it.url, open) }
-            AppCommunityLinks("netra-eco", open)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SocialLogoRow(open)
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) { AppCommunityLinks("netra-eco", open) }
         }
     }
 }
