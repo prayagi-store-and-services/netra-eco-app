@@ -367,9 +367,10 @@ fun EcoScreen(
                         requestedRow == null -> item { Text("Unavailable: this app is not in the current catalog. No download started.") }
                         else -> item { AppCard(requestedRow, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ } }
                     }
+                    item { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                 }
             } else if (updatesSelected) {
-                LazyColumn(Modifier.weight(1f)) { item { StoreUpdatesPanel(rows ?: emptyList(), screenScope, installActions) } }
+                LazyColumn(Modifier.weight(1f)) { item { StoreUpdatesPanel(rows ?: emptyList(), screenScope, installActions) }; item { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) } }
             } else {
             LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item(key = "section-controls") {
@@ -410,6 +411,7 @@ fun EcoScreen(
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
+                    item(key = "social-footer") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                     return@LazyColumn
                 }
                 val picked = cat
@@ -423,6 +425,7 @@ fun EcoScreen(
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
+                    item(key = "social-footer") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                     return@LazyColumn
                 }
                 if (!futureSelected) {
@@ -445,6 +448,7 @@ fun EcoScreen(
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
+                item(key = "social-footer") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                 if (!futureSelected) {
                 item(key = "timespeak") { TimeSpeakCard() }
                 item(key = "usage") { UsageCard() }
@@ -454,7 +458,6 @@ fun EcoScreen(
             }
             }
         }
-        SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer"))
     }
 }
 }

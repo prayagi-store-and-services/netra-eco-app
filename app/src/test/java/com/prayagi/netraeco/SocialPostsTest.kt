@@ -2,6 +2,8 @@ package com.prayagi.netraeco
 import java.time.Instant
 import org.junit.Assert.*
 import org.junit.Test
+@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [34])
 class SocialPostsTest {
  private val now = Instant.parse("2026-11-05T07:00:00Z")
  private fun feed(date: String = "2026-11-05", counts: String = "{\"youtube\":2,\"x\":0,\"telegram\":1}") = """{"schemaVersion":1,"timezone":"Asia/Kolkata","date":"$date","generatedAt":"2026-11-05T06:00:00Z","counts":$counts}"""

@@ -73,6 +73,7 @@ class CommunityScreenTest {
         }
         rule.onNodeWithTag("current-list").performScrollToKey("community")
         rule.onNodeWithTag("social-header").assertIsDisplayed()
+        rule.onNodeWithTag("current-list").performScrollToKey("social-footer")
         rule.onNodeWithTag("social-footer").assertIsDisplayed()
         shot("current-integration")
     }
