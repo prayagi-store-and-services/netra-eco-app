@@ -59,7 +59,8 @@ class EcoActionScreenTest {
             }
         }
         rule.onNodeWithText("Future").performClick()
-        rule.onNodeWithText("Media").performScrollTo().assertIsDisplayed().performClick()
+        rule.onNodeWithTag("future-list").performScrollToKey("category-controls")
+        rule.onNodeWithText("Media").assertIsDisplayed().performClick()
         rule.waitForIdle()
         rule.onNodeWithTag("future-list").performScrollToKey("cat-head")
         rule.onNodeWithText("Media: 1 app. An app can be in more than one group, based on what it does.").assertExists()
