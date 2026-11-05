@@ -69,7 +69,8 @@ import kotlinx.coroutines.withContext
 data class AppRow(
     val app: CatalogApp,
     val installed: Pair<Long, String>?,
-    val latest: LatestRelease?
+    val latest: LatestRelease?,
+    val deviceStateKnown: Boolean = true
 )
 
 /** A released app or a coming-soon app in one shared alphabetical list; a coming-soon card keeps its place when the app goes live. */
@@ -193,7 +194,8 @@ private suspend fun loadRows(context: Context): List<AppRow>? = withContext(Disp
         // The catalog may list Netra Ecosystem itself; this phone's own entry comes from selfApp only.
         (listOf(self) + apps.filter { it.id != self.id && it.packageName != self.packageName }).map { app ->
             async {
-                AppRow(app, Net.installed(context, app.packageName), Net.fetchLatest(app, context = context))
+                val device = InstalledApps.read(context, app.packageName)
+                AppRow(app, device.version, Net.fetchLatest(app, context = context), device.known)
             }
         }.awaitAll()
     }
@@ -259,15 +261,21 @@ fun EcoScreen(
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
     var upcomingUnavailable by remember { mutableStateOf(false) }
     var futureSelected by rememberSaveable { mutableStateOf(false) }
+    var updatesSelected by rememberSaveable { mutableStateOf(false) }
+    var selectedAppId by rememberSaveable { mutableStateOf<String?>(null) }
+    val detailAppId = requestedAppId ?: selectedAppId
+    val closeDetail = { selectedAppId = null; if (requestedAppId != null) onCloseApp() }
     LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) futureSelected = false }
     var currentQuery by rememberSaveable { mutableStateOf("") }
     var futureQuery by rememberSaveable { mutableStateOf("") }
-    var currentCat by rememberSaveable { mutableStateOf<AppCategory?>(null) }
-    var futureCat by rememberSaveable { mutableStateOf<AppCategory?>(null) }
+    var currentCatName by rememberSaveable { mutableStateOf<String?>(null) }
+    val currentCat = AppCategory.values().firstOrNull { it.name == currentCatName }
+    var futureCatName by rememberSaveable { mutableStateOf<String?>(null) }
+    val futureCat = AppCategory.values().firstOrNull { it.name == futureCatName }
     val query = if (futureSelected) futureQuery else currentQuery
     val cat = if (futureSelected) futureCat else currentCat
     val setQuery: (String) -> Unit = { if (futureSelected) futureQuery = it else currentQuery = it }
-    val setCat: (AppCategory?) -> Unit = { if (futureSelected) futureCat = it else currentCat = it }
+    val setCat: (AppCategory?) -> Unit = { if (futureSelected) futureCatName = it?.name else currentCatName = it?.name }
     val currentListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val futureListState = androidx.compose.foundation.lazy.rememberLazyListState()
 
@@ -304,12 +312,13 @@ fun EcoScreen(
                 Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(4.dp))
-            if (requestedAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!futureSelected) Button(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                else OutlinedButton(onClick = { futureSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                if (futureSelected) Button(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
-                else OutlinedButton(onClick = { futureSelected = true }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+            if (detailAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!futureSelected) Button(onClick = { futureSelected = false; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                if (futureSelected) Button(onClick = { futureSelected = true; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
             }
+            if (detailAppId == null) TextButton(onClick = { updatesSelected = !updatesSelected; futureSelected = false }) { Text(if (updatesSelected) "Back to store" else "Updates") }
             val sectionRows = if (futureSelected) emptyList() else rows ?: emptyList()
             val sectionUpcoming = if (futureSelected) upcoming else emptyList()
             val searching = query.isNotBlank()
@@ -319,12 +328,12 @@ fun EcoScreen(
             val catUp = sectionUpcoming.map { it to AppCategories.classify(it.name, it.type, it.summary) }
             val usedCats = AppCategory.values().filter { c -> catRows.any { c in it.second } || catUp.any { c in it.second } }
             val listState = if (futureSelected) futureListState else currentListState
-            if (requestedAppId != null) {
-                androidx.activity.compose.BackHandler(onBack = onCloseApp)
+            if (detailAppId != null) {
+                androidx.activity.compose.BackHandler(onBack = closeDetail)
                 LazyColumn(Modifier.weight(1f).testTag("handoff-app"), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    item { OutlinedButton(onClick = onCloseApp) { Text("Back to all apps") } }
+                    item { OutlinedButton(onClick = closeDetail) { Text("Back to all apps") } }
                     item { Text("App update page", style = MaterialTheme.typography.titleLarge) }
-                    val requestedRow = rows?.firstOrNull { it.app.id == requestedAppId }
+                    val requestedRow = rows?.firstOrNull { it.app.id == detailAppId }
                     when {
                         loading -> item { Text("Loading app details...") }
                         failed -> item { Text("Unavailable: could not refresh app details. No download started."); OutlinedButton(onClick = { reload++ }) { Text("Check again") } }
@@ -332,6 +341,8 @@ fun EcoScreen(
                         else -> item { AppCard(requestedRow, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ } }
                     }
                 }
+            } else if (updatesSelected) {
+                LazyColumn(Modifier.weight(1f)) { item { StoreUpdatesPanel(rows ?: emptyList(), screenScope, installActions) } }
             } else {
             LazyColumn(modifier = Modifier.weight(1f).testTag(if (futureSelected) "future-list" else "current-list"), state = listState, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item(key = "section-controls") {
@@ -349,6 +360,9 @@ fun EcoScreen(
                 )
                 Spacer(Modifier.height(8.dp))
             }
+                    }
+                }
+                item(key = "category-controls") {
             if (rows != null && !searching && usedCats.size > 1) {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (cat == null) Button(onClick = { setCat(null) }) { Text("All", maxLines = 1) } else OutlinedButton(onClick = { setCat(null) }) { Text("All", maxLines = 1) }
@@ -358,7 +372,6 @@ fun EcoScreen(
                 }
                 Spacer(Modifier.height(8.dp))
             }
-                    }
                 }
                 if (searching) {
                     if (shownRows.isEmpty() && shownUpcoming.isEmpty()) {
@@ -366,7 +379,7 @@ fun EcoScreen(
                     }
                     items(mergedEcoEntries(shownRows, shownUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
+                            is EcoEntry.Live -> StoreBrowseRow(e.row, screenScope, installActions) { selectedAppId = e.row.app.id }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -379,7 +392,7 @@ fun EcoScreen(
                     item(key = "cat-head") { Text(picked.label + ": " + (inRows.size + inUp.size) + (if (inRows.size + inUp.size == 1) " app" else " apps") + ". An app can be in more than one group, based on what it does.", style = MaterialTheme.typography.bodyMedium) }
                     items(mergedEcoEntries(inRows, inUp, pendingRoadmap), key = { it.itemKey }) { e ->
                         when (e) {
-                            is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
+                            is EcoEntry.Live -> StoreBrowseRow(e.row, screenScope, installActions) { selectedAppId = e.row.app.id }
                             is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                         }
                     }
@@ -401,7 +414,7 @@ fun EcoScreen(
                 if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text(if (upcomingUnavailable) "Planned apps could not be loaded. Check your connection and retry." else "No planned apps are listed right now.") }
                 items(mergedEcoEntries(sectionRows, sectionUpcoming, pendingRoadmap), key = { it.itemKey }) { e ->
                     when (e) {
-                        is EcoEntry.Live -> AppCard(e.row, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ }
+                        is EcoEntry.Live -> StoreBrowseRow(e.row, screenScope, installActions) { selectedAppId = e.row.app.id }
                         is EcoEntry.Soon -> UpcomingCard(e.up, pendingRoadmap)
                     }
                 }
@@ -439,7 +452,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf<String?>(null) }
-    val status = statusForRelease(row.installed?.first, row.installed?.second, row.latest)
+    val status = storeStatus(row)
     val latestMinSdk = row.latest?.minSdk
     val latestIncompatible = latestMinSdk != null && android.os.Build.VERSION.SDK_INT < latestMinSdk
 
@@ -465,26 +478,38 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
                 Text("No security updates or any further updates possible due to Android limit.",
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
+            StoreReleaseFacts(row)
+            Spacer(Modifier.height(12.dp))
+            if (!row.deviceStateKnown) Text("Device status Unknown. Check again before installing.", color = MaterialTheme.colorScheme.error)
+            else if (status == Status.NotInstalled || status == Status.UpdateAvailable) {
+                if (latestIncompatible) Text("Requires Android " + latestMinSdk + " or newer - this device cannot install or update to it.")
+                else AppDownloadButton(row, status, actionScope = scope, installActions = installActions)
+            }
+            if (row.installed != null) StoreInstalledActions(row)
+            Spacer(Modifier.height(18.dp))
+            Text("About this app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(8.dp))
             Text(row.app.summary, style = MaterialTheme.typography.bodyMedium)
-            AppCommunityLinks(row.app.id)
-            Spacer(Modifier.height(10.dp))
-            PreviewBlock(row.app.id)
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.weight(1f)) {
-                    Text("Installed", style = MaterialTheme.typography.labelSmall)
-                    Text(row.installed?.second?.ifBlank { "Unavailable" } ?: "Not installed", fontWeight = FontWeight.Medium)
-                    Text(
-                        if (row.installed != null) "version code " + row.installed.first + " - " + row.app.packageName else "Eco looked for " + row.app.packageName,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
-                    Text("Latest", style = MaterialTheme.typography.labelSmall)
-                    Text(row.latest?.let { it.versionName + " - " + formatSize(it.size) } ?: "Unavailable", fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
+            val notes = usefulNotes(row.latest?.notes.orEmpty())
+            if (notes.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)).padding(10.dp)
+                ) {
+                    Text("What's new in " + (row.latest?.versionName ?: ""), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(notes.take(600), style = MaterialTheme.typography.bodySmall)
                 }
             }
+            Spacer(Modifier.height(18.dp))
+            Text("Data safety", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Read this app's privacy policy and permission disclosures. No blanket data-collection claim is made.", style = MaterialTheme.typography.bodySmall)
+            val privacyUrl = row.app.privacyUrl.takeIf { it.isNotBlank() }
+            if (privacyUrl != null) TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(privacyUrl))) }) { Text("Privacy policy") }
+            Spacer(Modifier.height(18.dp))
+            Text("Ratings & reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("No verified ratings available. Reviews are not collected here yet.", style = MaterialTheme.typography.bodySmall)
             // Next planned release for this app, from the roadmap. Live countdown, approximate, may come earlier or later.
             val nextPlan = pendingRoadmap?.let { Roadmap.nextFor(it, row.app.id) }
             Spacer(Modifier.height(8.dp))
@@ -500,58 +525,8 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
                     Text(if (pendingRoadmap == null) "The roadmap could not be read." else "No planned release with an ETA is set for this app.", style = MaterialTheme.typography.labelSmall)
                 }
             }
-            val notes = usefulNotes(row.latest?.notes.orEmpty())
-            if (notes.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
-                Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)).padding(10.dp)
-                ) {
-                    Text("What's new in " + (row.latest?.versionName ?: ""), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text(notes.take(600), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            when (status) {
-                Status.NotInstalled, Status.UpdateAvailable ->
-                    if (latestIncompatible) Text("Requires Android " + latestMinSdk + " or newer - this device cannot install or update to it.", style = MaterialTheme.typography.bodySmall)
-                    else AppDownloadButton(row, status, actionScope = scope, installActions = installActions)
-                Status.InstalledNewer -> Text("Installed version is newer than the published one", style = MaterialTheme.typography.bodySmall)
-                Status.Unavailable -> Text("Latest version Unavailable right now", style = MaterialTheme.typography.bodySmall)
-                Status.UpToDate -> {}
-            }
-            if (row.installed != null) {
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        onClick = {
-                            val launch = context.packageManager.getLaunchIntentForPackage(row.app.packageName)
-                            if (launch == null) {
-                                message = "Cannot open " + row.app.name + ": Android has no screen to start for it."
-                            } else {
-                                try {
-                                    context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                                } catch (e: Exception) {
-                                    message = "Cannot open " + row.app.name + ". " + plainFailure(e, "Android refused.")
-                                }
-                            }
-                        }
-                    ) { Text("Open") }
-                    OutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        onClick = {
-                            try {
-                                context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:" + row.app.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                            } catch (e: Exception) {
-                                message = "Cannot start uninstall. " + plainFailure(e, "Android refused.")
-                            }
-                        }
-                    ) { Text("Uninstall") }
-                }
-            }
+            AppCommunityLinks(row.app.id)
+            PreviewBlock(row.app.id)
             message?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             progress?.let { Spacer(Modifier.height(4.dp)); Text(it, style = MaterialTheme.typography.bodySmall) }
         }

@@ -7,6 +7,9 @@ App previews are screenshot-only. There is no in-app video player, video poster,
 Part of Netra Ecosystem: https://prayagi-store-and-services.github.io/netra-eco/
 Releases: https://github.com/prayagi-store-and-services/netra-eco-app/releases
 
+## What's new in v1.3.0
+Compact browsing opens a dedicated detail page with version/size, About, What's new, privacy and honest rating state. Known installed apps with verified newer releases appear in Updates; Update all queues verified downloads and Android still confirms each install. Failed/unknown package checks never become Not installed. Charge has its independently verified signer pin. No new permission or all-app inventory scan. Optional conditional automatic updating is a separate unreleased PR, not in1.3.0. CI and rendered UI checks do not prove physical-device acceptance.
+
 ## What's new in v1.2.46
 Removed all in-app video preview paths and video metadata parsing. Screenshots retain display-sized decoding and a bounded cache. No new permission, dependency or network endpoint. Automated checks only, not phone-tested. See SECURITY.md for scope and limits.
 
