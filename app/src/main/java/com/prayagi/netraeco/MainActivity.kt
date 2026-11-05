@@ -268,12 +268,14 @@ fun EcoScreen(
     LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) futureSelected = false }
     var currentQuery by rememberSaveable { mutableStateOf("") }
     var futureQuery by rememberSaveable { mutableStateOf("") }
-    var currentCat by rememberSaveable { mutableStateOf<AppCategory?>(null) }
-    var futureCat by rememberSaveable { mutableStateOf<AppCategory?>(null) }
+    var currentCatName by rememberSaveable { mutableStateOf<String?>(null) }
+    val currentCat = AppCategory.values().firstOrNull { it.name == currentCatName }
+    var futureCatName by rememberSaveable { mutableStateOf<String?>(null) }
+    val futureCat = AppCategory.values().firstOrNull { it.name == futureCatName }
     val query = if (futureSelected) futureQuery else currentQuery
     val cat = if (futureSelected) futureCat else currentCat
     val setQuery: (String) -> Unit = { if (futureSelected) futureQuery = it else currentQuery = it }
-    val setCat: (AppCategory?) -> Unit = { if (futureSelected) futureCat = it else currentCat = it }
+    val setCat: (AppCategory?) -> Unit = { if (futureSelected) futureCatName = it?.name else currentCatName = it?.name }
     val currentListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val futureListState = androidx.compose.foundation.lazy.rememberLazyListState()
 
