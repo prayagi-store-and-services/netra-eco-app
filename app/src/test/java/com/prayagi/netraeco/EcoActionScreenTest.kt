@@ -61,8 +61,7 @@ class EcoActionScreenTest {
         rule.onNodeWithText("Future").performClick()
         rule.onNodeWithText("Media").performClick()
         restorer.emulateSavedInstanceStateRestore()
-        rule.waitUntil(10000) { rule.onAllNodesWithText("Media: 1 app. An app can be in more than one group, based on what it does.").fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithTag("future-list").performScrollToKey("cat-head")
+        rule.waitUntil(10000) { runCatching { rule.onNodeWithTag("future-list").performScrollToKey("cat-head"); true }.getOrDefault(false) }
         rule.onNodeWithText("Media: 1 app. An app can be in more than one group, based on what it does.").assertExists()
         rule.onNodeWithTag("future-list").performScrollToKey("up-b")
         rule.onNodeWithText("Future Beta").assertIsDisplayed()
