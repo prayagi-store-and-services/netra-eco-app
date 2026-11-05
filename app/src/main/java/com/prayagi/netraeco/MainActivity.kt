@@ -249,11 +249,28 @@ fun EcoScreen(
     currentRequestKey: Int = 0
 ) {
     val context = LocalContext.current
+    val connectivity = remember { context.getSystemService(android.net.ConnectivityManager::class.java) }
+    var socialOnline by remember { mutableStateOf(false) }
+    DisposableEffect(connectivity) {
+        fun refresh() { socialOnline = connectivity?.getNetworkCapabilities(connectivity.activeNetwork)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true }
+        val callback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) { refresh() }
+            override fun onLost(network: android.net.Network) { socialOnline = false }
+            override fun onCapabilitiesChanged(network: android.net.Network, caps: android.net.NetworkCapabilities) { refresh() }
+        }
+        refresh()
+        runCatching { connectivity?.registerDefaultNetworkCallback(callback) }
+        onDispose { runCatching { connectivity?.unregisterNetworkCallback(callback) } }
+    }
     var socialCountsDay by remember { mutableStateOf(SocialPosts.day(java.time.Instant.now())) }
     var socialCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    LaunchedEffect(resumeKey) {
+    LaunchedEffect(resumeKey, socialOnline) {
         socialCounts = emptyMap()
-        val raw = withContext(Dispatchers.IO) { textLoader(SocialPosts.URL) }
+        val raw = withContext(Dispatchers.IO) {
+            val cm = context.getSystemService(android.net.ConnectivityManager::class.java)
+            val caps = cm?.getNetworkCapabilities(cm.activeNetwork)
+            if (caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true) textLoader(SocialPosts.URL) else null
+        }
         socialCountsDay = SocialPosts.day(java.time.Instant.now())
         socialCounts = SocialPosts.parse(raw, java.time.Instant.now())
     }
@@ -307,7 +324,7 @@ fun EcoScreen(
         LaunchedEffect(Unit) { withContext(Dispatchers.IO) { NameGate.refresh(context) }; ecoName = NameGate.displayName(context) }
         val ownVersion = remember { try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (e: Exception) { null } ?: "Unavailable" }
         EcoHeader(ecoName, ownVersion, clockNow)
-        val todayCounts = if (SocialPosts.day(clockNow.toInstant()) == socialCountsDay) socialCounts else emptyMap()
+        val todayCounts = if (socialOnline && SocialPosts.day(clockNow.toInstant()) == socialCountsDay) socialCounts else emptyMap()
         SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-header"))
         val publishedVersions = (rows ?: emptyList()).mapNotNull { r -> r.latest?.let { r.app.id to it.versionName } }.toMap()
         val pendingRoadmap = roadmap?.let { Roadmap.pending(it, publishedVersions) }
