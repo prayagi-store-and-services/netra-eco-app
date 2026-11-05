@@ -120,3 +120,38 @@ fun StoreInstalledActions(row: AppRow) {
     }
     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 }
+
+@Composable
+fun ConditionalUpdateSetting() {
+    val context=LocalContext.current
+    var enabled by remember { mutableStateOf(ConditionalUpdates.enabled(context)) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("Optional automatic updates",style=MaterialTheme.typography.titleMedium)
+                    Text(if(enabled)"Enabled for eligible Eco-installed apps"else"Off by default",style=MaterialTheme.typography.bodySmall)
+                }
+                Switch(checked=enabled,onCheckedChange={enabled=it;ConditionalUpdates.setEnabled(context,it)})
+            }
+            Text("Only eligible Netra apps installed by Eco. Android may still ask for a confirmation tap.", style=MaterialTheme.typography.bodyMedium)
+            HorizontalDivider()
+            Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                Text("What this permission does", style=MaterialTheme.typography.titleSmall)
+                Text("UPDATE_PACKAGES_WITHOUT_USER_ACTION lets Eco request an update without another tap where Android allows it. It does not bypass Android's rules.", style=MaterialTheme.typography.bodySmall)
+            }
+            HorizontalDivider()
+            Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                Text("Before each install", style=MaterialTheme.typography.titleSmall)
+                Text("Verify file hash, package, version and signer. Check Android version and installer ownership. Read back the installed version before saying done.", style=MaterialTheme.typography.bodySmall)
+            }
+            HorizontalDivider()
+            Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                Text("Background checks", style=MaterialTheme.typography.titleSmall)
+                Text("About every 6 hours, when Android allows it. Automatic downloads use unmetered networks only. Otherwise, a notification offers a verified update.", style=MaterialTheme.typography.bodySmall)
+            }
+            Text("No root, no accessibility auto-clicks, no all-app scanning. Realme and other battery controls can delay checks.", style=MaterialTheme.typography.bodySmall)
+            Text("You can switch this off at any time",style=MaterialTheme.typography.labelMedium)
+        }
+    }
+}

@@ -1,3 +1,7 @@
+# Pending optional updates (not released)
+
+Optional automatic updates for eligible Eco-installed apps on Android12+. Off by default. Android may still ask for a confirmation tap. Existing six-hour background checks can notify for other installed Netra app updates; tap to verify and ask Android to install. New permission UPDATE_PACKAGES_WITHOUT_USER_ACTION does not grant root, all-app visibility or permission to bypass Android confirmation. No OEM or physical-device validation claimed.
+
 # Upcoming store redesign (not released)
 
 - Compact app browsing and dedicated app details. Install for a known not-installed app; Installed + Update for a newer release; Open/Uninstall for current installed apps.

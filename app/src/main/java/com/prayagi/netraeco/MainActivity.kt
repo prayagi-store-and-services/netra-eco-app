@@ -422,6 +422,7 @@ fun EcoScreen(
                 item(key = "timespeak") { TimeSpeakCard() }
                 item(key = "usage") { UsageCard() }
                 item(key = "crash") { CrashReportCard() }
+                item(key = "conditional-updates") { ConditionalUpdateSetting() }
                 item(key = "perms") { PermissionsCard(ecoPermissions()) }
                 }
             }
