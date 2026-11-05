@@ -120,3 +120,17 @@ fun StoreInstalledActions(row: AppRow) {
     }
     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 }
+
+@Composable
+fun ConditionalUpdateSetting() {
+    val context=LocalContext.current
+    var enabled by remember { mutableStateOf(ConditionalUpdates.enabled(context)) }
+    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Text("Optional automatic updates", style=MaterialTheme.typography.titleMedium)
+        Text(ConditionalUpdates.NOTICE, style=MaterialTheme.typography.bodySmall)
+        Row(verticalAlignment=Alignment.CenterVertically) {
+            Switch(checked=enabled,onCheckedChange={enabled=it;ConditionalUpdates.setEnabled(context,it)})
+            Text(if(enabled)"Enabled for eligible Eco-installed apps"else"Off by default")
+        }
+    }
+}
