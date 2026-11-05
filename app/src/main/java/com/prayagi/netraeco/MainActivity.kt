@@ -439,7 +439,6 @@ fun EcoScreen(
                 }
                 item(key = "downloads") { DownloadManagerCard(rows ?: emptyList(), actionScope = screenScope, installActions = installActions) }
                 item(key = "community") { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { AppCommunityLinks("netra-eco") } } }
-                item(key = "trikaal") { TrikaalCard() }
                 item(key = "festival") { FestivalBannerCard(modifier = Modifier.fillMaxWidth()) }
                 }
                 if (futureSelected && sectionUpcoming.isEmpty()) item(key = "future-empty") { Text(if (upcomingUnavailable) "Planned apps could not be loaded. Check your connection and retry." else "No planned apps are listed right now.") }
