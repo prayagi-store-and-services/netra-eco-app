@@ -60,8 +60,12 @@ class EcoActionScreenTest {
         }
         rule.onNodeWithText("Future").performClick()
         rule.onNodeWithText("Media").performClick()
+        rule.onNodeWithTag("future-list").performScrollToKey("cat-head")
+        rule.onNodeWithText("Media: 1 app. An app can be in more than one group, based on what it does.").assertExists()
         restorer.emulateSavedInstanceStateRestore()
-        rule.waitUntil(10000) { runCatching { rule.onNodeWithTag("future-list").performScrollToKey("cat-head"); true }.getOrDefault(false) }
+        try {
+            rule.waitUntil(10000) { runCatching { rule.onNodeWithTag("future-list").performScrollToKey("cat-head"); true }.getOrDefault(false) }
+        } catch(e:Exception) { println(rule.onRoot(useUnmergedTree=true).printToString()); throw e }
         rule.onNodeWithText("Media: 1 app. An app can be in more than one group, based on what it does.").assertExists()
         rule.onNodeWithTag("future-list").performScrollToKey("up-b")
         rule.onNodeWithText("Future Beta").assertIsDisplayed()
