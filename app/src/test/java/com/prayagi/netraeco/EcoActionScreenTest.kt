@@ -59,9 +59,8 @@ class EcoActionScreenTest {
             }
         }
         rule.onNodeWithText("Future").performClick()
-        rule.onNodeWithText("Media").performClick()
+        rule.onNodeWithText("Media").performScrollTo().assertIsDisplayed().performClick()
         rule.waitForIdle()
-        println("BEFORE_RESTORE="+rule.onRoot(useUnmergedTree=true).printToString())
         rule.onNodeWithTag("future-list").performScrollToKey("cat-head")
         rule.onNodeWithText("Media: 1 app. An app can be in more than one group, based on what it does.").assertExists()
         restorer.emulateSavedInstanceStateRestore()
