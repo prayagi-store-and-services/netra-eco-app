@@ -20,9 +20,11 @@ internal object InstallerGate {
         "prayagi-privacy" to ("com.aistudio.sensorguard.prvsec" to "prayagi-Privacy-"),
         "netra-trikaal" to ("com.prayagi.netratrikaal" to "netra-trikaal"),
         "netra-player" to ("com.prayagi.netraplayer" to "netra-player"),
-        "netra-eco" to ("com.prayagi.netraeco" to "netra-eco-app")
+        "netra-eco" to ("com.prayagi.netraeco" to "netra-eco-app"),
+        "netra-charge" to ("com.netracharge.app" to "netra-charge")
     )
     fun expectedSigner(pkg: String): String? = when {
+        pkg == "com.netracharge.app" -> "814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9"
         pkg == "com.prayagi.netratrikaal" -> "38bad1b7117f9cd94f8de94e2c9050861b6c7b482ce4241bfb9b4bf3c89fb8d8"
         identities.values.any { it.first == pkg } -> ORIGINAL
         else -> null

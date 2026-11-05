@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 
 fun storeUpdateRows(rows: List<AppRow>): List<AppRow> = AppSort.current(rows).filter {
-    it.app.id != "netra-charge" && it.deviceStateKnown && storeStatus(it) == Status.UpdateAvailable &&
+    it.deviceStateKnown && storeStatus(it) == Status.UpdateAvailable &&
         it.latest != null && DownloadCenter.allowedForDownload(it.app, it.latest)
 }
 

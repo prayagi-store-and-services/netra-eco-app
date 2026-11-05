@@ -37,7 +37,7 @@ object InstalledApps {
 fun storeStatus(row: AppRow): Status = if (!row.deviceStateKnown) Status.Unavailable else
     statusForRelease(row.installed?.first, row.installed?.second, row.latest)
 
-fun storeActionLabel(row: AppRow): String = if (row.app.id == "netra-charge") "Details" else when (storeStatus(row)) {
+fun storeActionLabel(row: AppRow): String = when (storeStatus(row)) {
     Status.NotInstalled -> "Install"
     Status.UpdateAvailable -> "Update"
     Status.UpToDate, Status.InstalledNewer -> "Open"
@@ -86,8 +86,7 @@ fun StoreBrowseRow(row: AppRow, scope: CoroutineScope, actions: EcoInstallAction
                             if (launch != null) runCatching { context.startActivity(launch) } else onDetails()
                         }
                         Status.NotInstalled, Status.UpdateAvailable -> {
-                            if (row.app.id == "netra-charge") onDetails()
-                            else if (row.latest?.minSdk?.let { !deviceCompatible(it) } == true) onDetails()
+                            if (row.latest?.minSdk?.let { !deviceCompatible(it) } == true) onDetails()
                             else actions.update(scope, context, row)
                         }
                         else -> onDetails()

@@ -165,13 +165,15 @@ object Net {
         val sha = o.getString("sha256").lowercase()
         val size = o.getLong("size")
         val code = o.getLong("versionCode")
+        val apkFile = o.optString("apkFile", "app-release.apk")
+        require(Regex("^[A-Za-z0-9._-]+\\.apk$").matches(apkFile))
         val minSdk = if (o.has("minSdk")) o.getInt("minSdk").takeIf { it in 1..40 } else null
         if (!isValidTag(tag) || !isValidSha256(sha) || size <= 0L || code <= 0L) null else LatestRelease(
             tag = tag,
             versionName = o.optString("versionName", tag.removePrefix("v")),
             versionCode = code,
             notes = o.optString("notes", "").trim(),
-            apkUrl = "https://github.com/$repo/releases/download/$tag/app-release.apk",
+            apkUrl = "https://github.com/$repo/releases/download/$tag/$apkFile",
             sha256 = sha,
             size = size,
             publishedAtMillis = releaseTimeMillis(o.optString("published_at")),

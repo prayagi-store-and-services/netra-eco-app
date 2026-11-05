@@ -477,8 +477,7 @@ fun AppCard(row: AppRow, pendingRoadmap: List<RoadmapItem>?, actionScope: kotlin
             Spacer(Modifier.height(16.dp))
             StoreReleaseFacts(row)
             Spacer(Modifier.height(12.dp))
-            if (row.app.id == "netra-charge") Text("Installer identity verification is not available for this app yet. No install started.", color = MaterialTheme.colorScheme.error)
-            else if (!row.deviceStateKnown) Text("Device status Unknown. Check again before installing.", color = MaterialTheme.colorScheme.error)
+            if (!row.deviceStateKnown) Text("Device status Unknown. Check again before installing.", color = MaterialTheme.colorScheme.error)
             else if (status == Status.NotInstalled || status == Status.UpdateAvailable) {
                 if (latestIncompatible) Text("Requires Android " + latestMinSdk + " or newer - this device cannot install or update to it.")
                 else AppDownloadButton(row, status, actionScope = scope, installActions = installActions)

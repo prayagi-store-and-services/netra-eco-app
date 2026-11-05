@@ -36,5 +36,9 @@ class StoreLayoutTest {
         InstalledApps.knownPackages.filter { it != "com.prayagi.netraeco" }.forEach { assertTrue(it,text.contains("android:name=\""+it+"\"")) }
         assertFalse(text.contains("QUERY_ALL_PACKAGES"))
     }
+    @Test fun chargeSignerIsNarrowlyPinned() {
+        assertEquals("814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9",InstallerGate.expectedSigner("com.netracharge.app"))
+        assertNull(InstallerGate.expectedSigner("com.netracharge.other"))
+    }
     @Test fun unknownReleaseDateIsNotInvented() { assertEquals("Unavailable",storeReleaseDate(null)) }
 }
