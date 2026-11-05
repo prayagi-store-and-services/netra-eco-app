@@ -3,6 +3,8 @@ package com.prayagi.netraeco
 import org.junit.Assert.*
 import org.junit.Test
 
+@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk=[34],application=android.app.Application::class)
 class StoreLayoutTest {
     private val app = CatalogApp("kbc", "Netra KBC", "Game", "Quiz", "prayagi-store-and-services/KBC", "com.aistudio.reasoningquiz.tark", "", "")
     private val latest = LatestRelease("v1.1.43", "1.1.43", 43, "notes", "https://github.com/prayagi-store-and-services/KBC/releases/download/v1.1.43/app-release.apk", "a".repeat(64), 100)

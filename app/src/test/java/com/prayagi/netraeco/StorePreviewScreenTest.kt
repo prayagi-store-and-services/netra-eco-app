@@ -28,7 +28,7 @@ class StorePreviewScreenTest {
     }
     @Test fun browseOpensDetailAndKeepsHonestReviewState() {
         rule.setContent { MaterialTheme { EcoScreen(0,catalogLoader={listOf(AppRow(app,null,release))},textLoader={null}) } }
-        rule.waitUntil(10000){rule.onAllNodesWithText("App details").fetchSemanticsNodes().isNotEmpty()}
+        rule.waitUntil(10000){rule.onAllNodesWithText("Search apps").fetchSemanticsNodes().isNotEmpty()}
         rule.onNodeWithTag("current-list").performScrollToKey("l-kbc")
         shot("browse")
         rule.onNodeWithText("App details").performClick()
