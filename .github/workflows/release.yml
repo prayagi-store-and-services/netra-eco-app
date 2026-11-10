@@ -125,6 +125,7 @@ jobs:
       - name: Upload signed APK and manifest for independent audit
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: signed-eco-audit
           path: |
             app/build/outputs/apk/release/app-release.apk
