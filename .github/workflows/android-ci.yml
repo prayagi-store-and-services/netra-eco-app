@@ -61,6 +61,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
+          retention-days: 3
           name: build-diagnostics
           path: |
             app/build/test-results/testDebugUnitTest/*.xml
