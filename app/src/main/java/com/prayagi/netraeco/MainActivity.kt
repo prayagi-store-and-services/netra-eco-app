@@ -287,11 +287,12 @@ fun EcoScreen(
     var upcoming by remember { mutableStateOf<List<UpcomingApp>>(emptyList()) }
     var upcomingUnavailable by remember { mutableStateOf(false) }
     var futureSelected by rememberSaveable { mutableStateOf(false) }
+    var gamesSelected by rememberSaveable { mutableStateOf(false) }
     var updatesSelected by rememberSaveable { mutableStateOf(false) }
     var selectedAppId by rememberSaveable { mutableStateOf<String?>(null) }
     val detailAppId = requestedAppId ?: selectedAppId
     val closeDetail = { selectedAppId = null; if (requestedAppId != null) onCloseApp() }
-    LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) futureSelected = false }
+    LaunchedEffect(currentRequestKey) { if (currentRequestKey > 0) { futureSelected = false; gamesSelected = false; updatesSelected = false } }
     var currentQuery by rememberSaveable { mutableStateOf("") }
     var futureQuery by rememberSaveable { mutableStateOf("") }
     var currentCatName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -340,12 +341,16 @@ fun EcoScreen(
             }
             Spacer(Modifier.height(4.dp))
             if (detailAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!futureSelected) Button(onClick = { futureSelected = false; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                if (futureSelected) Button(onClick = { futureSelected = true; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
-                else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+                if (!futureSelected) Button(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                if (futureSelected) Button(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
             }
-            if (detailAppId == null) TextButton(onClick = { updatesSelected = !updatesSelected; futureSelected = false }) { Text(if (updatesSelected) "Back to store" else "Updates") }
+            if (detailAppId == null) {
+                if (gamesSelected) Button(onClick = { gamesSelected = false }, modifier = Modifier.fillMaxWidth().testTag("games-tab")) { Text("Games") }
+                else OutlinedButton(onClick = { gamesSelected = true; updatesSelected = false }, modifier = Modifier.fillMaxWidth().testTag("games-tab")) { Text("Games") }
+            }
+            if (detailAppId == null) TextButton(onClick = { updatesSelected = !updatesSelected; futureSelected = false; gamesSelected = false }) { Text(if (updatesSelected) "Back to store" else "Updates") }
             val sectionRows = if (futureSelected) emptyList() else rows ?: emptyList()
             val sectionUpcoming = if (futureSelected) upcoming else emptyList()
             val searching = query.isNotBlank()
@@ -368,6 +373,22 @@ fun EcoScreen(
                         else -> item { AppCard(requestedRow, pendingRoadmap, actionScope = screenScope, installActions = installActions) { reload++ } }
                     }
                     item { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
+                }
+            } else if (gamesSelected) {
+                val gameRows = (rows ?: emptyList()).filter { GamesDirectory.isGame(it.app) }
+                LazyColumn(Modifier.weight(1f).testTag("games-list"), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    item(key = "games-heading") { Column {
+                        Text("Games", style = MaterialTheme.typography.headlineSmall)
+                        Text("Released games and plans are separate. Planned games have no download or install action.", style = MaterialTheme.typography.bodyMedium)
+                    } }
+                    item(key = "games-current") { Text("In the current catalog", style = MaterialTheme.typography.titleMedium) }
+                    if (loading) item { Text("Checking game catalog...") }
+                    else if (failed) item { Text("Game catalog could not be refreshed. Availability is unverified.") }
+                    else if (gameRows.isEmpty()) item { Text("No released games could be found in the loaded catalog.") }
+                    items(gameRows, key = { "game-" + it.app.id }) { row -> StoreBrowseRow(row, screenScope, installActions) { selectedAppId = row.app.id } }
+                    item(key = "games-planned") { Text("Planned games · not released", style = MaterialTheme.typography.titleMedium) }
+                    items(GamesDirectory.plansNotInCatalog(rows ?: emptyList()), key = { "game-plan-" + it.id }) { plan -> UpcomingCard(plan, null) }
+                    item(key = "games-social") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                 }
             } else if (updatesSelected) {
                 LazyColumn(Modifier.weight(1f)) { item { StoreUpdatesPanel(rows ?: emptyList(), screenScope, installActions) }; item { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) } }

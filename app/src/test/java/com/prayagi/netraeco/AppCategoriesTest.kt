@@ -4,6 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AppCategoriesTest {
+    @Test fun gameDirectoryDoesNotDuplicatePublishedPlans() {
+        val app = CatalogApp("netra-ludo", "Netra Ludo", "Game", "Offline", "", "", "", "")
+        org.junit.Assert.assertTrue(GamesDirectory.isGame(app))
+        org.junit.Assert.assertFalse(GamesDirectory.plansNotInCatalog(listOf(AppRow(app, null, null))).any { it.id == "netra-ludo" })
+        org.junit.Assert.assertEquals(5, GamesDirectory.plansNotInCatalog(emptyList()).size)
+    }
     @Test fun playerIsMediaNotUtility() =
         assertEquals(listOf(AppCategory.MEDIA), AppCategories.classify("Netra Player", "Video and MP3 player", "A simple video and MP3 player for Android. Plays video and music files stored on your phone."))
     @Test fun hubIsSafety() =

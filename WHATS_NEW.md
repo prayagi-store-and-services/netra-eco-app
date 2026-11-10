@@ -53,3 +53,6 @@
 Awaiting CI, visual checks and independent review. No measured battery or thermal guarantee.
 
 Review hardening (candidate): every installer entry now checks expected size, SHA256, package/version and independently pinned signing certificate immediately before Android handoff. Bad cached files are deleted; legacy files without bound metadata require a fresh download. Unknown signing identities fail closed. Existing Human Safety pin stays unchanged. The Future countdown stops when the hosting activity is not STARTED. This is not a measured battery improvement or Play approval; the existing APK self-update architecture is not suitable for Play distribution without a separate policy change.
+
+## Unreleased Games section candidate
+Dedicated Games entry separates live catalog games (including KBC when supplied by the current catalog) from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app; Chess, Sudoku and original match-3 are separate planned apps. Tic Tac Toe is awaiting confirmation. Planned entries have no download/install, release date, package or release link. No new permission, endpoint, telemetry or dependency. Owner preview and green checks required before public release.
