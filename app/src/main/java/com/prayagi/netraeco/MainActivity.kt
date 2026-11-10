@@ -341,9 +341,9 @@ fun EcoScreen(
             }
             Spacer(Modifier.height(4.dp))
             if (detailAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!futureSelected) Button(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
+                if (!futureSelected && !gamesSelected && !updatesSelected) Button(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
                 else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                if (futureSelected) Button(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
+                if (futureSelected && !gamesSelected) Button(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
                 else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
             }
             if (detailAppId == null) {
