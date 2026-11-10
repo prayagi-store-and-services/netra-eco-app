@@ -340,13 +340,13 @@ fun EcoScreen(
                 Text("Could not refresh. Showing the last list that loaded.", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.height(4.dp))
-            if (detailAppId == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!futureSelected && !gamesSelected && !updatesSelected) Button(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
-                if (futureSelected && !gamesSelected) Button(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
-                else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
-                if (gamesSelected) Button(onClick = { gamesSelected = false }, modifier = Modifier.weight(1f).testTag("games-tab")) { Text("Games", maxLines = 1) }
-                else OutlinedButton(onClick = { gamesSelected = true; updatesSelected = false }, modifier = Modifier.weight(1f).testTag("games-tab")) { Text("Games", maxLines = 1) }
+            if (detailAppId == null) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!futureSelected && !gamesSelected && !updatesSelected) Button(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier) { Text("Current", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier) { Text("Current", maxLines = 1) }
+                if (futureSelected && !gamesSelected) Button(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier) { Text("Future", maxLines = 1) }
+                else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier) { Text("Future", maxLines = 1) }
+                if (gamesSelected) Button(onClick = { gamesSelected = false }, modifier = Modifier.testTag("games-tab")) { Text("Games", maxLines = 1) }
+                else OutlinedButton(onClick = { gamesSelected = true; updatesSelected = false }, modifier = Modifier.testTag("games-tab")) { Text("Games", maxLines = 1) }
             }
             if (detailAppId == null) TextButton(onClick = { updatesSelected = !updatesSelected; futureSelected = false; gamesSelected = false }) { Text(if (updatesSelected) "Back to store" else "Updates") }
             val sectionRows = if (futureSelected) emptyList() else rows ?: emptyList()
@@ -385,7 +385,7 @@ fun EcoScreen(
                     else if (gameRows.isEmpty()) item { Text("No released games could be found in the loaded catalog.") }
                     items(gameRows, key = { "game-" + it.app.id }) { row -> StoreBrowseRow(row, screenScope, installActions) { selectedAppId = row.app.id } }
                     item(key = "games-planned") { Text("Planned games · not released", style = MaterialTheme.typography.titleMedium) }
-                    items(GamesDirectory.plansNotInCatalog(rows ?: emptyList()), key = { "game-plan-" + it.id }) { plan -> UpcomingCard(plan, null) }
+                    items(GamesDirectory.plansNotInCatalog(rows ?: emptyList()), key = { "game-plan-" + it.id }) { plan -> UpcomingCard(plan, emptyList()) }
                     item(key = "games-social") { SocialLogoRow(counts = todayCounts, modifier = Modifier.padding(horizontal = 16.dp).testTag("social-footer")) }
                 }
             } else if (updatesSelected) {

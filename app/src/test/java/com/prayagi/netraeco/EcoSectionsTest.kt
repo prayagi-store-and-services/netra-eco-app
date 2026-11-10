@@ -60,7 +60,7 @@ class EcoSectionsTest {
         val game = CatalogApp("kbc", "Netra KBC", "Game", "Reasoning quiz", "", "test.kbc", "", "")
         val utility = CatalogApp("fixture", "Current Alpha", "Utility", "Fixture", "", "test.fixture", "", "")
         rule.setContent { EcoScreen(0, catalogLoader = { listOf(AppRow(game, null, null), AppRow(utility, null, null)) }, textLoader = { if (it == Net.CATALOG_URL) catalog else null }) }
-        rule.onNodeWithTag("games-tab").performClick()
+        rule.onNodeWithTag("games-tab").performScrollTo().performClick()
         rule.onNodeWithTag("games-list").performScrollToKey("game-kbc")
         rule.onNodeWithText("Netra KBC").assertIsDisplayed()
         rule.onAllNodesWithText("Current Alpha").assertCountEquals(0)
@@ -74,9 +74,9 @@ class EcoSectionsTest {
         rule.onNodeWithTag("games-list").performScrollToKey("game-plan-netra-tictactoe")
         rule.onNodeWithText("Tic Tac Toe (confirmation pending)").assertIsDisplayed()
         shot("games-pending")
-        rule.onNodeWithText("Future").performClick()
+        rule.onNodeWithText("Future").performScrollTo().performClick()
         rule.onNodeWithTag("future-list").assertExists()
-        rule.onNodeWithText("Current").performClick()
+        rule.onNodeWithText("Current").performScrollTo().performClick()
         rule.onNodeWithTag("current-list").assertExists()
     }
     @Test fun tabsKeepSeparateSearchWithoutReloadingCatalog() {
