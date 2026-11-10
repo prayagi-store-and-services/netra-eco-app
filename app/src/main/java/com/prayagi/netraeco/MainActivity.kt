@@ -345,10 +345,8 @@ fun EcoScreen(
                 else OutlinedButton(onClick = { futureSelected = false; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Current", maxLines = 1) }
                 if (futureSelected && !gamesSelected) Button(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
                 else OutlinedButton(onClick = { futureSelected = true; updatesSelected = false; gamesSelected = false }, modifier = Modifier.weight(1f)) { Text("Future", maxLines = 1) }
-            }
-            if (detailAppId == null) {
-                if (gamesSelected) Button(onClick = { gamesSelected = false }, modifier = Modifier.fillMaxWidth().testTag("games-tab")) { Text("Games") }
-                else OutlinedButton(onClick = { gamesSelected = true; updatesSelected = false }, modifier = Modifier.fillMaxWidth().testTag("games-tab")) { Text("Games") }
+                if (gamesSelected) Button(onClick = { gamesSelected = false }, modifier = Modifier.weight(1f).testTag("games-tab")) { Text("Games", maxLines = 1) }
+                else OutlinedButton(onClick = { gamesSelected = true; updatesSelected = false }, modifier = Modifier.weight(1f).testTag("games-tab")) { Text("Games", maxLines = 1) }
             }
             if (detailAppId == null) TextButton(onClick = { updatesSelected = !updatesSelected; futureSelected = false; gamesSelected = false }) { Text(if (updatesSelected) "Back to store" else "Updates") }
             val sectionRows = if (futureSelected) emptyList() else rows ?: emptyList()
