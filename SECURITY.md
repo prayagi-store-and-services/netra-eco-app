@@ -1,5 +1,5 @@
 ## v1.3.2 candidate - Games navigation
-No permission, library, network endpoint, analytics or installer-policy changes. Planned game cards contain no package, APK or install action. Current games still use the existing catalog/release/installer validation. The existing user-previewed FormSubmit crash-send path remains HTTPS, not file-E2EE; no exception or completion of the fleet E2EE rule is claimed. Public release is held for the owner's decision. No security vulnerability fix is claimed.
+No permission, library, network endpoint, analytics or installer-policy changes. Planned game cards contain no package, APK or install action. Current games still use the existing catalog/release/installer validation. The existing user-previewed FormSubmit crash-send path remains HTTPS, not file-E2EE; no exception or completion of the fleet E2EE rule is claimed. Owner approved this temporary HTTPS user-tap path on 11 Nov 2026; file-E2EE remains backlog. No security vulnerability fix is claimed.
 
 ## v1.2.50 - minSdk device-compatibility gate
 

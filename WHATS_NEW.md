@@ -1,5 +1,5 @@
 # 1.3.2 candidate - Games section (not released)
-Dedicated Games tab separates current-catalog games from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app. Chess, Sudoku, Tic Tac Toe (confirmation pending) and the original match-3 game are not shown as released downloads. Section tabs scroll at large font sizes without adding a fixed row. No new permission, dependency or network endpoint. Automated build/test/render evidence only; physical-phone acceptance not verified. Publication awaits the owner's fleet encryption/crash-send decision.
+Dedicated Games tab separates current-catalog games from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app. Chess, Sudoku, Tic Tac Toe (confirmation pending) and the original match-3 game are not shown as released downloads. Section tabs scroll at large font sizes without adding a fixed row. No new permission, dependency or network endpoint. Automated build/test/render evidence only; physical-phone acceptance not verified. Owner approved retaining the existing HTTPS user-tap crash-send path on 11 Nov 2026; file-level E2EE remains future backlog, not implemented.
 
 # 1.3.1 - Remove embedded Trikaal home card
 
