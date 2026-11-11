@@ -6,7 +6,7 @@ Owner10:49screenshot shows 'Harmful app blocked', app label Netra Ecosystem, ins
 Downloaded public Eco assets:
 -1.3.1/code67, com.prayagi.netraeco, SHA25675f0caee8d2ff17e5f5d1157f028148ba97135d6c8ab26babab6f52ce5515aba.
 -1.3.2/code68, com.prayagi.netraeco, SHA25630b8c62ab99fa0db9cf7e866d586288fb0cea45d8a06c8bd18d4f60cc63381e1.
--Both target36, APKv2signer certificateSHA256543b46402206ae0022d352f65bea618386bd7aa681b4d5bcfb5ce02bac49c8c4. Extracted signer equality is not an independent full apksig cryptographic verification in this investigation.
+-Both target36, APKv2signer certificateSHA256543b46402206ae0022d352f65bea618386bd7aa681b4d5bcfb5ce02bac49c8c4. Independent Google apksig8.13.0 verification of both downloadedAPKs: verified=true,v2=true,errors=[],warnings=[]. Samecertificate confirmed. Cryptographic validity is not PlayProtectclearance.
 -Permissions unchanged between versions: internet/network, notifications, package install/uninstall requests, exact alarms/boot, coarse location, normal WorkManager foreground/wakelock, dynamic receiver permission. No SMS/accessibility/notification-listener declaration in either manifest. Standard ZIP header. No engine/native executable payload introduced by1.3.2.
 -Source1.3.1→1.3.2 changes Games UI/docs/version/CI, not installer/manifest/dependencies. No evidence that a new permission or signing change caused warning.
 
