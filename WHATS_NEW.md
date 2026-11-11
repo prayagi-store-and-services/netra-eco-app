@@ -1,3 +1,6 @@
+# 1.3.2 candidate - Games section (not released)
+Dedicated Games tab separates current-catalog games from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app. Chess, Sudoku, Tic Tac Toe (confirmation pending) and the original match-3 game are not shown as released downloads. Section tabs scroll at large font sizes without adding a fixed row. No new permission, dependency or network endpoint. Automated build/test/render evidence only; physical-phone acceptance not verified. Owner approved retaining the existing HTTPS user-tap crash-send path on 11 Nov 2026; file-level E2EE remains future backlog, not implemented.
+
 # 1.3.1 - Remove embedded Trikaal home card
 
 - Removed the embedded NETRA TRIKAAL chart-calculation card from Eco home.
@@ -53,3 +56,6 @@
 Awaiting CI, visual checks and independent review. No measured battery or thermal guarantee.
 
 Review hardening (candidate): every installer entry now checks expected size, SHA256, package/version and independently pinned signing certificate immediately before Android handoff. Bad cached files are deleted; legacy files without bound metadata require a fresh download. Unknown signing identities fail closed. Existing Human Safety pin stays unchanged. The Future countdown stops when the hosting activity is not STARTED. This is not a measured battery improvement or Play approval; the existing APK self-update architecture is not suitable for Play distribution without a separate policy change.
+
+## Unreleased Games section candidate
+Dedicated Games entry separates live catalog games (including KBC when supplied by the current catalog) from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app; Chess, Sudoku and original match-3 are separate planned apps. Tic Tac Toe is awaiting confirmation. Planned entries have no download/install, release date, package or release link. No new permission, endpoint, telemetry or dependency. Owner preview and green checks required before public release.

@@ -22,3 +22,9 @@ Current release-time sorting, named available updates, observed new-app release 
 ## Community links
 
 The Current tab includes five official Netra social profiles. Each released app card opens its own verified website, real community ratings/reviews, or a private contact form in a browser only after a tap. There is no automatic follow, rating prompt, reward, device identifier or new background upload. Only declared browser apps are eligible, preventing Eco app-link loops; if none exists, an error is shown. This uses an APP_BROWSER visibility query, not a new permission. Reviews are community submissions, not Google Play ratings. Phone model and any entered name or area are publicly stored; a copy is emailed through FormSubmit after the web form consent. Use the separate private contact form for private feedback. Private contact details are sent only through the website form after its separate consent; they are not public reviews. Browser/network failures do not imply a submission succeeded.
+
+## Unreleased Games section candidate
+Dedicated Games entry separates live catalog games (including KBC when supplied by the current catalog) from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app; Chess, Sudoku and original match-3 are separate planned apps. Tic Tac Toe is awaiting confirmation. Planned entries have no download/install, release date, package or release link. No new permission, endpoint, telemetry or dependency. Owner preview and green checks required before public release.
+
+## v1.3.2 candidate
+Games-section UI approved by the owner on 11 Nov 2026. VersionCode68 / versionName1.3.2 prepared; not released. Owner separately approved retaining HTTPS user-tap crash-send on 11 Nov 2026. File-level E2EE is backlog and is not claimed implemented.
