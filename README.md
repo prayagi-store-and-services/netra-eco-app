@@ -25,3 +25,6 @@ The Current tab includes five official Netra social profiles. Each released app 
 
 ## Unreleased Games section candidate
 Dedicated Games entry separates live catalog games (including KBC when supplied by the current catalog) from clearly labelled plans. Ludo includes planned Snakes & Ladders in the same app; Chess, Sudoku and original match-3 are separate planned apps. Tic Tac Toe is awaiting confirmation. Planned entries have no download/install, release date, package or release link. No new permission, endpoint, telemetry or dependency. Owner preview and green checks required before public release.
+
+## v1.3.2 candidate
+Games-section UI approved by the owner on 11 Nov 2026. VersionCode68 / versionName1.3.2 prepared; not released. Existing HTTPS crash-send versus fleet file-E2EE requirement is awaiting the owner's separate decision. No UI approval is treated as an encryption exception.

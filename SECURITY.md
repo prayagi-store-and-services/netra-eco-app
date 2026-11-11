@@ -1,3 +1,6 @@
+## v1.3.2 candidate - Games navigation
+No permission, library, network endpoint, analytics or installer-policy changes. Planned game cards contain no package, APK or install action. Current games still use the existing catalog/release/installer validation. The existing user-previewed FormSubmit crash-send path remains HTTPS, not file-E2EE; no exception or completion of the fleet E2EE rule is claimed. Public release is held for the owner's decision. No security vulnerability fix is claimed.
+
 ## v1.2.50 - minSdk device-compatibility gate
 
 Releases now declare minSdk and the store checks it against the device before offering a download or update, like the Play Store. Incompatible updates are blocked from the download queue with an explanatory failure; installed apps whose latest release is incompatible show a static notice that no security updates or any further updates possible due to Android limit. A release without a minSdk declaration is treated as unknown and behaves as before; nothing is hidden without data. No new permissions, endpoints, or telemetry.
