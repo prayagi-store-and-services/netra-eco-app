@@ -19,9 +19,9 @@ object MediaPlaybackGuard {
         val am = try { context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager } catch (_: Throwable) { null }
             ?: return true
         val music: Boolean? = try { am.isMusicActive } catch (_: Throwable) { null }
-        // AudioPlaybackConfiguration.isActive exists from API 34; older phones rely on isMusicActive.
+        // Public API 26+: the platform lists only players that are currently active.
         val playback: Boolean? = try {
-            if (Build.VERSION.SDK_INT >= 34) am.activePlaybackConfigurations.any { it.isActive } else false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) am.activePlaybackConfigurations.isNotEmpty() else false
         } catch (_: Throwable) { null }
         return mediaBlocks(music, playback)
     }
