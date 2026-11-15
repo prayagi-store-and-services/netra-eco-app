@@ -132,6 +132,8 @@ class TimeSpeaker private constructor(private val appContext: Context) {
     /** True when spoken right away or queued for a starting engine; false when no engine exists. */
     private fun speakOrQueue(text: String, onFinished: (() -> Unit)?): Boolean {
         if (tts == null) return false
+        // Owner rule 15 Nov 2026: skip while any media plays (admission check).
+        if (MediaPlaybackGuard.isMediaActive(appContext)) { onFinished?.invoke(); return true }
         if (ready) {
             speak(text, onFinished)
         } else {
@@ -143,6 +145,8 @@ class TimeSpeaker private constructor(private val appContext: Context) {
     private fun speak(text: String, onFinished: (() -> Unit)?) {
         val engine = tts
         if (!ready || engine == null) { onFinished?.invoke(); return }
+        // Owner rule 15 Nov 2026: skip while any media plays (re-checked right before speaking).
+        if (MediaPlaybackGuard.isMediaActive(appContext)) { onFinished?.invoke(); return }
         // Never speak into a phone call.
         try {
             val am = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
@@ -153,7 +157,7 @@ class TimeSpeaker private constructor(private val appContext: Context) {
         val id = "TimeSpeak-" + System.nanoTime()
         val params = android.os.Bundle()
         params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, id)
-        val focus = requestSpeechFocus()
+        val focus: Any? = null // no audio focus is requested: media is skipped, never paused
         // A refused focus is null; the registry stores it safely (ConcurrentHashMap rejects nulls).
         focusRegistry.register(id, focus, onFinished)
         // Watchdog: focus is released and the finisher runs even if the speech callbacks never arrive.
@@ -163,26 +167,6 @@ class TimeSpeaker private constructor(private val appContext: Context) {
         } catch (_: Exception) {
             releaseFocusFor(id)
         }
-    }
-
-    private fun requestSpeechFocus(): Any? {
-        val am = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return null
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                    .setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ASSISTANT)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build()
-                    )
-                    .build()
-                if (am.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) req else null
-            } else {
-                @Suppress("DEPRECATION")
-                if (am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) Any() else null
-            }
-        } catch (_: Exception) { null }
     }
 
     private fun releaseFocusFor(id: String) {
