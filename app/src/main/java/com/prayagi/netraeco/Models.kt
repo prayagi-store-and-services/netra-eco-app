@@ -51,10 +51,20 @@ fun isValidTag(tag: String): Boolean = Regex("^v[0-9]+\\.[0-9]+\\.[0-9]+$").matc
 
 fun isValidSha256(sha: String): Boolean = Regex("^[0-9a-f]{64}$").matches(sha)
 
-/** Only these two places may serve an APK or a catalog: this site and GitHub releases of this organization. */
+/** Existing organization plus the single, explicitly approved Guardian repository. */
 const val ORG = "prayagi-store-and-services"
 
-fun isTrustedRepo(repo: String): Boolean = Regex("^" + Regex.escape(ORG) + "/[A-Za-z0-9._-]+$").matches(repo)
+const val GUARDIAN_ID = "netra-battery-guardian"
+const val GUARDIAN_REPO = "prayagideepak-collab/Netra-Battery-Guardian"
+const val GUARDIAN_PACKAGE = "com.aistudio.netrabattery.kxmzqr"
+
+fun isTrustedRepo(repo: String): Boolean = repo == GUARDIAN_REPO || Regex("^" + Regex.escape(ORG) + "/[A-Za-z0-9._-]+$").matches(repo)
+
+/** The external-owner exception cannot be relabeled as another app or package. */
+fun isTrustedCatalogIdentity(id: String, repo: String, pkg: String): Boolean =
+    if (id == GUARDIAN_ID || repo == GUARDIAN_REPO || pkg == GUARDIAN_PACKAGE)
+        id == GUARDIAN_ID && repo == GUARDIAN_REPO && pkg == GUARDIAN_PACKAGE
+    else isTrustedRepo(repo) && pkg.isNotBlank()
 
 fun formatSize(bytes: Long): String {
     if (bytes <= 0L) return "Unavailable"

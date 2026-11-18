@@ -21,7 +21,8 @@ internal object InstallerGate {
         "netra-trikaal" to ("com.prayagi.netratrikaal" to "netra-trikaal"),
         "netra-player" to ("com.prayagi.netraplayer" to "netra-player"),
         "netra-eco" to ("com.prayagi.netraeco" to "netra-eco-app"),
-        "netra-charge" to ("com.netracharge.app" to "netra-charge")
+        "netra-charge" to ("com.netracharge.app" to "netra-charge"),
+        GUARDIAN_ID to (GUARDIAN_PACKAGE to "Netra-Battery-Guardian")
     )
     fun expectedSigner(pkg: String): String? = when {
         pkg == "com.netracharge.app" -> "814d2dd07f8ba510643795215f61083d1ebc905a5e9b3fba570faa5862381ab9"
@@ -45,7 +46,7 @@ internal object InstallerGate {
     /** Snapshot comes only from the existing trusted release resolver, never from the APK itself. */
     fun remember(c: Context, app: CatalogApp, release: LatestRelease) {
         val identity = identities[app.id]
-        check(identity != null && identity.first == app.packageName && app.repo == "$ORG/${identity.second}") { "This app's installer identity is not approved." }
+        check(identity != null && identity.first == app.packageName && app.repo == (if (app.id == GUARDIAN_ID) GUARDIAN_REPO else "$ORG/${identity.second}")) { "This app's installer identity is not approved." }
         HumanSafetyHold.requireAllowed(app.repo, app.packageName, release)
         val o = JSONObject().put("package", app.packageName).put("version", release.versionName).put("code", release.versionCode)
             .put("size", release.size).put("sha", release.sha256)
