@@ -45,7 +45,13 @@ class EcoSectionsTest {
                 }
             }
         }
-        if (roadmap != null) rule.mainClock.advanceTimeBy(1000)
+        // The real ticker keeps animating, so its clock remains manually controlled.
+        // Clock advancement alone does not await Dispatchers.IO catalog/roadmap work.
+        // Wait for the actual controls, advancing frames so completed IO can compose.
+        rule.waitUntil(timeoutMillis = 10000) {
+            if (roadmap != null) rule.mainClock.advanceTimeBy(64)
+            rule.onAllNodesWithText("Search apps").fetchSemanticsNodes().size == 1
+        }
         rule.onNodeWithText("Search apps").assertExists()
         return { loads }
     }
