@@ -18,7 +18,8 @@ object CommunityLinks {
         "netra-trikaal" to "https://prayagi-store-and-services.github.io/netra-eco/app/trikaal/",
         "netra-player" to "https://prayagi-store-and-services.github.io/netra-eco/app/player/",
         "netra-eco" to "https://prayagi-store-and-services.github.io/netra-eco/app/eco/",
-        "netra-charge" to "https://prayagi-store-and-services.github.io/netra-eco/app/charge/"
+        "netra-charge" to "https://prayagi-store-and-services.github.io/netra-eco/app/charge/",
+        GUARDIAN_ID to "https://prayagi-store-and-services.github.io/netra-eco/app/guardian/"
     )
     fun website(appId: String): String? = sites[appId]
     fun reviews(appId: String): String? = sites[appId]?.let { "https://prayagi-store-and-services.github.io/netra-eco/embed.html?app=$appId" }

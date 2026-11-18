@@ -21,7 +21,7 @@ object InstalledApps {
     val knownPackages = setOf(
         "com.aistudio.batterysentinel.ntra", "com.aistudio.reasoningquiz.tark",
         "com.aistudio.netrasensorhub.kxmpzq", "com.aistudio.sensorguard.prvsec",
-        "com.prayagi.netraplayer", "com.prayagi.netratrikaal", "com.netracharge.app", "com.prayagi.netraeco"
+        "com.prayagi.netraplayer", "com.prayagi.netratrikaal", "com.netracharge.app", "com.prayagi.netraeco", GUARDIAN_PACKAGE
     )
     data class Result(val known: Boolean, val version: Pair<Long, String>? = null)
     fun read(context: Context, packageName: String): Result {

@@ -37,4 +37,16 @@ class StorePreviewScreenTest {
         rule.onNodeWithTag("handoff-app").performScrollToNode(hasText("No verified ratings available. Reviews are not collected here yet."))
         rule.onNodeWithText("No verified ratings available. Reviews are not collected here yet.").assertExists()
     }
+    @Test fun guardianCatalogCardAndDetail() {
+        val guardian=CatalogApp(GUARDIAN_ID,"Netra Battery Guardian","Battery & Device","Local battery and temperature monitoring",GUARDIAN_REPO,GUARDIAN_PACKAGE,"","https://prayagi-store-and-services.github.io/netra-eco/app/guardian/")
+        val latest=LatestRelease("v1.0.0","1.0.0",1,"Physical-device tests not yet verified.","https://github.com/$GUARDIAN_REPO/releases/download/v1.0.0/app-release.apk","f115e902aa9e191c4367519f274c26bf6adaf0692f12c57493af151f1e6f467f",13300013,minSdk=24)
+        rule.setContent { MaterialTheme { EcoScreen(0,catalogLoader={listOf(AppRow(guardian,null,latest))},textLoader={null}) } }
+        rule.waitUntil(10000){rule.onAllNodesWithText("Search apps").fetchSemanticsNodes().isNotEmpty()}
+        rule.onNodeWithTag("current-list").performScrollToKey("l-$GUARDIAN_ID")
+        rule.onNodeWithText("Netra Battery Guardian").assertExists()
+        shot("guardian-browse")
+        rule.onNodeWithText("App details").performClick()
+        rule.onNodeWithText("Back to all apps").assertIsDisplayed()
+        shot("guardian-detail")
+    }
 }

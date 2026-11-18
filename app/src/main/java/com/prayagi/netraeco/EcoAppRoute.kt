@@ -8,7 +8,7 @@ object EcoAppRoute {
     private val appIds = mapOf(
         "bspn" to "battery-sentinel", "kbc" to "kbc", "hub" to "netra-hub",
         "privacy" to "prayagi-privacy", "trikaal" to "netra-trikaal",
-        "player" to "netra-player", "charge" to "netra-charge", "eco" to "netra-eco"
+        "player" to "netra-player", "charge" to "netra-charge", "eco" to "netra-eco", "guardian" to GUARDIAN_ID
     )
     fun appId(raw: String?): String? = try {
         val uri = URI(raw ?: "")

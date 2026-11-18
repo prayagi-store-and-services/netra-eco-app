@@ -142,7 +142,7 @@ object Net {
             val o = arr.getJSONObject(i)
             val repo = o.optString("repo").ifBlank { if (o.optString("id") == "netra-charge" && o.optString("package") == "com.netracharge.app") "prayagi-store-and-services/netra-charge" else "" }
             val pkg = o.optString("package")
-            if (!isTrustedRepo(repo) || pkg.isBlank()) null else CatalogApp(
+            if (!isTrustedCatalogIdentity(o.optString("id"), repo, pkg)) null else CatalogApp(
                 id = o.getString("id"),
                 name = o.getString("name"),
                 type = o.optString("type"),

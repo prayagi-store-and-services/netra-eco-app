@@ -27,6 +27,7 @@
         <package android:name="com.prayagi.netraplayer" />
         <package android:name="com.prayagi.netratrikaal" />
         <package android:name="com.netracharge.app" />
+        <package android:name="com.aistudio.netrabattery.kxmzqr" />
     </queries>
 
     <application
